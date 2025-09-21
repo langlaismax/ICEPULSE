@@ -103,8 +103,9 @@
           </table>
         </div>
 	 <div style="margin-top:10px;display:flex;gap:0px;flex-wrap:wrap">
-      <button id="downloadCsv" class="alt">Download CSV</button>
-		 IcePulse by Max L
+<div style="text-align: center; margin-top: 0px;">
+  <button id="downloadCsv" class="alt">Download CSV</button>
+</div>
         </div>
      </div>		           
     </div>
@@ -179,7 +180,7 @@ function clearSelectedColumn(){
 function updateAverageReal() {
   const last10 = splitLog.slice(-10).map(r => r.real).filter(v => v !== null && !isNaN(v));
   if (last10.length === 0) {
-    document.getElementById('avgReal').innerText = 'Avg (last 10): —';
+    document.getElementById('avgReal').innerText = 'Average: —';
     return;
   }
   const sum = last10.reduce((a,b) => a+b, 0);
@@ -402,7 +403,3 @@ setInterval(() => {
 </script>
 </body>
 </html>
-
-
-
-
