@@ -77,9 +77,6 @@
         <div class="actions">
           <button id="startStop" class="primary">Start</button>
 		</div>
-		<div>
-          <button id="resetBtn" class="primary">Reset</button>
-        </div>
       </div>
 
       <div class="controls" style="margin-top:8px">
@@ -105,7 +102,9 @@
         </div>
 	 <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
       <button id="downloadCsv" class="alt">Download CSV</button>
-	  <button id="grabBtn" class="alt">IcePulse by Max L</button>
+	  <button id="grabBtn" class="alt">IcePulse</button>
+      <button id="resetBtn" class="alt">Max L</button>
+        </div>
      </div>		           
     </div>
 	
@@ -253,6 +252,7 @@ document.getElementById('grabBtn').addEventListener('click', ()=>{ document.getE
 
 /* render column buttons with combined calculate+log on tap */
 function renderColumnButtons(){
+  // create the regular column buttons (1-10, H)
   columns.forEach(c => {
     const b = document.createElement('button');
     b.type = 'button';
@@ -288,7 +288,31 @@ function renderColumnButtons(){
     });
     colButtonsWrap.appendChild(b);
   });
+
+  // === add Reset as the final (12th) option in the same grid ===
+  const resetBtn = document.createElement('button');
+  resetBtn.type = 'button';
+  resetBtn.id = 'resetBtn';
+  // keep the 'alt' appearance while also using 'col-btn' sizing
+  resetBtn.className = 'col-btn alt';
+  resetBtn.innerText = 'Reset';
+  resetBtn.setAttribute('aria-label','Reset stopwatch');
+
+  // wire the same reset behavior
+  resetBtn.addEventListener('click', ()=>{
+    running = false;
+    startTs = 0;
+    elapsed = 0;
+    displayEl.innerText = '0.00';
+    // if startStop button text was 'Stop', set back to Start
+    startStopBtn.innerText = 'Start';
+    // also clear any selected column highlight (optional)
+    clearSelectedColumn();
+  });
+
+  colButtonsWrap.appendChild(resetBtn);
 }
+
 
 /* CSV download */
 function downloadCsv(){
@@ -304,23 +328,7 @@ function downloadCsv(){
 
 document.getElementById('downloadCsv').addEventListener('click', downloadCsv);
 
-/* initialize */
-// NOTE: conversion_table must be the full numeric 2D array. The preview placeholder above should be
-// replaced with the actual table when you paste this file into your project. To keep this file
-// compact in the editor pane we used the placeholder string — simply replace it with the same
-// `conversion_table` array from your original file (the long numeric literal).
-
-// If the conversion_table placeholder is still present at runtime, create a safe fallback:
-if (typeof conversion_table === 'string') {
-  console.warn('Please replace conversion_table placeholder with the full numeric array.');
-}
-
 renderColumnButtons();
 </script>
 </body>
 </html>
-
-
-
-
-
