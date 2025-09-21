@@ -86,6 +86,7 @@
     </header>
 
     <div id="result" aria-live="polite">Real: —</div>
+	<div id="avgReal" aria-live="polite" style="margin-top:6px;font-size:24px;color:#666;">Avg (last 10): —</div>
 
     <div class="grid">
       <div>
@@ -173,6 +174,17 @@ function clearSelectedColumn(){
   document.querySelectorAll('.col-btn').forEach(x=>x.classList.remove('selected'));
 }
 
+function updateAverageReal() {
+  const last10 = splitLog.slice(-10).map(r => r.real).filter(v => v !== null && !isNaN(v));
+  if (last10.length === 0) {
+    document.getElementById('avgReal').innerText = 'Avg (last 10): —';
+    return;
+  }
+  const sum = last10.reduce((a,b) => a+b, 0);
+  const avg = sum / last10.length;
+  document.getElementById('avgReal').innerText = 'Avg (last 10): ' + avg.toFixed(2) + ' s';
+}
+
 function lookupRealSplit(column, enteredValue){
   const colIndex = columns.indexOf(String(column));
   if (colIndex === -1) return null;
@@ -197,6 +209,7 @@ function addLogEntry(ts, col, ent, real){
   if (splitLog.length > MAX_LOG) splitLog.shift();
   renderLogTable();
   updateChart();
+  updateAverageReal();
 }
 
 function renderLogTable(){
@@ -344,4 +357,3 @@ renderColumnButtons();
 </script>
 </body>
 </html>
-
