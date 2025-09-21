@@ -87,7 +87,6 @@
     </header>
 
     <div id="result" aria-live="polite">Real: —</div>
-	<div id="avgReal" aria-live="polite" style="margin-top:0px;font-size:24px;color:#666;">Average: —</div>
 
     <div class="grid">
       <div>
@@ -162,6 +161,8 @@ const conversion_table = [
   [20.6,19.2,18.2,17.8,17.4,17.1,16.6,16.2,16.1,15.9,15.1],
   [20.8,19.3,18.3,17.9,17.5,17.2,16.7,16.3,16.1,16.0,15.2]
 ];
+
+
 
 /* stopwatch logic */
 let running=false, startTs=0, elapsed=0;
@@ -319,13 +320,59 @@ const splitsChart = new Chart(ctx, {
 
 function updateChart(){
   const labels = splitLog.map(r => { const d = new Date(r.ts); return d.toLocaleTimeString(); });
-  const enteredData = splitLog.map(r => r.entered);
   const realData = splitLog.map(r => r.real === null ? NaN : r.real);
+
+  // Calculate moving average for trend line
+  const trendData = [];
+  const windowSize = 10;  // increase to smooth more
+  for (let i = 0; i < realData.length; i++) {
+    let sum = 0, count = 0;
+    for (let j = Math.max(0, i - windowSize + 1); j <= i; j++) {
+      if (!isNaN(realData[j])) {
+        sum += realData[j];
+        count++;
+      }
+    }
+    trendData.push(count > 0 ? sum / count : NaN);
+  }
+
   splitsChart.data.labels = labels;
-  splitsChart.data.datasets[0].data = enteredData;
-  splitsChart.data.datasets[1].data = realData;
+
+  // Keep only Real dataset (green) and Trend line (orange)
+  splitsChart.data.datasets = [
+    {
+      label: 'Adjusted H2H Split Times',
+      data: realData,
+      tension: 0.3,
+      pointRadius: 6,
+      borderColor: 'rgba(0,170,90,0.85)',
+      backgroundColor: 'rgba(0,170,90,0.08)',
+      yAxisID: 'y'
+    },
+    {
+      label: 'Trend',
+      data: trendData,
+      borderColor: 'orange',
+      backgroundColor: 'rgba(255,165,0,0.2)',
+      pointRadius: 0,
+      borderWidth: 2,
+      tension: 0.4,
+      yAxisID: 'y'
+    }
+  ];
+const lastEntries = splitLog.slice(-MAX_LOG).map(r => r.real).filter(v => v !== null && !isNaN(v));
+const avg = lastEntries.length ? (lastEntries.reduce((a, b) => a + b, 0) / lastEntries.length).toFixed(2) : '—';
+splitsChart.options.plugins.title = {
+  display: true,
+  text: `Average: ${avg} s`,
+  font: { size: 18 }
+};
+
+
   splitsChart.update();
 }
+
+
 
 /* UI handlers */
 startStopBtn.addEventListener('click', ()=>{
