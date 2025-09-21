@@ -102,234 +102,176 @@
   </div>
 
 <script>
-/* === conversion data (copied from your Python file) === */
-const columns = [ "1","2","3","4","5","6","7","8","9","10","H" ];
+window.addEventListener('DOMContentLoaded', function(){
+  /* === conversion data === */
+  const columns = [ "1","2","3","4","5","6","7","8","9","10","H" ];
+  const conversion_table = [
+    [16.2,15.1,14.3,13.9,13.6,13.4,13.0,12.7,12.6,12.5,11.9],
+    [16.3,15.2,14.4,14.0,13.7,13.5,13.1,12.8,12.7,12.6,11.9],
+    [16.4,15.3,14.5,14.2,13.8,13.6,13.2,12.9,12.8,12.7,12.0],
+    [16.5,15.4,14.6,14.3,14.0,13.7,13.3,13.0,12.9,12.8,12.1],
+    [16.7,15.5,14.7,14.4,14.1,13.8,13.4,13.1,13.0,12.9,12.2],
+    [16.8,15.6,14.8,14.5,14.2,13.9,13.5,13.2,13.1,12.9,12.3],
+    [16.9,15.8,14.9,14.6,14.3,14.0,13.6,13.3,13.2,13.0,12.4],
+    [17.0,15.9,15.0,14.7,14.4,14.1,13.7,13.4,13.2,13.1,12.5],
+    [17.2,16.0,15.1,14.8,14.5,14.2,13.8,13.5,13.3,13.2,12.6],
+    [17.3,16.1,15.3,14.9,14.6,14.3,13.9,13.5,13.4,13.3,12.7],
+    [17.4,16.2,15.4,15.0,14.7,14.4,14.0,13.6,13.5,13.4,12.8],
+    [17.5,16.3,15.5,15.1,14.8,14.5,14.1,13.7,13.6,13.5,12.9],
+    [17.7,16.5,15.7,15.2,14.9,14.6,14.2,13.8,13.7,13.6,13.0],
+    [17.8,16.6,15.8,15.4,15.0,14.7,14.3,13.9,13.8,13.7,13.1],
+    [17.9,16.7,16.0,15.5,15.1,14.8,14.4,14.0,13.9,13.8,13.2],
+    [18.1,16.9,16.1,15.6,15.2,14.9,14.5,14.1,14.0,13.9,13.2],
+    [18.2,17.0,16.2,15.8,15.3,15.0,14.6,14.2,14.1,14.0,13.3],
+    [18.3,17.1,16.4,15.9,15.5,15.1,14.7,14.3,14.2,14.1,13.4],
+    [18.4,17.2,16.5,16.0,15.6,15.2,14.8,14.4,14.3,14.2,13.5],
+    [18.5,17.3,16.6,16.1,15.7,15.3,14.9,14.5,14.4,14.3,13.5],
+    [18.7,17.5,16.7,16.2,15.8,15.4,15.0,14.5,14.5,14.4,13.6],
+    [18.8,17.6,16.8,16.4,15.9,15.6,15.1,14.7,14.6,14.5,13.7],
+    [18.9,17.7,16.9,16.5,16.0,15.6,15.2,14.8,14.7,14.6,13.8],
+    [19.0,17.8,17.0,16.6,16.1,15.7,15.3,14.9,14.8,14.7,13.9],
+    [19.2,17.9,17.1,16.7,16.2,15.8,15.4,15.0,14.9,14.8,14.0],
+    [19.3,18.1,17.2,16.8,16.3,15.9,15.5,15.1,15.0,14.9,14.1],
+    [19.4,18.2,17.3,16.9,16.5,16.2,15.8,15.4,15.3,15.2,14.5],
+    [19.5,18.3,17.4,16.9,16.6,16.3,15.9,15.5,15.4,15.3,14.6],
+    [19.6,18.4,17.5,17.0,16.7,16.4,16.0,15.6,15.5,15.4,14.6],
+    [19.7,18.5,17.6,17.2,16.8,16.5,16.0,15.6,15.5,15.3,14.6],
+    [19.9,18.7,17.7,17.3,16.9,16.6,16.1,15.7,15.6,15.4,14.7],
+    [20.0,18.8,17.8,17.4,17.0,16.7,16.2,15.8,15.7,15.5,14.8],
+    [20.2,18.9,17.9,17.5,17.1,16.8,16.3,15.9,15.8,15.6,14.9],
+    [20.3,19.0,18.0,17.6,17.2,16.9,16.4,16.0,15.9,15.7,15.0],
+    [20.5,19.1,18.1,17.7,17.3,17.0,16.5,16.1,16.0,15.8,15.0],
+    [20.6,19.2,18.2,17.8,17.4,17.1,16.6,16.2,16.1,15.9,15.1],
+    [20.8,19.3,18.3,17.9,17.5,17.2,16.7,16.3,16.1,16.0,15.2]
+  ];
 
-const conversion_table = [
-  [16.2,15.1,14.3,13.9,13.6,13.4,13.0,12.7,12.6,12.5,11.9],
-  [16.3,15.2,14.4,14.0,13.7,13.5,13.1,12.8,12.7,12.6,11.9],
-  [16.4,15.3,14.5,14.2,13.8,13.6,13.2,12.9,12.8,12.7,12.0],
-  [16.5,15.4,14.6,14.3,14.0,13.7,13.3,13.0,12.9,12.8,12.1],
-  [16.7,15.5,14.7,14.4,14.1,13.8,13.4,13.1,13.0,12.9,12.2],
-  [16.8,15.6,14.8,14.5,14.2,13.9,13.5,13.2,13.1,12.9,12.3],
-  [16.9,15.8,14.9,14.6,14.3,14.0,13.6,13.3,13.2,13.0,12.4],
-  [17.0,15.9,15.0,14.7,14.4,14.1,13.7,13.4,13.2,13.1,12.5],
-  [17.2,16.0,15.1,14.8,14.5,14.2,13.8,13.5,13.3,13.2,12.6],
-  [17.3,16.1,15.3,14.9,14.6,14.3,13.9,13.5,13.4,13.3,12.7],
-  [17.4,16.2,15.4,15.0,14.7,14.4,14.0,13.6,13.5,13.4,12.8],
-  [17.5,16.3,15.5,15.1,14.8,14.5,14.1,13.7,13.6,13.5,12.9],
-  [17.7,16.5,15.7,15.2,14.9,14.6,14.2,13.8,13.7,13.6,13.0],
-  [17.8,16.6,15.8,15.4,15.0,14.7,14.3,13.9,13.8,13.7,13.1],
-  [17.9,16.7,16.0,15.5,15.1,14.8,14.4,14.0,13.9,13.8,13.2],
-  [18.1,16.9,16.1,15.6,15.2,14.9,14.5,14.1,14.0,13.9,13.2],
-  [18.2,17.0,16.2,15.8,15.3,15.0,14.6,14.2,14.1,14.0,13.3],
-  [18.3,17.1,16.4,15.9,15.5,15.1,14.7,14.3,14.2,14.1,13.4],
-  [18.4,17.2,16.5,16.0,15.6,15.2,14.8,14.4,14.3,14.2,13.5],
-  [18.5,17.3,16.6,16.1,15.7,15.3,14.9,14.5,14.4,14.3,13.5],
-  [18.7,17.5,16.7,16.2,15.8,15.4,15.0,14.5,14.5,14.4,13.6],
-  [18.8,17.6,16.8,16.4,15.9,15.6,15.1,14.7,14.6,14.5,13.7],
-  [18.9,17.7,16.9,16.5,16.0,15.6,15.2,14.8,14.7,14.6,13.8],
-  [19.0,17.8,17.0,16.6,16.1,15.7,15.3,14.9,14.8,14.7,13.9],
-  [19.2,17.9,17.1,16.7,16.2,15.8,15.4,15.0,14.9,14.8,14.0],
-  [19.3,18.1,17.2,16.8,16.3,15.9,15.5,15.1,15.0,14.9,14.1],
-  [19.4,18.2,17.3,16.9,16.5,16.2,15.8,15.4,15.3,15.2,14.5],
-  [19.5,18.3,17.4,16.9,16.6,16.3,15.9,15.5,15.4,15.3,14.6],
-  [19.6,18.4,17.5,17.0,16.7,16.4,16.0,15.6,15.5,15.4,14.6],
-  [19.7,18.5,17.6,17.2,16.8,16.5,16.0,15.6,15.5,15.3,14.6],
-  [19.9,18.7,17.7,17.3,16.9,16.6,16.1,15.7,15.6,15.4,14.7],
-  [20.0,18.8,17.8,17.4,17.0,16.7,16.2,15.8,15.7,15.5,14.8],
-  [20.2,18.9,17.9,17.5,17.1,16.8,16.3,15.9,15.8,15.6,14.9],
-  [20.3,19.0,18.0,17.6,17.2,16.9,16.4,16.0,15.9,15.7,15.0],
-  [20.5,19.1,18.1,17.7,17.3,17.0,16.5,16.1,16.0,15.8,15.0],
-  [20.6,19.2,18.2,17.8,17.4,17.1,16.6,16.2,16.1,15.9,15.1],
-  [20.8,19.3,18.3,17.9,17.5,17.2,16.7,16.3,16.1,16.0,15.2]
-];
+  /* === stopwatch logic === */
+  let running=false, startTs=0, elapsed=0;
+  const displayEl = document.getElementById('display');
+  const startStopBtn = document.getElementById('startStop');
+  const resetBtn = document.getElementById('resetBtn');
+  const grabBtn = document.getElementById('grabBtn');
+  const downloadCsvBtn = document.getElementById('downloadCsv');
 
-/* === stopwatch logic === */
-let running=false, startTs=0, elapsed=0;
-const displayEl = document.getElementById('display');
-const startStopBtn = document.getElementById('startStop');
+  let selectedColumn = null; // must be chosen manually every time
 
-let selectedColumn = null; // must be chosen manually every time
+  function updateDisplay(){
+    let value = elapsed;
+    if (running) value = (Date.now()/1000 - startTs) + elapsed;
+    displayEl.innerText = value.toFixed(2);
+  }
+  setInterval(updateDisplay, 100);
 
-function updateDisplay(){
-  let value = elapsed;
-  if (running) value = (Date.now()/1000 - startTs) + elapsed;
-  displayEl.innerText = value.toFixed(2);
-}
-setInterval(updateDisplay, 100);
+  /* helper: lookup real split */
+  function lookupRealSplit(column, enteredValue){
+    const colIndex = columns.indexOf(String(column));
+    if (colIndex === -1) return null;
+    let closestRow = null;
+    let closestDiff = Number.POSITIVE_INFINITY;
+    for (const row of conversion_table){
+      const val = row[colIndex];
+      const diff = Math.abs(val - enteredValue);
+      if (diff < closestDiff){
+        closestDiff = diff; closestRow = row;
+      }
+    }
+    return closestRow ? closestRow[6] : null; // 7th column
+  }
 
-/* create column buttons (11 buttons) */
-const colButtonsWrap = document.getElementById('colButtons');
-function renderColumnButtons(){
+  /* logging/chart state */
+  let splitLog = [];
+  const MAX_LOG = 10;
+
+  function addLogEntry(ts, col, ent, real){
+    splitLog.push({ts, col, entered: Number(ent), real: real === null ? null : Number(real)});
+    if (splitLog.length > MAX_LOG) splitLog.shift();
+    renderLogTable(); updateChart();
+  }
+
+  function renderLogTable(){
+    const tbody = document.querySelector('#logTable tbody');
+    tbody.innerHTML = '';
+    for (let i = splitLog.length - 1; i >= 0; i--){
+      const row = splitLog[i];
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td>'+row.ts+'</td><td>'+row.col+'</td><td>'+row.entered.toFixed(2)+'</td><td>'+(row.real!==null?row.real.toFixed(2):'N/A')+'</td>';
+      tbody.appendChild(tr);
+    }
+  }
+
+  /* chart init */
+  const ctx = document.getElementById('splitsChart').getContext('2d');
+  const splitsChart = new Chart(ctx, {
+    type: 'line', data: { labels: [], datasets: [
+      { label: 'Entered (s)', data: [], tension: 0.3, pointRadius: 4, borderColor: 'rgba(10,102,255,0.85)', backgroundColor: 'rgba(10,102,255,0.08)' },
+      { label: 'Real (s)', data: [], tension: 0.3, pointRadius: 4, borderColor: 'rgba(0,170,90,0.85)', backgroundColor: 'rgba(0,170,90,0.08)' }
+    ] },
+    options: { responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false}, plugins:{legend:{display:true,position:'top'}}, scales:{x:{display:true}, y:{beginAtZero:false, title:{display:true,text:'Seconds'}} }
+  });
+
+  function updateChart(){
+    splitsChart.data.labels = splitLog.map(r=>new Date(r.ts).toLocaleTimeString());
+    splitsChart.data.datasets[0].data = splitLog.map(r=>r.entered);
+    splitsChart.data.datasets[1].data = splitLog.map(r=> r.real===null ? NaN : r.real);
+    splitsChart.update();
+  }
+
+  /* create column buttons */
+  const colButtonsWrap = document.getElementById('colButtons');
   columns.forEach(c => {
     const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'col-btn';
-    b.innerText = c;
-    b.dataset.col = c;
+    b.type = 'button'; b.className = 'col-btn'; b.innerText = c; b.dataset.col = c;
     b.addEventListener('click', ()=>{
-      // set selection
+      // set selection (always manual)
       selectedColumn = c;
-      // update UI: remove selected from others
       document.querySelectorAll('.col-btn').forEach(x=>x.classList.remove('selected'));
       b.classList.add('selected');
-
-      // AUTOMATIC: compute & add to log using entered value if present, otherwise display
+      // compute real split using entered value if present, otherwise display
       let ent = parseFloat(document.getElementById('entered').value);
-      if (isNaN(ent)) {
-        ent = parseFloat(displayEl.innerText) || 0;
-      }
-      if (!isNaN(ent) && ent > 0) {
+      if (isNaN(ent)) ent = parseFloat(displayEl.innerText) || 0;
+      if (!isNaN(ent) && ent > 0){
         const real = lookupRealSplit(selectedColumn, ent);
-        if (real === null || real === undefined) {
-          document.getElementById('result').innerText = 'Real split: N/A';
-        } else {
-          document.getElementById('result').innerText = 'Real split: ' + real.toFixed(2) + ' s';
-        }
-        const ts = new Date().toISOString();
-        addLogEntry(ts, selectedColumn, ent, real !== null ? real : null);
+        document.getElementById('result').innerText = (real===null)?'Real split: N/A':'Real split: '+real.toFixed(2)+' s';
+        addLogEntry(new Date().toISOString(), selectedColumn, ent, real!==null?real:null);
       }
     });
     colButtonsWrap.appendChild(b);
   });
-}
-renderColumnButtons();
 
-/* lookup function: same algorithm as Python's lookup_real_split */
-function lookupRealSplit(column, enteredValue){
-  const colIndex = columns.indexOf(String(column));
-  if (colIndex === -1) return null;
-  let closestRow = null;
-  let closestDiff = Number.POSITIVE_INFINITY;
-  for (const row of conversion_table){
-    const val = row[colIndex];
-    const diff = Math.abs(val - enteredValue);
-    if (diff < closestDiff){
-      closestDiff = diff;
-      closestRow = row;
+  /* controls */
+  startStopBtn.addEventListener('click', ()=>{
+    if (!running){ running=true; startTs = Date.now()/1000; startStopBtn.innerText='Stop'; }
+    else {
+      running=false; elapsed = (Date.now()/1000 - startTs) + elapsed; startStopBtn.innerText='Start'; updateDisplay();
+      // if user already selected a column, auto-log using display value
+      if (!selectedColumn) return;
+      const ent = Number(displayEl.innerText || 0);
+      if (!isNaN(ent) && ent > 0){ document.getElementById('entered').value = ent.toFixed(2); const real = lookupRealSplit(selectedColumn, ent); document.getElementById('result').innerText = (real===null)?'Real split: N/A':'Real split: '+real.toFixed(2)+' s'; addLogEntry(new Date().toISOString(), selectedColumn, ent, real!==null?real:null); }
     }
-  }
-  // return the 7th value (index 6) from the closest row
-  return closestRow ? closestRow[6] : null;
-}
+  });
 
-/* client-side log, chart state, and CSV download */
-let splitLog = []; // {ts, col, entered, real}
-const MAX_LOG = 10;
+  resetBtn.addEventListener('click', ()=>{
+    running=false; startTs=0; elapsed=0; displayEl.innerText='0.00'; startStopBtn.innerText='Start';
+    // clear selection to force manual pick
+    selectedColumn = null; document.querySelectorAll('.col-btn').forEach(x=>x.classList.remove('selected'));
+  });
 
-function addLogEntry(ts, col, ent, real){
-  splitLog.push({ts, col, entered: Number(ent), real: real === null ? null : Number(real)});
-  if (splitLog.length > MAX_LOG) splitLog.shift();
-  renderLogTable();
-  updateChart();
-}
+  grabBtn.addEventListener('click', ()=>{ document.getElementById('entered').value = parseFloat(displayEl.innerText || 0).toFixed(2); });
 
-function renderLogTable(){
-  const tbody = document.querySelector('#logTable tbody');
-  tbody.innerHTML = '';
-  for (let i = splitLog.length - 1; i >= 0; i--){
-    const row = splitLog[i];
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${row.ts}</td><td>${row.col}</td><td>${row.entered.toFixed(2)}</td><td>${row.real !== null ? row.real.toFixed(2) : 'N/A'}</td>`;
-    tbody.appendChild(tr);
-  }
-}
-
-/* Chart setup */
-const ctx = document.getElementById('splitsChart').getContext('2d');
-const splitsChart = new Chart(ctx, {
-  type: 'line',
-  data: {
-    labels: [],
-    datasets: [
-      { label: 'Entered (s)', data: [], tension: 0.3, pointRadius: 4, borderColor: 'rgba(10,102,255,0.85)', backgroundColor: 'rgba(10,102,255,0.08)', yAxisID: 'y' },
-      { label: 'Real (s)', data: [], tension: 0.3, pointRadius: 4, borderColor: 'rgba(0,170,90,0.85)', backgroundColor: 'rgba(0,170,90,0.08)', yAxisID: 'y' }
-    ]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: { mode: 'index', intersect: false },
-    plugins: { legend: { display: true, position: 'top' }, tooltip: { mode: 'index', intersect: false } },
-    scales: { x: { display: true }, y: { display: true, title: { display: true, text: 'Seconds' }, beginAtZero: false } }
-  }
-});
-
-function updateChart(){
-  const labels = splitLog.map(r => new Date(r.ts).toLocaleTimeString());
-  splitsChart.data.labels = labels;
-  splitsChart.data.datasets[0].data = splitLog.map(r => r.entered);
-  splitsChart.data.datasets[1].data = splitLog.map(r => r.real === null ? NaN : r.real);
-  splitsChart.update();
-}
-
-/* === UI control handlers === */
-startStopBtn.addEventListener('click', ()=>{
-  if(!running){
-    // start
-    running=true;
-    startTs = Date.now()/1000;
-    startStopBtn.innerText='Stop';
-  } else {
-    // stop -> capture elapsed
-    running=false;
-    elapsed = (Date.now()/1000 - startTs) + elapsed;
-    startStopBtn.innerText='Start';
-    updateDisplay();
-
-    // AUTO-LOG: only if a final location has been manually selected
-    if (!selectedColumn){
-      return; // silently skip auto-log
-    }
-
-    const ent = Number(displayEl.innerText || 0);
-    if (!isNaN(ent) && ent > 0) {
-      // populate entered field
-      document.getElementById('entered').value = ent.toFixed(2);
-      const col = selectedColumn;
-      const real = lookupRealSplit(col, ent);
-      // show computed result
-      if (real === null || real === undefined) {
-        document.getElementById('result').innerText = 'Real split: N/A';
-      } else {
-        document.getElementById('result').innerText = 'Real split: ' + real.toFixed(2) + ' s';
-      }
-      // add to log
-      const ts = new Date().toISOString();
-      addLogEntry(ts, col, ent, real !== null ? real : null);
-    }
-  }
-});
-
-document.getElementById('resetBtn').addEventListener('click', ()=>{
-  running=false; startTs=0; elapsed=0; displayEl.innerText='0.00'; startStopBtn.innerText='Start';
-  // clear selected column to force manual pick every time
-  selectedColumn = null; document.querySelectorAll('.col-btn').forEach(x=>x.classList.remove('selected'));
-});
-document.getElementById('grabBtn').addEventListener('click', ()=>{
-  document.getElementById('entered').value = parseFloat(displayEl.innerText || 0).toFixed(2);
-});
-
-/* CSV download uses splitLog */
-document.getElementById('downloadCsv').addEventListener('click', ()=>{
-  if (splitLog.length === 0){ alert('No logged rows to download'); return; }
-  const rows = [];
-  rows.push(['Timestamp','Column','EnteredSplit','RealSplit']);
-  for (let i = splitLog.length - 1; i >= 0; i--){
-    const r = splitLog[i];
-    rows.push([r.ts, r.col, r.entered.toFixed(2), r.real !== null ? r.real.toFixed(2) : 'N/A']);
-  }
-  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('
+  /* CSV download */
+  function escapeCsvCell(s){ if (s === null || s === undefined) return ''; const str = String(s); if (str.includes(',') || str.includes('"') || str.includes('
+')) return '"'+str.replace(/"/g,'""')+'"'; return str; }
+  downloadCsvBtn.addEventListener('click', ()=>{
+    if (splitLog.length === 0){ alert('No logged rows to download'); return; }
+    const rows = [['Timestamp','Column','EnteredSplit','RealSplit']];
+    for (let i = splitLog.length - 1; i >= 0; i--){ const r = splitLog[i]; rows.push([r.ts, r.col, r.entered.toFixed(2), r.real !== null ? r.real.toFixed(2) : 'N/A']); }
+    const csv = rows.map(r => r.map(c=>escapeCsvCell(c)).join(',')).join('
 ');
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'splits_log.csv'; document.body.appendChild(a); a.click();
-  setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 500);
-});
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'splits_log.csv'; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 500);
+  });
 
-/* initialize (chart/table empty) */
+});
 </script>
 </body>
 </html>
