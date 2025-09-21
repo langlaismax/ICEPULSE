@@ -23,6 +23,7 @@
     #log{max-height:300px;overflow:auto;margin-top:12px;border-top:1px dashed #eee;padding-top:8px}
     table{width:100%;border-collapse:collapse}
     th,td{padding:8px 6px;text-align:left;border-bottom:1px solid #f4f4f4;font-size:14px}
+	#startStop {display: block; width: 100%; margin-top: 8px;}
 
     /* layout */
     .grid {display:grid; grid-template-columns: 1fr 420px; gap:12px; align-items:start; margin-top:12px}
@@ -76,10 +77,12 @@
   <div id="display">0.00</div>
   <button id="lockScroll" class="alt">Lock Scroll</button>
 </div>
-		  <div></div>
-        <div class="actions">
-          <button id="startStop" class="primary">Start</button>
-		</div>
+
+<!-- Move the start button below -->
+<div style="margin-top:8px;">
+  <button id="startStop" class="primary">Start</button>
+</div>
+
       </div>
 
       <div class="controls" style="margin-top:8px">
@@ -374,5 +377,4 @@ renderColumnButtons();
 </script>
 </body>
 </html>
-
 
