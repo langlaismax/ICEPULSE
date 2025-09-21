@@ -43,21 +43,21 @@
 	.top-row {display: flex;justify-content: space-between; align-items: center; width: 100%; margin-top: 10px; margin-bottom: 10px;}
 
     /* mobile specific adjustments */
-@media (max-width:600px){
-  :root{--btn-pad:12px 12px;--btn-font:18px;--input-font:18px}
-  html,body{padding:14px; overflow-x:hidden} /* prevent horizontal scroll */
-  .card{padding:14px; max-width:100%}
-  #display{font-size:50px}
-  .controls{flex-direction:column}
-  .top-row {display: flex;justify-content: space-between; align-items: center; width: 100%; margin-bottom: 10px; margin-top: 10px;}
-  .actions{width:100%;display:flex;gap:8px}
-  .actions button{flex:1}
-  .col-buttons{grid-template-columns:repeat(4,1fr)}
-  .chart-wrap{width:100%; max-width:100%} /* fit screen */
-  canvas{width:100% !important; height:100% !important} /* responsive chart */
-  th,td{font-size:15px}
-  table thead th{font-size:13px}
-}
+  @media (max-width:600px){
+    :root{--btn-pad:12px 12px;--btn-font:18px;--input-font:18px}
+    html,body{padding:14px; overflow-x:hidden} /* prevent horizontal scroll */
+    .card{padding:14px; max-width:100%}
+    #display{font-size:50px}
+    .controls{flex-direction:column}
+    .top-row {display: flex;justify-content: space-between; align-items: center; width: 100%; margin-bottom: 10px; margin-top: 10px;}
+    .actions{width:100%;display:flex;gap:8px}
+    .actions button{flex:1}
+    .col-buttons{grid-template-columns:repeat(4,1fr)}
+    .chart-wrap{width:100%; max-width:100%} /* fit screen */
+    canvas{width:100% !important; height:100% !important} /* responsive chart */
+    th,td{font-size:15px}
+    table thead th{font-size:13px}
+  }
 
     /* keyboard helpers */
     input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{ -webkit-appearance: none; margin: 0 }
@@ -94,7 +94,7 @@
       <div>
 	       <div style="margin-top:10px;display:flex;gap:0px;flex-wrap:wrap">
         <div class="chart-wrap">
-          <canvas id="splitsChart" width="400" height="320" aria-label="Last ten splits chart" role="img"></canvas>					
+          <canvas id="splitsChart" width="400" height="320" aria-label="Last ten splits chart" role="img"></canvas>				
         </div>
      </div>
         <div id="log">
@@ -104,7 +104,7 @@
           </table>
         </div>
 
-     </div>		           
+     </div>	           
     </div>
 	      <div class="top-row">
 <button id="downloadChart" class="alt">Chart</button>
@@ -123,9 +123,7 @@
   <table id="ccTable" aria-live="polite" style="display:none;width:100%;border-collapse:collapse">
     <thead><tr id="ccHead"></tr></thead>
     <tbody>
-      <tr id="ccRow5"></tr>
-      <tr><td colspan="13" style="height:8px;border:none"></td></tr>
-      <tr id="ccRow23"></tr>
+      <!-- Rows 5 through 23 will be generated dynamically -->
     </tbody>
   </table>
 </div>
@@ -240,12 +238,12 @@ function clearSelectedColumn(){
 function updateAverageReal() {
   const last10 = splitLog.slice(-10).map(r => r.real).filter(v => v !== null && !isNaN(v));
   if (last10.length === 0) {
-    document.getElementById('avgReal').innerText = 'Average: —';
+    const el = document.getElementById('avgReal'); if(el) el.innerText = 'Average: —';
     return;
   }
   const sum = last10.reduce((a,b) => a+b, 0);
   const avg = sum / last10.length;
-  document.getElementById('avgReal').innerText = 'Average ' + avg.toFixed(2) + ' s';
+  const el = document.getElementById('avgReal'); if(el) el.innerText = 'Average ' + avg.toFixed(2) + ' s';
 }
 
 (function(){
@@ -266,23 +264,37 @@ function updateAverageReal() {
     return (c.v !== undefined && c.v !== null) ? c.v : (c.w !== undefined ? c.w : '');
   }
 
+  function formatCell(val){
+    if(val === null || val === undefined || val === '') return '';
+    // coerce to number if possible, otherwise return trimmed string
+    const num = Number(val);
+    if(!isFinite(num)) return String(val);
+    return num.toFixed(1); // one decimal place as requested
+  }
+
   function render(){
     const head = document.getElementById('ccHead');
-    const r5 = document.getElementById('ccRow5');
-    const r23 = document.getElementById('ccRow23');
-    head.innerHTML = ''; r5.innerHTML = ''; r23.innerHTML = '';
+    const tbody = document.querySelector('#ccTable tbody');
+    head.innerHTML = ''; tbody.innerHTML = '';
 
     // header row (blank leading col + column letters)
-    head.appendChild(document.createElement('th'));
+    const blankTh = document.createElement('th');
+    head.appendChild(blankTh);
     COLS.forEach(c => { const th = document.createElement('th'); th.innerText = c; head.appendChild(th); });
 
-    // row 5
-    const label5 = document.createElement('td'); label5.innerText = 'Row 5'; r5.appendChild(label5);
-    COLS.forEach(c => { const td = document.createElement('td'); td.innerText = String(readCell(c+'5')); r5.appendChild(td); });
-
-    // row 23
-    const label23 = document.createElement('td'); label23.innerText = 'Row 23'; r23.appendChild(label23);
-    COLS.forEach(c => { const td = document.createElement('td'); td.innerText = String(readCell(c+'23')); r23.appendChild(td); });
+    // rows 5 through 23 inclusive
+    for(let rowNum = 5; rowNum <= 23; rowNum++){
+      const tr = document.createElement('tr');
+      const labelTd = document.createElement('td');
+      labelTd.innerText = 'Row ' + rowNum;
+      tr.appendChild(labelTd);
+      COLS.forEach(c => {
+        const td = document.createElement('td');
+        td.innerText = formatCell(readCell(c + String(rowNum)));
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    }
 
     document.getElementById('ccTable').style.display = 'table';
   }
@@ -523,7 +535,6 @@ if (avg !== '—' && !isNaN(Number(avg))) {
 }
 
 
-
 /* UI handlers */
 startStopBtn.addEventListener('click', ()=>{
   if(!running){
@@ -681,9 +692,3 @@ setInterval(() => {
 </script>
 </body>
 </html>
-
-
-
-
-
-
