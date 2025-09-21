@@ -98,7 +98,7 @@
      </div>
         <div id="log">
           <table id="logTable" aria-label="Split log table">
-            <thead><tr><th>Column</th><th>Entered (s)</th><th>Real (s)</th></tr></thead>
+            <thead><tr><th>Zone</th><th>Original Split Time</th><th>Real Split Time</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -369,10 +369,36 @@ function downloadCsv(){
 document.getElementById('downloadCsv').addEventListener('click', downloadCsv);
 
 renderColumnButtons();
+
+// === Preserve stopwatch & splits across refresh ===
+window.addEventListener('load', () => {
+  // Restore stopwatch
+  const savedElapsed = parseFloat(sessionStorage.getItem('elapsed') || '0');
+  elapsed = savedElapsed || 0;
+  updateDisplay();
+
+  // Restore entered value
+  const savedEntered = sessionStorage.getItem('entered');
+  if (savedEntered) document.getElementById('entered').value = savedEntered;
+
+  // Restore split log
+  const savedLog = sessionStorage.getItem('splitLog');
+  if (savedLog) {
+    splitLog = JSON.parse(savedLog);
+    renderLogTable();
+    updateChart();
+    updateAverageReal();
+  }
+});
+
+// Save data periodically
+setInterval(() => {
+  sessionStorage.setItem('elapsed', elapsed);
+  sessionStorage.setItem('entered', document.getElementById('entered').value);
+  sessionStorage.setItem('splitLog', JSON.stringify(splitLog));
+}, 500);
+
 </script>
 </body>
 </html>
-
-
-
 
