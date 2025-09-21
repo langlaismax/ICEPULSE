@@ -71,9 +71,12 @@
   <div class="card">
     <header>
       <div class="top-row">
-        <div>
-          <div id="display">0.00</div>
-        </div>
+<div class="top-row">
+  <div id="display">0.00</div>
+  <div class="actions">
+    <button id="lockScroll" class="alt">Lock Scroll</button>
+  </div>
+</div>
         <div class="actions">
           <button id="startStop" class="primary">Start</button>
 		</div>
@@ -203,6 +206,20 @@ function lookupRealSplit(column, enteredValue){
 
 let splitLog = [];
 const MAX_LOG = 10;
+
+let scrollLocked = false;
+const lockBtn = document.getElementById('lockScroll');
+
+lockBtn.addEventListener('click', () => {
+  scrollLocked = !scrollLocked;
+  if(scrollLocked){
+    document.body.style.overflow = 'hidden'; // disables scrolling
+    lockBtn.innerText = 'Unlock Scroll';
+  } else {
+    document.body.style.overflow = ''; // restores default
+    lockBtn.innerText = 'Lock Scroll';
+  }
+});
 
 function addLogEntry(ts, col, ent, real){
   splitLog.push({ts, col, entered: Number(ent), real: real === null ? null : Number(real)});
@@ -357,4 +374,3 @@ renderColumnButtons();
 </script>
 </body>
 </html>
-
