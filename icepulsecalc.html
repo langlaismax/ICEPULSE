@@ -8,7 +8,7 @@
     :root{ --bg:#fff; --text:#111; --muted:#666; --blue:#0a66ff; --card:#fafafa }
     html,body{height:100%;margin:0;padding:18px;font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--text)}
     h1{margin:0 0 8px 0;font-size:20px}
-    .card{border:1px solid #eee;border-radius:10px;padding:14px;box-shadow:0 6px 18px rgba(0,0,0,0.04);max-width:1100px;background:var(--card)}
+    .card{border:1px solid #eee;border-radius:10px;padding:14px;box-shadow:0 6px 18px rgba(0,0,0,0.04);max-width:1100px;background:var(--card);margin:0 auto}
     .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:12px}
     #display{font-size:48px;font-weight:800;margin-bottom:8px}
     button{cursor:pointer;border:0;padding:10px 14px;border-radius:8px}
@@ -29,6 +29,22 @@
     .col-btn{min-width:44px;padding:8px 10px;border-radius:8px;border:1px solid #ddd;background:#fff}
     .col-btn.selected{background:var(--blue);color:#fff;border-color:rgba(0,0,0,0.06);box-shadow:0 6px 12px rgba(10,102,255,0.12)}
     .col-btn:disabled{opacity:0.45;cursor:not-allowed}
+
+    /* mobile adjustments */
+    @media (max-width:600px){
+      html,body{padding:12px}
+      h1{font-size:18px}
+      #display{font-size:36px}
+      .card{padding:12px}
+      .row{flex-direction:column;align-items:stretch}
+      .row > *{width:100%}
+      .row input{width:100%}
+      .row button{width:100%}
+      .col-buttons{justify-content:flex-start}
+      .col-btn{flex:1 0 20%;min-width:44px}
+      .chart-wrap{height:220px}
+      table th, table td {font-size:12px}
+    }
   </style>
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -52,13 +68,11 @@
       <label for="entered" class="small">Entered split (s)</label>
       <input id="entered" type="number" step="0.01" placeholder="e.g. 13.25" />
 
-      <div style="display:flex;flex-direction:column;">
+      <div style="display:flex;flex-direction:column;min-width:220px">
         <div class="small">Final location (pick one)</div>
         <div id="colButtons" class="col-buttons" aria-label="Final location buttons"></div>
       </div>
 
-      <button id="calcBtn" class="primary" disabled>Calculate real split</button>
-      <button id="addLog" class="alt" disabled>Add to log</button>
       <button id="downloadCsv" class="alt">Download CSV</button>
     </div>
 
@@ -136,7 +150,7 @@ let running=false, startTs=0, elapsed=0;
 const displayEl = document.getElementById('display');
 const startStopBtn = document.getElementById('startStop');
 
-let selectedColumn = null; // user must pick one of the column buttons before calculating/logging
+let selectedColumn = null; // must be chosen manually every time
 
 function updateDisplay(){
   let value = elapsed;
@@ -160,9 +174,22 @@ function renderColumnButtons(){
       // update UI: remove selected from others
       document.querySelectorAll('.col-btn').forEach(x=>x.classList.remove('selected'));
       b.classList.add('selected');
-      // enable calculate/add buttons
-      document.getElementById('calcBtn').disabled = false;
-      document.getElementById('addLog').disabled = false;
+
+      // AUTOMATIC: compute & add to log using entered value if present, otherwise display
+      let ent = parseFloat(document.getElementById('entered').value);
+      if (isNaN(ent)) {
+        ent = parseFloat(displayEl.innerText) || 0;
+      }
+      if (!isNaN(ent) && ent > 0) {
+        const real = lookupRealSplit(selectedColumn, ent);
+        if (real === null || real === undefined) {
+          document.getElementById('result').innerText = 'Real split: N/A';
+        } else {
+          document.getElementById('result').innerText = 'Real split: ' + real.toFixed(2) + ' s';
+        }
+        const ts = new Date().toISOString();
+        addLogEntry(ts, selectedColumn, ent, real !== null ? real : null);
+      }
     });
     colButtonsWrap.appendChild(b);
   });
@@ -183,7 +210,7 @@ function lookupRealSplit(column, enteredValue){
       closestRow = row;
     }
   }
-  // return the 7th value (index 6) from the closest row, just like the Python function.
+  // return the 7th value (index 6) from the closest row
   return closestRow ? closestRow[6] : null;
 }
 
@@ -214,57 +241,26 @@ const ctx = document.getElementById('splitsChart').getContext('2d');
 const splitsChart = new Chart(ctx, {
   type: 'line',
   data: {
-    labels: [], // timestamps
+    labels: [],
     datasets: [
-      {
-        label: 'Entered (s)',
-        data: [],
-        tension: 0.3,
-        pointRadius: 4,
-        borderColor: 'rgba(10,102,255,0.85)',
-        backgroundColor: 'rgba(10,102,255,0.08)',
-        yAxisID: 'y'
-      },
-      {
-        label: 'Real (s)',
-        data: [],
-        tension: 0.3,
-        pointRadius: 4,
-        borderColor: 'rgba(0,170,90,0.85)',
-        backgroundColor: 'rgba(0,170,90,0.08)',
-        yAxisID: 'y'
-      }
+      { label: 'Entered (s)', data: [], tension: 0.3, pointRadius: 4, borderColor: 'rgba(10,102,255,0.85)', backgroundColor: 'rgba(10,102,255,0.08)', yAxisID: 'y' },
+      { label: 'Real (s)', data: [], tension: 0.3, pointRadius: 4, borderColor: 'rgba(0,170,90,0.85)', backgroundColor: 'rgba(0,170,90,0.08)', yAxisID: 'y' }
     ]
   },
   options: {
     responsive: true,
     maintainAspectRatio: false,
     interaction: { mode: 'index', intersect: false },
-    plugins: {
-      legend: { display: true, position: 'top' },
-      tooltip: { mode: 'index', intersect: false }
-    },
-    scales: {
-      x: { display: true },
-      y: {
-        display: true,
-        title: { display: true, text: 'Seconds' },
-        beginAtZero: false
-      }
-    }
+    plugins: { legend: { display: true, position: 'top' }, tooltip: { mode: 'index', intersect: false } },
+    scales: { x: { display: true }, y: { display: true, title: { display: true, text: 'Seconds' }, beginAtZero: false } }
   }
 });
 
 function updateChart(){
-  const labels = splitLog.map(r => {
-    const d = new Date(r.ts);
-    return d.toLocaleTimeString();
-  });
-  const enteredData = splitLog.map(r => r.entered);
-  const realData = splitLog.map(r => r.real === null ? NaN : r.real);
+  const labels = splitLog.map(r => new Date(r.ts).toLocaleTimeString());
   splitsChart.data.labels = labels;
-  splitsChart.data.datasets[0].data = enteredData;
-  splitsChart.data.datasets[1].data = realData;
+  splitsChart.data.datasets[0].data = splitLog.map(r => r.entered);
+  splitsChart.data.datasets[1].data = splitLog.map(r => r.real === null ? NaN : r.real);
   splitsChart.update();
 }
 
@@ -282,10 +278,9 @@ startStopBtn.addEventListener('click', ()=>{
     startStopBtn.innerText='Start';
     updateDisplay();
 
-    // AUTO-LOG: ensure user selected final location first
+    // AUTO-LOG: only if a final location has been manually selected
     if (!selectedColumn){
-      alert('Please select the final location of the rock (pick one of the buttons) before logging or calculating the real split.');
-      return; // do not compute or log until a column is selected
+      return; // silently skip auto-log
     }
 
     const ent = Number(displayEl.innerText || 0);
@@ -309,34 +304,11 @@ startStopBtn.addEventListener('click', ()=>{
 
 document.getElementById('resetBtn').addEventListener('click', ()=>{
   running=false; startTs=0; elapsed=0; displayEl.innerText='0.00'; startStopBtn.innerText='Start';
+  // clear selected column to force manual pick every time
+  selectedColumn = null; document.querySelectorAll('.col-btn').forEach(x=>x.classList.remove('selected'));
 });
 document.getElementById('grabBtn').addEventListener('click', ()=>{
   document.getElementById('entered').value = parseFloat(displayEl.innerText || 0).toFixed(2);
-});
-
-/* manual calculate button */
-document.getElementById('calcBtn').addEventListener('click', ()=>{
-  if (!selectedColumn){ alert('Select final location first'); return; }
-  const ent = parseFloat(document.getElementById('entered').value);
-  if (isNaN(ent)){ alert('Enter a split (seconds)'); return; }
-  const col = selectedColumn;
-  const real = lookupRealSplit(col, ent);
-  if (real === null || real === undefined){
-    document.getElementById('result').innerText = 'Real split: N/A';
-  } else {
-    document.getElementById('result').innerText = 'Real split: ' + real.toFixed(2) + ' s';
-  }
-});
-
-/* Add-to-log button handler (manual) */
-document.getElementById('addLog').addEventListener('click', ()=>{
-  if (!selectedColumn){ alert('Select final location first'); return; }
-  const ent = parseFloat(document.getElementById('entered').value);
-  if (isNaN(ent)){ alert('Enter a split first'); return; }
-  const col = selectedColumn;
-  const real = lookupRealSplit(col, ent);
-  const ts = new Date().toISOString();
-  addLogEntry(ts, col, ent, real !== null ? real : null);
 });
 
 /* CSV download uses splitLog */
@@ -348,7 +320,8 @@ document.getElementById('downloadCsv').addEventListener('click', ()=>{
     const r = splitLog[i];
     rows.push([r.ts, r.col, r.entered.toFixed(2), r.real !== null ? r.real.toFixed(2) : 'N/A']);
   }
-  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('
+');
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
