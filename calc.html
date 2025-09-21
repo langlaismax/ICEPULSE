@@ -12,7 +12,7 @@
     html,body{height:100%;margin:0;padding:18px;font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--text)}
     .card{border:1px solid #eee;border-radius:14px;padding:18px;box-shadow:0 6px 20px rgba(0,0,0,0.04);max-width:1100px;background:var(--card);margin:0 auto}
     header{display:flex;flex-direction:column;gap:10px}
-    #display{font-size:44px;font-weight:800;margin:0}
+    #display{font-size:88px;font-weight:800;margin:0}
     .controls{display:flex;gap:10px;flex-wrap:wrap}
     button{cursor:pointer;border:0;padding:var(--btn-pad);border-radius:var(--radius);font-size:var(--btn-font);min-height:56px;min-width:72px}
     .primary{background:var(--blue);color:white}
@@ -72,18 +72,15 @@
       <div class="top-row">
         <div>
           <div id="display">0.00</div>
-          <div class="small" style="margin-top:6px">Stopwatch</div>
         </div>
         <div class="actions">
           <button id="startStop" class="primary">Start</button>
           <button id="resetBtn" class="alt">Reset</button>
-          <button id="grabBtn" class="alt">Use Display</button>
         </div>
       </div>
 
       <div class="controls" style="margin-top:8px">
         <input id="entered" type="number" step="0.01" placeholder="e.g. 13.25" aria-label="Entered split" />
-        <div class="small" style="margin-top:6px">Pick final location (tap once to calculate & log)</div>
         <div id="colButtons" class="col-buttons" aria-label="Final location buttons"></div>
       </div>
     </header>
@@ -94,20 +91,20 @@
       <div>
         <div id="log">
           <table id="logTable" aria-label="Split log table">
-            <thead><tr><th>Timestamp</th><th>Column</th><th>Entered (s)</th><th>Real (s)</th></tr></thead>
+            <thead><tr><th>Column</th><th>Entered (s)</th><th>Real (s)</th></tr></thead>
             <tbody></tbody>
           </table>
-        </div>
-        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-          <button id="downloadCsv" class="alt">Download CSV</button>
         </div>
       </div>
 
       <div>
         <div class="small" style="margin-bottom:8px">Live view (last 10 splits)</div>
         <div class="chart-wrap">
-          <canvas id="splitsChart" width="400" height="320" aria-label="Last ten splits chart" role="img"></canvas>
+          <canvas id="splitsChart" width="200" height="320" aria-label="Last ten splits chart" role="img"></canvas>
         </div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+          <button id="downloadCsv" class="alt">Download CSV</button>
       </div>
     </div>
   </div>
@@ -320,3 +317,4 @@ renderColumnButtons();
 </script>
 </body>
 </html>
+
