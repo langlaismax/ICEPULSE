@@ -1,0 +1,664 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>IcePulse — Split Time Calculator (Mobile Optimized)</title>
+  <style>
+    :root{
+      --bg:#fff; --text:#111; --muted:#666; --blue:#0a66ff; --card:#fafafa; --gap:12px;
+      --btn-pad:14px 16px; --btn-font:18px; --input-font:18px; --radius:12px;
+    }
+    html,body{height:100%;margin:0;padding:18px;font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--text)}
+    .card{border:1px solid #eee;border-radius:14px;padding:18px;box-shadow:0 6px 20px rgba(0,0,0,0.04);max-width:1100px;background:var(--card);margin:0 auto}
+    header{display:flex;flex-direction:column;gap:10px}
+    #display{font-size:50px;font-weight:800;margin:0}
+    .controls{display:flex;gap:10px;flex-wrap:wrap}
+    button{cursor:pointer;border:0;padding:var(--btn-pad);border-radius:var(--radius);font-size:var(--btn-font);min-height:56px;min-width:72px}
+    .primary{background:var(--blue);color:white}
+    .alt{background:#fff;border:1px solid #ddd}
+    input,select{padding:12px;border-radius:10px;border:1px solid #ddd;font-size:var(--input-font);width:100%;box-sizing:border-box}
+    .small{font-size:13px;color:var(--muted)}
+    #result{font-size:50px;margin-top:10px;font-weight:700}
+    #log{max-height:300px;overflow:auto;margin-top:12px;border-top:1px dashed #eee;padding-top:8px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px 6px;text-align:left;border-bottom:1px solid #f4f4f4;font-size:14px}
+	#startStop {display: block; width: 100%; margin-top: 8px;}
+
+    /* layout */
+    .grid {display:grid; grid-template-columns: 1fr 420px; gap:12px; align-items:start; margin-top:12px}
+    @media (max-width:980px){ .grid{ grid-template-columns: 1fr } }
+
+    .chart-wrap{width:100%;padding:8px;border:1px solid #eee;border-radius:10px;background:white}
+
+    /* column buttons - touch friendly */
+    .col-buttons{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+    .col-btn{display:inline-flex;align-items:center;justify-content:center;padding:12px;border-radius:12px;border:1px solid #ddd;background:#fff;font-size:18px;min-height:56px;aspect-ratio:1/1}
+    .col-btn.selected{background:var(--blue);color:#fff;border-color:rgba(0,0,0,0.08);box-shadow:0 8px 18px rgba(10,102,255,0.14)}
+    .col-btn:disabled{opacity:0.45;cursor:not-allowed}
+
+    /* compact header controls on mobile */
+    .top-row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+    .top-row .actions{display:flex;gap:8px}
+	.top-row {display: flex;justify-content: space-between; align-items: center; width: 100%; margin-top: 10px; margin-bottom: 10px;}
+
+    /* mobile specific adjustments */
+@media (max-width:600px){
+  :root{--btn-pad:12px 12px;--btn-font:18px;--input-font:18px}
+  html,body{padding:14px; overflow-x:hidden} /* prevent horizontal scroll */
+  .card{padding:14px; max-width:100%}
+  #display{font-size:50px}
+  .controls{flex-direction:column}
+  .top-row {display: flex;justify-content: space-between; align-items: center; width: 100%; margin-bottom: 10px; margin-top: 10px;}
+  .actions{width:100%;display:flex;gap:8px}
+  .actions button{flex:1}
+  .col-buttons{grid-template-columns:repeat(4,1fr)}
+  .chart-wrap{width:100%; max-width:100%} /* fit screen */
+  canvas{width:100% !important; height:100% !important} /* responsive chart */
+  th,td{font-size:15px}
+  table thead th{font-size:13px}
+}
+
+    /* keyboard helpers */
+    input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{ -webkit-appearance: none; margin: 0 }
+
+    /* accessibility focus */
+    .col-btn:focus,.primary:focus,.alt:focus{outline:3px solid rgba(10,102,255,0.18);outline-offset:2px}
+
+  </style>
+  <!-- Chart.js CDN (keep same major version you were using) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-calc@0.9.2/dist/xlsx-calc.min.js"></script>
+</head>
+<body>
+  <div class="card">
+    <header>
+      <div class="top-row">
+  <div id="display">0.00</div>
+  <button id="lockScroll" class="alt">Scroll Lock</button>
+</div>
+
+<div class="controls" style="margin-top:-15px">
+  <button id="startStop" class="primary">Start</button>
+</div>
+      <div class="controls" style="margin-top:0px">
+        <input id="entered" type="number" step="0.01" placeholder="e.g. 13.25" aria-label="Entered split" />
+        <div id="colButtons" class="col-buttons" aria-label="Final location buttons"></div>
+      </div>
+    </header>
+
+    <div id="result" aria-live="polite">Real: —</div>
+
+    <div class="grid">
+      <div>
+	       <div style="margin-top:10px;display:flex;gap:0px;flex-wrap:wrap">
+        <div class="chart-wrap">
+          <canvas id="splitsChart" width="400" height="320" aria-label="Last ten splits chart" role="img"></canvas>					
+        </div>
+     </div>
+        <div id="log">
+          <table id="logTable" aria-label="Split log table">
+            <thead><tr><th>Zone</th><th>Original Split Time</th><th>Real Split Time</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+     </div>		           
+    </div>
+	      <div class="top-row">
+<button id="downloadChart" class="alt">Chart</button>
+  <button id="downloadCsv" class="alt">Log</button>
+  Size:
+  <select id="logSizeSelect">
+    <!-- Options will be generated by JS -->
+  </select>
+  </div>
+  <div style="text-align:center;margin-top:10px">
+  <!-- CardCalcs live display -->
+<div id="cardCalcs" style="max-width:980px;margin:24px auto;padding:12px;border:1px solid #eee;border-radius:10px;background:#fff">
+  <h2 style="margin:0 0 8px;font-size:18px">CardCalcs (live)</h2>
+  <div id="ccStatus" style="font-size:13px;color:#666;margin-bottom:8px">Loading workbook…</div>
+
+  <table id="ccTable" aria-live="polite" style="display:none;width:100%;border-collapse:collapse">
+    <thead><tr id="ccHead"></tr></thead>
+    <tbody>
+      <tr id="ccRow5"></tr>
+      <tr><td colspan="13" style="height:8px;border:none"></td></tr>
+      <tr id="ccRow23"></tr>
+    </tbody>
+  </table>
+</div>
+IcePulse by Max Langlais and Scott Walker
+</div>
+  </div>
+<div style="height:30px;"></div>
+</body>
+<script>
+/* === original logic preserved, small changes only to improve mobile UX === */
+const columns = [ "1","2","3","4","5","6","7","8","9","10","H" ];
+
+const conversion_table = [
+  [16.2,15.1,14.3,13.9,13.6,13.4,13.0,12.7,12.6,12.5,11.9],
+  [16.3,15.2,14.4,14.0,13.7,13.5,13.1,12.8,12.7,12.6,11.9],
+  [16.4,15.3,14.5,14.2,13.8,13.6,13.2,12.9,12.8,12.7,12.0],
+  [16.5,15.4,14.6,14.3,14.0,13.7,13.3,13.0,12.9,12.8,12.1],
+  [16.7,15.5,14.7,14.4,14.1,13.8,13.4,13.1,13.0,12.9,12.2],
+  [16.8,15.6,14.8,14.5,14.2,13.9,13.5,13.2,13.1,12.9,12.3],
+  [16.9,15.8,14.9,14.6,14.3,14.0,13.6,13.3,13.2,13.0,12.4],
+  [17.0,15.9,15.0,14.7,14.4,14.1,13.7,13.4,13.2,13.1,12.5],
+  [17.2,16.0,15.1,14.8,14.5,14.2,13.8,13.5,13.3,13.2,12.6],
+  [17.3,16.1,15.3,14.9,14.6,14.3,13.9,13.5,13.4,13.3,12.7],
+  [17.4,16.2,15.4,15.0,14.7,14.4,14.0,13.6,13.5,13.4,12.8],
+  [17.5,16.3,15.5,15.1,14.8,14.5,14.1,13.7,13.6,13.5,12.9],
+  [17.7,16.5,15.7,15.2,14.9,14.6,14.2,13.8,13.7,13.6,13.0],
+  [17.8,16.6,15.8,15.4,15.0,14.7,14.3,13.9,13.8,13.7,13.1],
+  [17.9,16.7,16.0,15.5,15.1,14.8,14.4,14.0,13.9,13.8,13.2],
+  [18.1,16.9,16.1,15.6,15.2,14.9,14.5,14.1,14.0,13.9,13.2],
+  [18.2,17.0,16.2,15.8,15.3,15.0,14.6,14.2,14.1,14.0,13.3],
+  [18.3,17.1,16.4,15.9,15.5,15.1,14.7,14.3,14.2,14.1,13.4],
+  [18.4,17.2,16.5,16.0,15.6,15.2,14.8,14.4,14.3,14.2,13.5],
+  [18.5,17.3,16.6,16.1,15.7,15.3,14.9,14.5,14.4,14.3,13.5],
+  [18.7,17.5,16.7,16.2,15.8,15.4,15.0,14.5,14.5,14.4,13.6],
+  [18.8,17.6,16.8,16.4,15.9,15.6,15.1,14.7,14.6,14.5,13.7],
+  [18.9,17.7,16.9,16.5,16.0,15.6,15.2,14.8,14.7,14.6,13.8],
+  [19.0,17.8,17.0,16.6,16.1,15.7,15.3,14.9,14.8,14.7,13.9],
+  [19.2,17.9,17.1,16.7,16.2,15.8,15.4,15.0,14.9,14.8,14.0],
+  [19.3,18.1,17.2,16.8,16.3,15.9,15.5,15.1,15.0,14.9,14.1],
+  [19.4,18.2,17.3,16.9,16.5,16.2,15.8,15.4,15.3,15.2,14.5],
+  [19.5,18.3,17.4,16.9,16.6,16.3,15.9,15.5,15.4,15.3,14.6],
+  [19.6,18.4,17.5,17.0,16.7,16.4,16.0,15.6,15.5,15.4,14.6],
+  [19.7,18.5,17.6,17.2,16.8,16.5,16.0,15.6,15.5,15.3,14.6],
+  [19.9,18.7,17.7,17.3,16.9,16.6,16.1,15.7,15.6,15.4,14.7],
+  [20.0,18.8,17.8,17.4,17.0,16.7,16.2,15.8,15.7,15.5,14.8],
+  [20.2,18.9,17.9,17.5,17.1,16.8,16.3,15.9,15.8,15.6,14.9],
+  [20.3,19.0,18.0,17.6,17.2,16.9,16.4,16.0,15.9,15.7,15.0],
+  [20.5,19.1,18.1,17.7,17.3,17.0,16.5,16.1,16.0,15.8,15.0],
+  [20.6,19.2,18.2,17.8,17.4,17.1,16.6,16.2,16.1,15.9,15.1],
+  [20.8,19.3,18.3,17.9,17.5,17.2,16.7,16.3,16.1,16.0,15.2]
+];
+
+
+
+/* stopwatch logic */
+let running=false, startTs=0, elapsed=0;
+const displayEl = document.getElementById('display');
+const startStopBtn = document.getElementById('startStop');
+
+let selectedColumn = null;
+
+function updateDisplay(){
+  let value = elapsed;
+  if (running) value = (Date.now()/1000 - startTs) + elapsed;
+  displayEl.innerText = value.toFixed(2);
+}
+setInterval(updateDisplay, 100);
+
+const colButtonsWrap = document.getElementById('colButtons');
+
+function downloadChartImage(){
+  if (!splitsChart) return;
+
+  // Ask user for filename
+  let filename = prompt("Enter a filename for your chart image:", "splits_chart");
+  if (!filename) filename = "splits_chart";
+
+  // Temporarily set a white background
+  const canvas = splitsChart.canvas;
+  const ctx = canvas.getContext('2d');
+
+  // Save current canvas state
+  ctx.save();
+
+  // Draw white rectangle behind existing chart
+  ctx.globalCompositeOperation = 'destination-over';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Get chart image as a data URL
+  const url = splitsChart.toBase64Image();
+
+  // Restore canvas state
+  ctx.restore();
+
+  // Create temporary link and trigger download
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename + '.png';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+document.getElementById('downloadChart').addEventListener('click', downloadChartImage);
+
+function clearSelectedColumn(){
+  selectedColumn = null;
+  document.querySelectorAll('.col-btn').forEach(x=>x.classList.remove('selected'));
+}
+
+function updateAverageReal() {
+  const last10 = splitLog.slice(-10).map(r => r.real).filter(v => v !== null && !isNaN(v));
+  if (last10.length === 0) {
+    document.getElementById('avgReal').innerText = 'Average: —';
+    return;
+  }
+  const sum = last10.reduce((a,b) => a+b, 0);
+  const avg = sum / last10.length;
+  document.getElementById('avgReal').innerText = 'Average ' + avg.toFixed(2) + ' s';
+}
+
+(function(){
+  // Path to your uploaded workbook (adjust filename if you uploaded under a different name)
+  const XLSX_URL = 'Converting hog-hog to split times(1).xlsx';
+
+  let workbook = null;
+  let sheet = null;
+  let loaded = false;
+
+  // Columns to display
+  const COLS = ['G','H','I','J','K','L','M','N','O','P','Q','R','S'];
+
+  function readCell(addr){
+    if(!sheet) return '';
+    const c = sheet[addr];
+    if(!c) return '';
+    return (c.v !== undefined && c.v !== null) ? c.v : (c.w !== undefined ? c.w : '');
+  }
+
+  function render(){
+    const head = document.getElementById('ccHead');
+    const r5 = document.getElementById('ccRow5');
+    const r23 = document.getElementById('ccRow23');
+    head.innerHTML = ''; r5.innerHTML = ''; r23.innerHTML = '';
+
+    // header row (blank leading col + column letters)
+    head.appendChild(document.createElement('th'));
+    COLS.forEach(c => { const th = document.createElement('th'); th.innerText = c; head.appendChild(th); });
+
+    // row 5
+    const label5 = document.createElement('td'); label5.innerText = 'Row 5'; r5.appendChild(label5);
+    COLS.forEach(c => { const td = document.createElement('td'); td.innerText = String(readCell(c+'5')); r5.appendChild(td); });
+
+    // row 23
+    const label23 = document.createElement('td'); label23.innerText = 'Row 23'; r23.appendChild(label23);
+    COLS.forEach(c => { const td = document.createElement('td'); td.innerText = String(readCell(c+'23')); r23.appendChild(td); });
+
+    document.getElementById('ccTable').style.display = 'table';
+  }
+
+  function recalcAndRender(a1val){
+    if(!loaded){ document.getElementById('ccStatus').innerText = 'Workbook not loaded yet.'; return; }
+    // write numeric A1
+    sheet['A1'] = { t: 'n', v: Number(a1val) };
+    try{
+      if(typeof XLSX_CALC === 'function'){
+        XLSX_CALC(workbook);
+        document.getElementById('ccStatus').innerText = 'Recalculated A1 = ' + a1val;
+      } else {
+        document.getElementById('ccStatus').innerText = 'Recalculation library not available; A1 updated.';
+      }
+    }catch(e){
+      document.getElementById('ccStatus').innerText = 'Recalc error: ' + e.message;
+      console.error(e);
+    }
+    render();
+  }
+
+  async function loadWorkbook(){
+    try{
+      const r = await fetch(XLSX_URL);
+      if(!r.ok) throw new Error('HTTP ' + r.status + ' while fetching workbook');
+      const ab = await r.arrayBuffer();
+      workbook = XLSX.read(new Uint8Array(ab), { type:'array', cellFormula:true, cellNF:true, cellDates:true });
+      // choose the CardCalcs sheet if present, otherwise first sheet
+      sheet = workbook.Sheets['CardCalcs'] || workbook.Sheets[workbook.SheetNames[0]];
+      loaded = true;
+      document.getElementById('ccStatus').innerText = 'Workbook loaded.';
+    }catch(err){
+      document.getElementById('ccStatus').innerText = 'Error loading workbook: ' + err.message;
+      console.error(err);
+    }
+  }
+
+  // public function to update A1 and refresh display
+  window.updateCardCalcs = function(a1){
+    if(a1 === null || a1 === undefined || a1 === '' || isNaN(Number(a1))){
+      document.getElementById('ccStatus').innerText = 'Invalid A1: ' + a1;
+      return;
+    }
+    // ensure workbook loaded
+    if(!loaded){
+      loadWorkbook().then(()=>recalcAndRender(a1)).catch(e=>console.error(e));
+    } else {
+      recalcAndRender(a1);
+    }
+  };
+
+  // auto-load workbook now
+  loadWorkbook();
+
+  // Poll sessionStorage key 'CardCalcs_A1' for changes so the display updates automatically
+  let last = null;
+  setInterval(()=>{
+    try{
+      const s = sessionStorage.getItem('CardCalcs_A1');
+      if(s !== last){
+        last = s;
+        if(s !== null && s !== '') window.updateCardCalcs(s);
+      }
+    }catch(e){
+      // ignore storage access errors
+    }
+  }, 500);
+
+})();
+
+function lookupRealSplit(column, enteredValue){
+  const colIndex = columns.indexOf(String(column));
+  if (colIndex === -1) return null;
+  let closestRow = null;
+  let closestDiff = Number.POSITIVE_INFINITY;
+  for (const row of conversion_table){
+    const val = row[colIndex];
+    const diff = Math.abs(val - enteredValue);
+    if (diff < closestDiff){
+      closestDiff = diff;
+      closestRow = row;
+    }
+  }
+  return closestRow ? closestRow[6] : null;
+}
+
+let splitLog = [];
+let MAX_LOG = 10; // default log size
+
+// Populate log size select
+const logSizeSelect = document.getElementById('logSizeSelect');
+for (let i = 5; i <= 100; i++) {
+  const option = document.createElement('option');
+  option.value = i;
+  option.text = i;
+  if(i === MAX_LOG) option.selected = true;
+  logSizeSelect.appendChild(option);
+}
+
+// Update MAX_LOG when user changes selection
+logSizeSelect.addEventListener('change', () => {
+  MAX_LOG = parseInt(logSizeSelect.value, 10);
+  // trim existing log if necessary
+  if(splitLog.length > MAX_LOG) splitLog = splitLog.slice(-MAX_LOG);
+  renderLogTable();
+  updateChart();
+  updateAverageReal();
+});
+
+let scrollLocked = false;
+const lockBtn = document.getElementById('lockScroll');
+
+lockBtn.addEventListener('click', () => {
+  scrollLocked = !scrollLocked;
+  if(scrollLocked){
+    document.body.style.overflow = 'hidden'; // disables scrolling
+    lockBtn.innerText = 'Unlock Scroll';
+  } else {
+    document.body.style.overflow = ''; // restores default
+    lockBtn.innerText = 'Lock Scroll';
+  }
+});
+
+function addLogEntry(ts, col, ent, real){
+  splitLog.push({ts, col, entered: Number(ent), real: real === null ? null : Number(real)});
+  if (splitLog.length > MAX_LOG) splitLog.shift();
+  renderLogTable();
+  updateChart();
+  updateAverageReal();
+}
+
+function renderLogTable(){
+  const tbody = document.querySelector('#logTable tbody');
+  tbody.innerHTML = '';
+  for (let i = splitLog.length - 1; i >= 0; i--){
+    const row = splitLog[i];
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${row.col}</td><td>${row.entered.toFixed(2)}</td><td>${row.real !== null ? row.real.toFixed(2) : 'N/A'}</td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+/* Chart setup - keep responsive and allow larger points for touch */
+const ctx = document.getElementById('splitsChart').getContext('2d');
+const splitsChart = new Chart(ctx, {
+  type: 'line',
+  data: { labels: [], datasets: [ { label: 'Entered (s)', data: [], tension: 0.3, pointRadius: 6, borderColor: 'rgba(10,102,255,0.85)', backgroundColor: 'rgba(10,102,255,0.08)', yAxisID: 'y' }, { label: 'Real (s)', data: [], tension: 0.3, pointRadius: 6, borderColor: 'rgba(0,170,90,0.85)', backgroundColor: 'rgba(0,170,90,0.08)', yAxisID: 'y' } ] },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: { legend: { display: true, position: 'top' }, tooltip: { mode: 'index', intersect: false } },
+    scales: { x: { display: true }, y: { display: true, title: { display: true, text: 'Seconds' }, beginAtZero: false } }
+  }
+});
+
+function updateChart(){
+  const labels = splitLog.map(r => { const d = new Date(r.ts); return d.toLocaleTimeString(); });
+  const realData = splitLog.map(r => r.real === null ? NaN : r.real);
+
+  // Calculate moving average for trend line
+  const trendData = [];
+  const windowSize = 10;  // increase to smooth more
+  for (let i = 0; i < realData.length; i++) {
+    let sum = 0, count = 0;
+    for (let j = Math.max(0, i - windowSize + 1); j <= i; j++) {
+      if (!isNaN(realData[j])) {
+        sum += realData[j];
+        count++;
+      }
+    }
+    trendData.push(count > 0 ? sum / count : NaN);
+  }
+
+  splitsChart.data.labels = labels;
+
+  // Keep only Real dataset (green) and Trend line (orange)
+  splitsChart.data.datasets = [
+    {
+      label: 'Adjusted H2H Split Times',
+      data: realData,
+      tension: 0.3,
+      pointRadius: 6,
+      borderColor: 'rgba(0,170,90,0.85)',
+      backgroundColor: 'rgba(0,170,90,0.08)',
+      yAxisID: 'y'
+    },
+    {
+      label: 'Trend',
+      data: trendData,
+      borderColor: 'orange',
+      backgroundColor: 'rgba(255,165,0,0.2)',
+      pointRadius: 0,
+      borderWidth: 2,
+      tension: 0.4,
+      yAxisID: 'y'
+    }
+  ];
+const lastEntries = splitLog.slice(-MAX_LOG).map(r => r.real).filter(v => v !== null && !isNaN(v));
+const avg = lastEntries.length ? (lastEntries.reduce((a, b) => a + b, 0) / lastEntries.length).toFixed(2) : '—';
+splitsChart.options.plugins.title = {
+  display: true,
+  text: `Average: ${avg} s`,
+  font: { size: 18 }
+};
+
+// make numeric avg available to the embedded CardCalcs display
+if (avg !== '—' && !isNaN(Number(avg))) {
+  sessionStorage.setItem('CardCalcs_A1', avg);
+  if (typeof window.updateCardCalcs === 'function') window.updateCardCalcs(Number(avg));
+} else {
+  sessionStorage.removeItem('CardCalcs_A1');
+}
+
+  splitsChart.update();
+}
+
+
+
+/* UI handlers */
+startStopBtn.addEventListener('click', ()=>{
+  if(!running){
+    running=true; startTs = Date.now()/1000; startStopBtn.innerText='Stop';
+  } else {
+    running=false; elapsed = (Date.now()/1000 - startTs) + elapsed; startStopBtn.innerText='Start'; updateDisplay();
+    const entVal = parseFloat(displayEl.innerText || '0');
+    document.getElementById('entered').value = isNaN(entVal) ? '' : entVal.toFixed(2);
+  }
+});
+
+const resetBtnEl = document.getElementById('resetBtn');
+if (resetBtnEl) {
+  resetBtnEl.addEventListener('click', ()=>{ 
+    running=false; startTs=0; elapsed=0; 
+    displayEl.innerText='0.00'; 
+    startStopBtn.innerText='Start'; 
+  });
+}
+
+const grabBtnEl = document.getElementById('grabBtn');
+if (grabBtnEl) {
+  grabBtnEl.addEventListener('click', ()=>{
+    document.getElementById('entered').value = parseFloat(displayEl.innerText || 0).toFixed(2);
+  });
+}
+
+
+/* render column buttons with combined calculate+log on tap */
+function renderColumnButtons(){
+  // create the regular column buttons (1-10, H)
+  columns.forEach(c => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'col-btn';
+    b.innerText = c;
+    b.dataset.col = c;
+    b.addEventListener('click', ()=>{
+      selectedColumn = c;
+      document.querySelectorAll('.col-btn').forEach(x=>x.classList.remove('selected'));
+      b.classList.add('selected');
+
+      let ent = parseFloat(document.getElementById('entered').value);
+      if (isNaN(ent) || ent <= 0) { ent = parseFloat(displayEl.innerText || 0); }
+
+      if (isNaN(ent) || ent <= 0) {
+        document.getElementById('result').innerText = 'Real split: N/A (no valid split)';
+        clearSelectedColumn();
+        return;
+      }
+
+      const real = lookupRealSplit(selectedColumn, ent);
+      if (real === null || real === undefined) {
+        document.getElementById('result').innerText = 'Real split: N/A';
+      } else {
+        document.getElementById('result').innerText = 'Real: ' + real.toFixed(2) + ' s';
+      }
+
+      const ts = new Date().toISOString();
+      addLogEntry(ts, selectedColumn, ent, real !== null ? real : null);
+
+      // tiny delay so users see the selection before it clears
+      setTimeout(()=> clearSelectedColumn(), 220);
+    });
+    colButtonsWrap.appendChild(b);
+  });
+
+  // === add Reset as the final (12th) option in the same grid ===
+  const resetBtn = document.createElement('button');
+  resetBtn.type = 'button';
+  resetBtn.id = 'resetBtn';
+  // keep the 'alt' appearance while also using 'col-btn' sizing
+  resetBtn.className = 'col-btn alt';
+  resetBtn.innerText = 'Reset';
+  resetBtn.setAttribute('aria-label','Reset stopwatch');
+
+  // wire the same reset behavior
+  resetBtn.addEventListener('click', ()=>{
+    running = false;
+    startTs = 0;
+    elapsed = 0;
+    displayEl.innerText = '0.00';
+    // if startStop button text was 'Stop', set back to Start
+    startStopBtn.innerText = 'Start';
+    // also clear any selected column highlight (optional)
+    clearSelectedColumn();
+  });
+
+  colButtonsWrap.appendChild(resetBtn);
+}
+
+
+/* CSV download */
+function downloadCsv(){
+  if (splitLog.length === 0){ 
+    alert('No logged rows to download'); 
+    return; 
+  }
+
+  // Ask user for filename
+  let filename = prompt("Enter a filename for your log:", "splits_log");
+  if (!filename) filename = "splits_log"; // fallback if user cancels or leaves blank
+
+  const rows = [];
+  rows.push(['Timestamp','Column','EnteredSplit','RealSplit']);
+  for (let i = splitLog.length - 1; i >= 0; i--){
+    const r = splitLog[i];
+    rows.push([r.ts, r.col, r.entered.toFixed(2), r.real !== null ? r.real.toFixed(2) : 'N/A']);
+  }
+
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 500);
+}
+
+document.getElementById('downloadCsv').addEventListener('click', downloadCsv);
+
+renderColumnButtons();
+
+// === Preserve stopwatch & splits across refresh ===
+window.addEventListener('load', () => {
+  // Restore stopwatch
+  const savedElapsed = parseFloat(sessionStorage.getItem('elapsed') || '0');
+  elapsed = savedElapsed || 0;
+  updateDisplay();
+
+  // Restore entered value
+  const savedEntered = sessionStorage.getItem('entered');
+  if (savedEntered) document.getElementById('entered').value = savedEntered;
+
+  // Restore split log
+  const savedLog = sessionStorage.getItem('splitLog');
+  if (savedLog) {
+    splitLog = JSON.parse(savedLog);
+    renderLogTable();
+    updateChart();
+    updateAverageReal();
+  }
+});
+
+// Save data periodically
+setInterval(() => {
+  sessionStorage.setItem('elapsed', elapsed);
+  sessionStorage.setItem('entered', document.getElementById('entered').value);
+  sessionStorage.setItem('splitLog', JSON.stringify(splitLog));
+}, 500);
+
+</script>
+</body>
+</html>
+
+
