@@ -277,7 +277,7 @@ function renderColumnButtons(){
       if (real === null || real === undefined) {
         document.getElementById('result').innerText = 'Real split: N/A';
       } else {
-        document.getElementById('result').innerText = 'Real split: ' + real.toFixed(2) + ' s';
+        document.getElementById('result').innerText = 'Real: ' + real.toFixed(2) + ' s';
       }
 
       const ts = new Date().toISOString();
@@ -332,4 +332,5 @@ renderColumnButtons();
 </script>
 </body>
 </html>
+
 
