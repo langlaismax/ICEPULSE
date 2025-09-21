@@ -51,7 +51,7 @@
   .actions{width:100%;display:flex;gap:8px}
   .actions button{flex:1}
   .col-buttons{grid-template-columns:repeat(4,1fr)}
-  .chart-wrap{height:250px; width:100%; max-width:100%} /* fit screen */
+  .chart-wrap{height:200px; width:100%; max-width:100%} /* fit screen */
   canvas{width:100% !important; height:100% !important} /* responsive chart */
   th,td{font-size:15px}
   table thead th{font-size:13px}
@@ -101,9 +101,7 @@
           </table>
         </div>
 	 <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-      <button id="downloadCsv" class="alt">Download</button>
-	  <button id="grabBtn" class="alt">IcePulse</button>
-      <button id="resetBtn" class="alt">Max L</button>
+      <button id="downloadCsv" class="alt">Download CSV</button>
         </div>
      </div>		           
     </div>
@@ -247,8 +245,22 @@ startStopBtn.addEventListener('click', ()=>{
   }
 });
 
-document.getElementById('resetBtn').addEventListener('click', ()=>{ running=false; startTs=0; elapsed=0; displayEl.innerText='0.00'; startStopBtn.innerText='Start'; });
-document.getElementById('grabBtn').addEventListener('click', ()=>{ document.getElementById('entered').value = parseFloat(displayEl.innerText || 0).toFixed(2); });
+const resetBtnEl = document.getElementById('resetBtn');
+if (resetBtnEl) {
+  resetBtnEl.addEventListener('click', ()=>{ 
+    running=false; startTs=0; elapsed=0; 
+    displayEl.innerText='0.00'; 
+    startStopBtn.innerText='Start'; 
+  });
+}
+
+const grabBtnEl = document.getElementById('grabBtn');
+if (grabBtnEl) {
+  grabBtnEl.addEventListener('click', ()=>{
+    document.getElementById('entered').value = parseFloat(displayEl.innerText || 0).toFixed(2);
+  });
+}
+
 
 /* render column buttons with combined calculate+log on tap */
 function renderColumnButtons(){
@@ -332,8 +344,3 @@ renderColumnButtons();
 </script>
 </body>
 </html>
-
-
-
-
-
