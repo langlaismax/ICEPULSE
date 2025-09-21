@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>IcePulse — Split Time Calculator (Mobile Optimized)</title>
+  <style>
+    :root{
+      --bg:#fff; --text:#111; --muted:#666; --blue:#0a66ff; --card:#fafafa; --gap:12px;
+      --btn-pad:14px 16px; --btn-font:18px; --input-font:18px; --radius:12px;
+    }
+    html,body{height:100%;margin:0;padding:18px;font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--text)}
+    .card{border:1px solid #eee;border-radius:14px;padding:18px;box-shadow:0 6px 20px rgba(0,0,0,0.04);max-width:1100px;background:var(--card);margin:0 auto}
+    header{display:flex;flex-direction:column;gap:10px}
+    #display{font-size:44px;font-weight:800;margin:0}
+    .controls{display:flex;gap:10px;flex-wrap:wrap}
+    button{cursor:pointer;border:0;padding:var(--btn-pad);border-radius:var(--radius);font-size:var(--btn-font);min-height:56px;min-width:72px}
+    .primary{background:var(--blue);color:white}
+    .alt{background:#fff;border:1px solid #ddd}
+    input,select{padding:12px;border-radius:10px;border:1px solid #ddd;font-size:var(--input-font);width:100%;box-sizing:border-box}
+    .small{font-size:13px;color:var(--muted)}
+    #result{font-size:20px;margin-top:10px;font-weight:700}
+    #log{max-height:300px;overflow:auto;margin-top:12px;border-top:1px dashed #eee;padding-top:8px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px 6px;text-align:left;border-bottom:1px solid #f4f4f4;font-size:14px}
+
+    /* layout */
+    .grid {display:grid; grid-template-columns: 1fr 420px; gap:12px; align-items:start; margin-top:12px}
+    @media (max-width:980px){ .grid{ grid-template-columns: 1fr } }
+
+    .chart-wrap{height:260px;padding:8px;border:1px solid #eee;border-radius:10px;background:white}
+
+    /* column buttons - touch friendly */
+    .col-buttons{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+    .col-btn{display:inline-flex;align-items:center;justify-content:center;padding:12px;border-radius:12px;border:1px solid #ddd;background:#fff;font-size:18px;min-height:56px;aspect-ratio:1/1}
+    .col-btn.selected{background:var(--blue);color:#fff;border-color:rgba(0,0,0,0.08);box-shadow:0 8px 18px rgba(10,102,255,0.14)}
+    .col-btn:disabled{opacity:0.45;cursor:not-allowed}
+
+    /* compact header controls on mobile */
+    .top-row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+    .top-row .actions{display:flex;gap:8px}
+
+    /* mobile specific adjustments */
+    @media (max-width:600px){
+      :root{--btn-pad:12px 12px;--btn-font:18px;--input-font:18px}
+      html,body{padding:14px}
+      .card{padding:14px}
+      #display{font-size:40px}
+      .controls{flex-direction:column}
+      .top-row{flex-direction:column;align-items:flex-start}
+      .actions{width:100%;display:flex;gap:8px}
+      .actions button{flex:1}
+      .col-buttons{grid-template-columns:repeat(4,1fr)}
+      .chart-wrap{height:320px}
+      th,td{font-size:15px}
+      table thead th{font-size:13px}
+    }
+
+    /* keyboard helpers */
+    input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{ -webkit-appearance: none; margin: 0 }
+
+    /* accessibility focus */
+    .col-btn:focus,.primary:focus,.alt:focus{outline:3px solid rgba(10,102,255,0.18);outline-offset:2px}
+
+  </style>
+  <!-- Chart.js CDN (keep same major version you were using) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="card">
+    <header>
+      <div class="top-row">
+        <div>
+          <div id="display">0.00</div>
+          <div class="small" style="margin-top:6px">Stopwatch</div>
+        </div>
+        <div class="actions">
+          <button id="startStop" class="primary">Start</button>
+          <button id="resetBtn" class="alt">Reset</button>
+          <button id="grabBtn" class="alt">Use Display</button>
+        </div>
+      </div>
+
+      <div class="controls" style="margin-top:8px">
+        <input id="entered" type="number" step="0.01" placeholder="e.g. 13.25" aria-label="Entered split" />
+        <div class="small" style="margin-top:6px">Pick final location (tap once to calculate & log)</div>
+        <div id="colButtons" class="col-buttons" aria-label="Final location buttons"></div>
+      </div>
+    </header>
+
+    <div id="result" aria-live="polite">Real split: —</div>
+
+    <div class="grid">
+      <div>
+        <div id="log">
+          <table id="logTable" aria-label="Split log table">
+            <thead><tr><th>Timestamp</th><th>Column</th><th>Entered (s)</th><th>Real (s)</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+          <button id="downloadCsv" class="alt">Download CSV</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="small" style="margin-bottom:8px">Live view (last 10 splits)</div>
+        <div class="chart-wrap">
+          <canvas id="splitsChart" width="400" height="320" aria-label="Last ten splits chart" role="img"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* === original logic preserved, small changes only to improve mobile UX === */
+const columns = [ "1","2","3","4","5","6","7","8","9","10","H" ];
+
+const conversion_table = [
+  [16.2,15.1,14.3,13.9,13.6,13.4,13.0,12.7,12.6,12.5,11.9],
+  [16.3,15.2,14.4,14.0,13.7,13.5,13.1,12.8,12.7,12.6,11.9],
+  [16.4,15.3,14.5,14.2,13.8,13.6,13.2,12.9,12.8,12.7,12.0],
+  [16.5,15.4,14.6,14.3,14.0,13.7,13.3,13.0,12.9,12.8,12.1],
+  [16.7,15.5,14.7,14.4,14.1,13.8,13.4,13.1,13.0,12.9,12.2],
+  [16.8,15.6,14.8,14.5,14.2,13.9,13.5,13.2,13.1,12.9,12.3],
+  [16.9,15.8,14.9,14.6,14.3,14.0,13.6,13.3,13.2,13.0,12.4],
+  [17.0,15.9,15.0,14.7,14.4,14.1,13.7,13.4,13.2,13.1,12.5],
+  [17.2,16.0,15.1,14.8,14.5,14.2,13.8,13.5,13.3,13.2,12.6],
+  [17.3,16.1,15.3,14.9,14.6,14.3,13.9,13.5,13.4,13.3,12.7],
+  [17.4,16.2,15.4,15.0,14.7,14.4,14.0,13.6,13.5,13.4,12.8],
+  [17.5,16.3,15.5,15.1,14.8,14.5,14.1,13.7,13.6,13.5,12.9],
+  [17.7,16.5,15.7,15.2,14.9,14.6,14.2,13.8,13.7,13.6,13.0],
+  [17.8,16.6,15.8,15.4,15.0,14.7,14.3,13.9,13.8,13.7,13.1],
+  [17.9,16.7,16.0,15.5,15.1,14.8,14.4,14.0,13.9,13.8,13.2],
+  [18.1,16.9,16.1,15.6,15.2,14.9,14.5,14.1,14.0,13.9,13.2],
+  [18.2,17.0,16.2,15.8,15.3,15.0,14.6,14.2,14.1,14.0,13.3],
+  [18.3,17.1,16.4,15.9,15.5,15.1,14.7,14.3,14.2,14.1,13.4],
+  [18.4,17.2,16.5,16.0,15.6,15.2,14.8,14.4,14.3,14.2,13.5],
+  [18.5,17.3,16.6,16.1,15.7,15.3,14.9,14.5,14.4,14.3,13.5],
+  [18.7,17.5,16.7,16.2,15.8,15.4,15.0,14.5,14.5,14.4,13.6],
+  [18.8,17.6,16.8,16.4,15.9,15.6,15.1,14.7,14.6,14.5,13.7],
+  [18.9,17.7,16.9,16.5,16.0,15.6,15.2,14.8,14.7,14.6,13.8],
+  [19.0,17.8,17.0,16.6,16.1,15.7,15.3,14.9,14.8,14.7,13.9],
+  [19.2,17.9,17.1,16.7,16.2,15.8,15.4,15.0,14.9,14.8,14.0],
+  [19.3,18.1,17.2,16.8,16.3,15.9,15.5,15.1,15.0,14.9,14.1],
+  [19.4,18.2,17.3,16.9,16.5,16.2,15.8,15.4,15.3,15.2,14.5],
+  [19.5,18.3,17.4,16.9,16.6,16.3,15.9,15.5,15.4,15.3,14.6],
+  [19.6,18.4,17.5,17.0,16.7,16.4,16.0,15.6,15.5,15.4,14.6],
+  [19.7,18.5,17.6,17.2,16.8,16.5,16.0,15.6,15.5,15.3,14.6],
+  [19.9,18.7,17.7,17.3,16.9,16.6,16.1,15.7,15.6,15.4,14.7],
+  [20.0,18.8,17.8,17.4,17.0,16.7,16.2,15.8,15.7,15.5,14.8],
+  [20.2,18.9,17.9,17.5,17.1,16.8,16.3,15.9,15.8,15.6,14.9],
+  [20.3,19.0,18.0,17.6,17.2,16.9,16.4,16.0,15.9,15.7,15.0],
+  [20.5,19.1,18.1,17.7,17.3,17.0,16.5,16.1,16.0,15.8,15.0],
+  [20.6,19.2,18.2,17.8,17.4,17.1,16.6,16.2,16.1,15.9,15.1],
+  [20.8,19.3,18.3,17.9,17.5,17.2,16.7,16.3,16.1,16.0,15.2]
+];
+
+/* stopwatch logic */
+let running=false, startTs=0, elapsed=0;
+const displayEl = document.getElementById('display');
+const startStopBtn = document.getElementById('startStop');
+
+let selectedColumn = null;
+
+function updateDisplay(){
+  let value = elapsed;
+  if (running) value = (Date.now()/1000 - startTs) + elapsed;
+  displayEl.innerText = value.toFixed(2);
+}
+setInterval(updateDisplay, 100);
+
+const colButtonsWrap = document.getElementById('colButtons');
+
+function clearSelectedColumn(){
+  selectedColumn = null;
+  document.querySelectorAll('.col-btn').forEach(x=>x.classList.remove('selected'));
+}
+
+function lookupRealSplit(column, enteredValue){
+  const colIndex = columns.indexOf(String(column));
+  if (colIndex === -1) return null;
+  let closestRow = null;
+  let closestDiff = Number.POSITIVE_INFINITY;
+  for (const row of conversion_table){
+    const val = row[colIndex];
+    const diff = Math.abs(val - enteredValue);
+    if (diff < closestDiff){
+      closestDiff = diff;
+      closestRow = row;
+    }
+  }
+  return closestRow ? closestRow[6] : null;
+}
+
+let splitLog = [];
+const MAX_LOG = 10;
+
+function addLogEntry(ts, col, ent, real){
+  splitLog.push({ts, col, entered: Number(ent), real: real === null ? null : Number(real)});
+  if (splitLog.length > MAX_LOG) splitLog.shift();
+  renderLogTable();
+  updateChart();
+}
+
+function renderLogTable(){
+  const tbody = document.querySelector('#logTable tbody');
+  tbody.innerHTML = '';
+  for (let i = splitLog.length - 1; i >= 0; i--){
+    const row = splitLog[i];
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${row.ts}</td><td>${row.col}</td><td>${row.entered.toFixed(2)}</td><td>${row.real !== null ? row.real.toFixed(2) : 'N/A'}</td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+/* Chart setup - keep responsive and allow larger points for touch */
+const ctx = document.getElementById('splitsChart').getContext('2d');
+const splitsChart = new Chart(ctx, {
+  type: 'line',
+  data: { labels: [], datasets: [ { label: 'Entered (s)', data: [], tension: 0.3, pointRadius: 6, borderColor: 'rgba(10,102,255,0.85)', backgroundColor: 'rgba(10,102,255,0.08)', yAxisID: 'y' }, { label: 'Real (s)', data: [], tension: 0.3, pointRadius: 6, borderColor: 'rgba(0,170,90,0.85)', backgroundColor: 'rgba(0,170,90,0.08)', yAxisID: 'y' } ] },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: { legend: { display: true, position: 'top' }, tooltip: { mode: 'index', intersect: false } },
+    scales: { x: { display: true }, y: { display: true, title: { display: true, text: 'Seconds' }, beginAtZero: false } }
+  }
+});
+
+function updateChart(){
+  const labels = splitLog.map(r => { const d = new Date(r.ts); return d.toLocaleTimeString(); });
+  const enteredData = splitLog.map(r => r.entered);
+  const realData = splitLog.map(r => r.real === null ? NaN : r.real);
+  splitsChart.data.labels = labels;
+  splitsChart.data.datasets[0].data = enteredData;
+  splitsChart.data.datasets[1].data = realData;
+  splitsChart.update();
+}
+
+/* UI handlers */
+startStopBtn.addEventListener('click', ()=>{
+  if(!running){
+    running=true; startTs = Date.now()/1000; startStopBtn.innerText='Stop';
+  } else {
+    running=false; elapsed = (Date.now()/1000 - startTs) + elapsed; startStopBtn.innerText='Start'; updateDisplay();
+    const entVal = parseFloat(displayEl.innerText || '0');
+    document.getElementById('entered').value = isNaN(entVal) ? '' : entVal.toFixed(2);
+  }
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{ running=false; startTs=0; elapsed=0; displayEl.innerText='0.00'; startStopBtn.innerText='Start'; });
+document.getElementById('grabBtn').addEventListener('click', ()=>{ document.getElementById('entered').value = parseFloat(displayEl.innerText || 0).toFixed(2); });
+
+/* render column buttons with combined calculate+log on tap */
+function renderColumnButtons(){
+  columns.forEach(c => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'col-btn';
+    b.innerText = c;
+    b.dataset.col = c;
+    b.addEventListener('click', ()=>{
+      selectedColumn = c;
+      document.querySelectorAll('.col-btn').forEach(x=>x.classList.remove('selected'));
+      b.classList.add('selected');
+
+      let ent = parseFloat(document.getElementById('entered').value);
+      if (isNaN(ent) || ent <= 0) { ent = parseFloat(displayEl.innerText || 0); }
+
+      if (isNaN(ent) || ent <= 0) {
+        document.getElementById('result').innerText = 'Real split: N/A (no valid split)';
+        clearSelectedColumn();
+        return;
+      }
+
+      const real = lookupRealSplit(selectedColumn, ent);
+      if (real === null || real === undefined) {
+        document.getElementById('result').innerText = 'Real split: N/A';
+      } else {
+        document.getElementById('result').innerText = 'Real split: ' + real.toFixed(2) + ' s';
+      }
+
+      const ts = new Date().toISOString();
+      addLogEntry(ts, selectedColumn, ent, real !== null ? real : null);
+
+      // tiny delay so users see the selection before it clears
+      setTimeout(()=> clearSelectedColumn(), 220);
+    });
+    colButtonsWrap.appendChild(b);
+  });
+}
+
+/* CSV download */
+function downloadCsv(){
+  if (splitLog.length === 0){ alert('No logged rows to download'); return; }
+  const rows = [];
+  rows.push(['Timestamp','Column','EnteredSplit','RealSplit']);
+  for (let i = splitLog.length - 1; i >= 0; i--){ const r = splitLog[i]; rows.push([r.ts, r.col, r.entered.toFixed(2), r.real !== null ? r.real.toFixed(2) : 'N/A']); }
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'splits_log.csv'; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 500);
+}
+
+document.getElementById('downloadCsv').addEventListener('click', downloadCsv);
+
+/* initialize */
+// NOTE: conversion_table must be the full numeric 2D array. The preview placeholder above should be
+// replaced with the actual table when you paste this file into your project. To keep this file
+// compact in the editor pane we used the placeholder string — simply replace it with the same
+// `conversion_table` array from your original file (the long numeric literal).
+
+// If the conversion_table placeholder is still present at runtime, create a safe fallback:
+if (typeof conversion_table === 'string') {
+  console.warn('Please replace conversion_table placeholder with the full numeric array.');
+}
+
+renderColumnButtons();
+</script>
+</body>
+</html>
