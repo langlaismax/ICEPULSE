@@ -19,7 +19,7 @@
     .alt{background:#fff;border:1px solid #ddd}
     input,select{padding:12px;border-radius:10px;border:1px solid #ddd;font-size:var(--input-font);width:100%;box-sizing:border-box}
     .small{font-size:13px;color:var(--muted)}
-    #result{font-size:20px;margin-top:10px;font-weight:700}
+    #result{font-size:88px;margin-top:10px;font-weight:700}
     #log{max-height:300px;overflow:auto;margin-top:12px;border-top:1px dashed #eee;padding-top:8px}
     table{width:100%;border-collapse:collapse}
     th,td{padding:8px 6px;text-align:left;border-bottom:1px solid #f4f4f4;font-size:14px}
@@ -72,6 +72,7 @@
       <div class="top-row">
         <div>
           <div id="display">0.00</div>
+          <div class="small" style="margin-top:6px">Stopwatch</div>
         </div>
         <div class="actions">
           <button id="startStop" class="primary">Start</button>
@@ -89,24 +90,24 @@
 
     <div class="grid">
       <div>
+	       <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+		<div class="small" style="margin-bottom:8px">Live view (last 10 splits)</div>
+        <div class="chart-wrap">
+          <canvas id="splitsChart" width="400" height="320" aria-label="Last ten splits chart" role="img"></canvas>					
+        </div>
+     </div>
         <div id="log">
           <table id="logTable" aria-label="Split log table">
             <thead><tr><th>Column</th><th>Entered (s)</th><th>Real (s)</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
-      </div>
-
-      <div>
-        <div class="small" style="margin-bottom:8px">Live view (last 10 splits)</div>
-        <div class="chart-wrap">
-          <canvas id="splitsChart" width="200" height="320" aria-label="Last ten splits chart" role="img"></canvas>
-        </div>
-      </div>
-      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-          <button id="downloadCsv" class="alt">Download CSV</button>
-      </div>
+	 <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <button id="downloadCsv" class="alt">Download CSV</button>
+	  <button id="grabBtn" class="alt">IcePulse by Max Langlais</button>
+     </div>		           
     </div>
+	
   </div>
 
 <script>
@@ -206,7 +207,7 @@ function renderLogTable(){
   for (let i = splitLog.length - 1; i >= 0; i--){
     const row = splitLog[i];
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${row.ts}</td><td>${row.col}</td><td>${row.entered.toFixed(2)}</td><td>${row.real !== null ? row.real.toFixed(2) : 'N/A'}</td>`;
+    tr.innerHTML = `<td>${row.col}</td><td>${row.entered.toFixed(2)}</td><td>${row.real !== null ? row.real.toFixed(2) : 'N/A'}</td>`;
     tbody.appendChild(tr);
   }
 }
@@ -317,4 +318,3 @@ renderColumnButtons();
 </script>
 </body>
 </html>
-
