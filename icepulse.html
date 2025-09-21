@@ -287,37 +287,47 @@ function updateAverageReal() {
     document.getElementById('ccTable').style.display = 'table';
   }
 
-  function recalcAndRender(a1val){
-    if(!loaded){ document.getElementById('ccStatus').innerText = 'Workbook not loaded yet.'; return; }
+  function recalcAndRender(a1){
+    // only run if workbook loaded
+    if(!loaded){
+      console.warn('recalcAndRender called but workbook not loaded yet');
+      document.getElementById('ccStatus').innerText = 'Workbook not loaded yet (will load).';
+      return;
+    }
     // write numeric A1
-    sheet['A1'] = { t: 'n', v: Number(a1val) };
+    sheet['A1'] = { t: 'n', v: Number(a1) };
     try{
       if(typeof XLSX_CALC === 'function'){
         XLSX_CALC(workbook);
-        document.getElementById('ccStatus').innerText = 'Recalculated A1 = ' + a1val;
+        document.getElementById('ccStatus').innerText = 'Recalculated A1 = ' + a1;
       } else {
         document.getElementById('ccStatus').innerText = 'Recalculation library not available; A1 updated.';
       }
     }catch(e){
       document.getElementById('ccStatus').innerText = 'Recalc error: ' + e.message;
-      console.error(e);
+      console.error('XLSX calc error', e);
     }
     render();
   }
 
   async function loadWorkbook(){
+    document.getElementById('ccStatus').innerText = 'Loading workbook…';
     try{
       const r = await fetch(XLSX_URL);
-      if(!r.ok) throw new Error('HTTP ' + r.status + ' while fetching workbook');
+      if(!r.ok) throw new Error('HTTP ' + r.status + ' while fetching workbook (' + XLSX_URL + ')');
       const ab = await r.arrayBuffer();
       workbook = XLSX.read(new Uint8Array(ab), { type:'array', cellFormula:true, cellNF:true, cellDates:true });
       // choose the CardCalcs sheet if present, otherwise first sheet
       sheet = workbook.Sheets['CardCalcs'] || workbook.Sheets[workbook.SheetNames[0]];
       loaded = true;
       document.getElementById('ccStatus').innerText = 'Workbook loaded.';
+      render();
+      return true;
     }catch(err){
+      loaded = false;
       document.getElementById('ccStatus').innerText = 'Error loading workbook: ' + err.message;
-      console.error(err);
+      console.error('Failed to load workbook from', XLSX_URL, err);
+      throw err;
     }
   }
 
@@ -327,16 +337,23 @@ function updateAverageReal() {
       document.getElementById('ccStatus').innerText = 'Invalid A1: ' + a1;
       return;
     }
-    // ensure workbook loaded
+    // ensure workbook loaded; if not, load it and then recalc
     if(!loaded){
-      loadWorkbook().then(()=>recalcAndRender(a1)).catch(e=>console.error(e));
+      document.getElementById('ccStatus').innerText = 'Workbook not loaded — loading now...';
+      loadWorkbook()
+        .then(()=>recalcAndRender(a1))
+        .catch(e => {
+          // loadWorkbook already sets ccStatus; keep console error
+          console.error('updateCardCalcs: loadWorkbook failed', e);
+        });
     } else {
       recalcAndRender(a1);
     }
   };
 
-  // auto-load workbook now
-  loadWorkbook();
+  // auto-load workbook now (attempt)
+  // If it fails this will set ccStatus with the fetch error; user sees that instead of silent failures.
+  loadWorkbook().catch(()=>{/* already handled and logged */});
 
   // Poll sessionStorage key 'CardCalcs_A1' for changes so the display updates automatically
   let last = null;
@@ -345,10 +362,14 @@ function updateAverageReal() {
       const s = sessionStorage.getItem('CardCalcs_A1');
       if(s !== last){
         last = s;
-        if(s !== null && s !== '') window.updateCardCalcs(s);
+        if(s !== null && s !== ''){
+          // attempt to update; updateCardCalcs will load file if necessary
+          window.updateCardCalcs(s);
+        }
       }
     }catch(e){
       // ignore storage access errors
+      console.error('sessionStorage polling error', e);
     }
   }, 500);
 
@@ -660,7 +681,6 @@ setInterval(() => {
 </script>
 </body>
 </html>
-
 
 
 
