@@ -41,7 +41,7 @@
     .top-row .actions{display:flex;gap:8px}
 
     /* mobile specific adjustments */
-    @media (max-width:400px){
+    @media (max-width:600px){
       :root{--btn-pad:12px 12px;--btn-font:18px;--input-font:18px}
       html,body{padding:14px}
       .card{padding:14px}
@@ -51,7 +51,7 @@
       .actions{width:100%;display:flex;gap:8px}
       .actions button{flex:1}
       .col-buttons{grid-template-columns:repeat(4,1fr)}
-      .chart-wrap{height:320px}
+      .chart-wrap{height:320px;width:600px}
       th,td{font-size:15px}
       table thead th{font-size:13px}
     }
@@ -318,4 +318,5 @@ renderColumnButtons();
 </script>
 </body>
 </html>
+
 
