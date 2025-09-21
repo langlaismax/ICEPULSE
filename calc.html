@@ -384,14 +384,32 @@ function renderColumnButtons(){
 
 /* CSV download */
 function downloadCsv(){
-  if (splitLog.length === 0){ alert('No logged rows to download'); return; }
+  if (splitLog.length === 0){ 
+    alert('No logged rows to download'); 
+    return; 
+  }
+
+  // Ask user for filename
+  let filename = prompt("Enter a filename for your log:", "splits_log");
+  if (!filename) filename = "splits_log"; // fallback if user cancels or leaves blank
+
   const rows = [];
   rows.push(['Timestamp','Column','EnteredSplit','RealSplit']);
-  for (let i = splitLog.length - 1; i >= 0; i--){ const r = splitLog[i]; rows.push([r.ts, r.col, r.entered.toFixed(2), r.real !== null ? r.real.toFixed(2) : 'N/A']); }
+  for (let i = splitLog.length - 1; i >= 0; i--){
+    const r = splitLog[i];
+    rows.push([r.ts, r.col, r.entered.toFixed(2), r.real !== null ? r.real.toFixed(2) : 'N/A']);
+  }
+
   const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'splits_log.csv'; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 500);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 500);
 }
 
 document.getElementById('downloadCsv').addEventListener('click', downloadCsv);
@@ -429,4 +447,3 @@ setInterval(() => {
 </script>
 </body>
 </html>
-
