@@ -1,0 +1,678 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Curling Scenario Calculator — Multi-select Filters</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  :root{ --muted:#666; --card-pad:8px; --compact-font:12px; }
+  body{font-family:system-ui,Arial,Helvetica,sans-serif;margin:10px auto;max-width:1150px;padding:10px}
+  h2{font-size:1.05rem;margin:6px 0}
+  .card{background:#fff;border:1px solid #e6e6e6;border-radius:8px;padding:var(--card-pad);box-shadow:0 1px 2px rgba(0,0,0,0.03);margin-bottom:10px}
+  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:end}
+  label{font-size:0.78rem;color:var(--muted);display:block;margin-bottom:4px}
+  select,input,button{padding:6px;border:1px solid #dcdcdc;border-radius:6px;font-size:0.88rem}
+  select[multiple]{height:86px;padding:6px}
+  button{background:#fff;cursor:pointer}
+  .muted{color:var(--muted);font-size:0.82rem}
+  .legend{display:flex;gap:8px;align-items:center;margin-top:8px}
+  .swatch{width:120px;height:12px;border-radius:4px}
+  table{border-collapse:collapse;width:100%;font-size:0.88rem;margin-top:8px}
+  thead th{background:#fbfbfb;position:sticky;top:0;z-index:2}
+  th,td{padding:7px;border-bottom:1px solid #f0f0f0;text-align:left}
+  td[data-pct]{border-radius:6px}
+  .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .small{font-size:0.82rem}
+  .note{font-size:0.82rem;color:var(--muted)}
+  .mobile-colhide { display:table-cell; }
+  .center { text-align:center; }
+
+  /* highlights */
+  .highlight-est { outline: 2px solid #ffd54f; border-radius:6px; box-shadow: 0 0 8px rgba(255,213,79,0.25); }
+  .highlight-player { outline: 2px solid #7bed9f; border-radius:6px; box-shadow: 0 0 8px rgba(123,237,159,0.18); }
+
+  /* compact task cards */
+  .task-card { padding:6px; font-size: var(--compact-font); border-radius:6px; }
+  .task-card .task-title { font-weight:600; font-size:0.82rem; margin-bottom:4px; }
+  .task-card select { font-size:0.8rem; padding:5px; }
+
+  /* layout: more columns on wide screens, compact on small screens */
+  #constraints { display:grid; grid-template-columns: repeat(8, 1fr); gap:6px; margin-top:10px; }
+  @media (max-width:1200px){ #constraints { grid-template-columns: repeat(6, 1fr); } }
+  @media (max-width:900px){ #constraints { grid-template-columns: repeat(4, 1fr); } }
+  @media (max-width:600px){
+    #constraints { grid-template-columns: repeat(2, 1fr); }
+    table{display:block;overflow:auto;white-space:nowrap}
+    .mobile-colhide { display:none; }
+  }
+
+  /* hide controls while keeping DOM for backend functionality */
+  .hide-ui { display:none !important; }
+
+</style>
+</head>
+<body>
+<h2>Curling Scenario Calculator — Multi-select Filters</h2>
+
+<!-- Main controls card -->
+<div class="card">
+  <div class="controls">
+    <div style="width:110px">
+      <label>Evaluate shot</label>
+      <select id="evalPos"></select>
+    </div>
+
+    <div style="width:180px">
+      <label>Max ends remaining</label>
+      <input id="maxEndsRem" type="number" min="0" value="10" />
+    </div>
+
+    <div style="width:120px">
+      <label>Click to start</label>
+      <button id="analyzeBtn">Analyze</button>
+    </div>
+
+    <div style="width:160px">
+      <label>Start date</label>
+      <input id="startDate" type="date" />
+    </div>
+
+    <div style="width:200px">
+      <label>Player</label>
+      <select id="playerSelect"><option value="">-- none --</option></select>
+    </div>
+
+    <div style="width:200px">
+      <label>Gender (multi)</label>
+      <select id="genderSelect" multiple>
+        <option value="Men">Men</option>
+        <option value="Women">Women</option>
+        <option value="Mixed">Mixed</option>
+        <option value="Mixed Doubles">Mixed Doubles</option>
+        <option value="Unknown">Unknown</option>
+      </select>
+    </div>
+
+    <div style="width:260px">
+      <label>Category (multi)</label>
+      <select id="categorySelect" multiple>
+        <option value="Grand Slams">Grand Slams</option>
+        <option value="Olympics">Olympics</option>
+        <option value="Worlds">Worlds</option>
+        <option value="Brier">Brier</option>
+        <option value="Scotties">Scotties</option>
+        <option value="Euros">Euros</option>
+        <option value="OQE">OQE</option>
+        <option value="CIS">CIS</option>
+        <option value="U Sports">U Sports</option>
+        <option value="Canadian Jrs">Canadian Jrs</option>
+        <option value="Canadian U-18s">Canadian U-18s</option>
+        <option value="Pacific-Asia">Pacific-Asia</option>
+        <option value="Jr Worlds">Jr Worlds</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+
+    <!-- Hidden controls kept in DOM for backend usage but not shown -->
+    <div class="hide-ui" style="width:180px">
+      <label>Dataset</label>
+      <select id="datasetSelect"><option value="ALL">All years (default)</option></select>
+    </div>
+    <div class="hide-ui" style="width:220px">
+      <label>Year filter</label>
+      <select id="yearFilter"><option value="ALL">All years</option></select>
+    </div>
+    <div class="hide-ui" style="width:170px">
+      <label>End date</label>
+      <input id="endDate" type="date" />
+    </div>
+    <div class="hide-ui" style="width:120px">
+      <label>Load</label>
+      <button id="loadAllBtn">Load all</button>
+    </div>
+
+  </div>
+
+  <!-- compactly arranged task selectors -->
+  <div id="constraints"></div>
+
+  <div class="legend" style="margin-top:10px">
+    <div class="small">Bucket color legend (dynamic per-table)</div>
+    <div class="swatch" id="legendSwatch"></div>
+  </div>
+</div>
+
+<div id="status" class="muted" style="margin-bottom:10px"></div>
+<div id="results"></div>
+  <div class="controls">
+<div style="margin-top:8px">
+  <button id="downloadBtn">Export CSV</button>
+</div>
+    <div style="margin-left:auto">
+      <label>&nbsp;</label>
+      <button id="toggleViewBtn">Expanded View</button>
+    </div>
+</div>
+
+<script>
+/* ========== CONFIG ========== */
+/* include consolidated summary first */
+const AVAILABLE_SUMMARIES = [
+  "data/summary_consolidated.json",
+  "data/summary_2001.json","data/summary_2002.json","data/summary_2003.json","data/summary_2004.json",
+  "data/summary_2005.json","data/summary_2006.json","data/summary_2007.json","data/summary_2008.json",
+  "data/summary_2009.json","data/summary_2010.json","data/summary_2011.json","data/summary_2012.json",
+  "data/summary_2013.json","data/summary_2014.json","data/summary_2015.json","data/summary_2016.json",
+  "data/summary_2017.json","data/summary_2018.json","data/summary_2019.json","data/summary_2020.json",
+  "data/summary_2021.json","data/summary_2022.json","data/summary_2023.json","data/summary_2024.json",
+  "data/summary_2025.json"
+];
+
+const TASK_OPTIONS = ["Any","Draw","Guard","Front","Take-out","Hit-roll","Double","Raise","Freeze","Clearing","Through","Wick","Promotion","Other"];
+const TURN_OPTIONS = ["Any","CW","CCW","UNKNOWN"];
+const BUCKETS = ['-3+','-2','-1','0','1','2','3+'];
+const BUCKET_VAL = {'-3+': -3, '-2': -2, '-1': -1, '0': 0, '1': 1, '2': 2, '3+': 3};
+const MIN_SUPPORT = 0.1;
+
+/* ========== DOM refs ========== */
+const datasetSelect = document.getElementById('datasetSelect');
+const yearFilter = document.getElementById('yearFilter');
+const evalPosSelect = document.getElementById('evalPos');
+const statusDiv = document.getElementById('status');
+const resultsDiv = document.getElementById('results');
+const playerSelect = document.getElementById('playerSelect');
+const constraintsDiv = document.getElementById('constraints');
+const toggleViewBtn = document.getElementById('toggleViewBtn');
+const genderSelect = document.getElementById('genderSelect');
+const categorySelect = document.getElementById('categorySelect');
+
+/* ========== init UI ========== */
+datasetSelect.appendChild(new Option("All years (default)","ALL"));
+for (const p of AVAILABLE_SUMMARIES) {
+  const label = p.split('/').pop().replace('summary_','').replace('.json','');
+  datasetSelect.appendChild(new Option(label,p));
+  yearFilter.appendChild(new Option(label,label));
+}
+yearFilter.insertBefore(new Option("All years","ALL"), yearFilter.firstChild);
+for (let i=1;i<=16;i++) evalPosSelect.appendChild(new Option(i,i));
+
+/* build compact constraints UI (16 task+turn selectors in small cards) - multi-selects for each */
+for (let i=0;i<16;i++){
+  const wrapper = document.createElement('div');
+  wrapper.className = 'task-card card';
+  wrapper.style.padding = '6px';
+  // task multi-select and turn multi-select (small size)
+  wrapper.innerHTML = `<div class="task-title">T${i+1}</div>
+    <select data-index="${i}" class="taskSel" title="Task ${i+1}" multiple size="4"></select>
+    <div style="height:6px"></div>
+    <select data-index="${i}" class="turnSel" title="Turn ${i+1}" multiple size="3"></select>`;
+  constraintsDiv.appendChild(wrapper);
+}
+document.querySelectorAll('.taskSel').forEach(s=> { TASK_OPTIONS.forEach(t=> s.add(new Option(t,t))); s.value='Any'; s.style.width='100%'; });
+document.querySelectorAll('.turnSel').forEach(s=> { TURN_OPTIONS.forEach(t=> s.add(new Option(t,t))); s.value='Any'; s.style.width='100%'; });
+
+/* color helpers */
+function percentToHSLStatic(pct){
+  const v = Math.max(0, Math.min(100, Number(pct)));
+  const hue = (v/100) * 120;
+  return `hsl(${hue},78%,45%)`;
+}
+function pickTextColor(pct){
+  return (pct === null || pct === undefined) ? '#333' : ((Number(pct) < 55) ? '#fff' : '#000');
+}
+(function setLegend(){ document.getElementById('legendSwatch').style.background='linear-gradient(90deg, hsl(0,78%,45%), hsl(60,78%,45%), hsl(120,78%,45%))'; })();
+
+/* ========== data holders & CSV helpers ========== */
+let mergedAll = [];
+let byYearMap = {};
+let playerStatsObj = null;
+
+function splitCSVLine(line){
+  const out=[]; let cur=''; let inQuote=false;
+  for(let i=0;i<line.length;i++){
+    const ch=line[i];
+    if(inQuote){
+      if(ch==='\"'){
+        if(line[i+1]==='\"'){ cur += '\"'; i++; }
+        else { inQuote=false; }
+      } else cur += ch;
+    } else {
+      if(ch===','){ out.push(cur); cur=''; }
+      else if(ch==='"'){ inQuote=true; }
+      else cur += ch;
+    }
+  }
+  out.push(cur);
+  return out;
+}
+function parseCSV(text){
+  const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
+  if(lines.length === 0) return {header:[], rows:[]};
+  const header = splitCSVLine(lines[0]).map(h=>h.trim());
+  const rows = [];
+  for(let i=1;i<lines.length;i++){
+    const cols = splitCSVLine(lines[i]);
+    if(cols.length === 0) continue;
+    const obj = {};
+    for(let j=0;j<header.length;j++) obj[header[j]] = (cols[j]===undefined? '': cols[j]);
+    rows.push(obj);
+  }
+  return {header, rows};
+}
+
+/* load players CSV (keeps the player DOM options) */
+async function loadPlayersCSV(path='/data/players_stats_spreadsheet.csv'){
+  try {
+    const r = await fetch(path);
+    if(!r.ok) throw new Error('not found');
+    const txt = await r.text();
+    const parsed = parseCSV(txt);
+    const headers = parsed.header;
+    const rows = parsed.rows;
+    const taskCols = {};
+    headers.forEach(h => {
+      const m = h.match(/^(.*)_(CW|CCW)$/i);
+      if(m){
+        const t = m[1].trim();
+        const turn = m[2].toUpperCase();
+        const key = t.toLowerCase();
+        taskCols[key] = taskCols[key] || { taskName: t, CW: null, CCW: null };
+        taskCols[key][turn] = h;
+      }
+    });
+    playerStatsObj = {};
+    rows.forEach(row => {
+      const name = row['Player'] || row['player'] || Object.values(row)[0];
+      if(!name) return;
+      const entry = {
+        Shots: row['Shots'] || row['shots'] || '',
+        AVG_CW: parsePercent(row['AVG_CW']||row['Avg_CW']||row['AVG CW']||''),
+        AVG_CCW: parsePercent(row['AVG_CCW']||row['Avg_CCW']||row['AVG CCW']||''),
+        tasks: {}
+      };
+      Object.values(taskCols).forEach(tc => {
+        const cw = tc.CW ? parsePercent(row[tc.CW]) : null;
+        const ccw = tc.CCW ? parsePercent(row[tc.CCW]) : null;
+        entry.tasks[tc.taskName] = { CW: cw, CCW: ccw };
+      });
+      playerStatsObj[name] = entry;
+    });
+    playerSelect.innerHTML = '<option value="">-- none --</option>';
+    Object.keys(playerStatsObj).sort().forEach(p => playerSelect.appendChild(new Option(p,p)));
+    statusDiv.textContent = (statusDiv.textContent || '') + ' | players loaded';
+  } catch(err){ console.warn('players csv not loaded', err); }
+}
+function parsePercent(s){
+  if(s===null||s===undefined) return null;
+  let t = String(s).trim();
+  if(!t || t.toUpperCase() === 'N/A') return null;
+  t = t.replace('%','').replace(/,/g,'').trim();
+  const n = Number(t); if(isNaN(n)) return null; return n;
+}
+
+/* fetch & merge summary files (backend functionality) */
+async function fetchAndMergeAll(){
+  statusDiv.textContent = 'Loading summary files...';
+  mergedAll = []; byYearMap = {};
+  for(const path of AVAILABLE_SUMMARIES){
+    try {
+      const r = await fetch(path);
+      if(!r.ok){ console.warn('skip', path, r.status); continue; }
+      const arr = await r.json();
+      if(!Array.isArray(arr)) continue;
+      const year = path.split('/').pop().replace('summary_','').replace('.json','');
+      byYearMap[year] = arr;
+      mergedAll = mergedAll.concat(arr);
+      statusDiv.textContent = `Loaded ${path} (${arr.length}) — total ${mergedAll.length}`;
+    } catch(err){ console.warn('fetch error', path, err); }
+  }
+  statusDiv.textContent = `Loaded ${mergedAll.length} ends across ${Object.keys(byYearMap).length} files.`;
+  try { await loadPlayersCSV('/data/players_stats_spreadsheet.csv'); } catch(e){ console.warn('player CSV auto-load failed', e); }
+}
+
+/* ========== Helpers for multi-select values ========== */
+function getSelectedValues(selectEl){
+  if(!selectEl) return [];
+  const vals = [];
+  for(const opt of Array.from(selectEl.options)){
+    if(opt.selected) vals.push(opt.value);
+  }
+  // if none selected => treat as wildcard (Any)
+  return vals.length ? vals : ['Any'];
+}
+
+/* constraints helpers (now expecting multi-selects) */
+function readConstraints(){
+  const tasks = document.querySelectorAll('.taskSel');
+  const turns = document.querySelectorAll('.turnSel');
+  const out = [];
+  for(let i=0;i<16;i++){
+    const taskSel = tasks[i];
+    const turnSel = turns[i];
+    const taskVals = getSelectedValues(taskSel); // array
+    const turnVals = getSelectedValues(turnSel); // array
+    out.push({ task: taskVals, turn: turnVals });
+  }
+  return out;
+}
+
+/* matchesConstraint now supports arrays (multi-select) */
+function matchesConstraint(endRec, cons){
+  for(let i=0;i<cons.length;i++){
+    const c = cons[i];
+    // if both are wildcards skip
+    const isTaskAny = c.task.includes('Any');
+    const isTurnAny = c.turn.includes('Any');
+    if(isTaskAny && isTurnAny) continue;
+    const shot = (endRec.shots||[]).find(s => Number(s.shot_num) === i+1);
+    if(!shot) return false;
+    const shotTask = (shot.task||'').toString();
+    const shotTurn = (shot.turn||'').toString().toUpperCase();
+
+    // Task matching: if Any selected it's fine; otherwise check if shotTask matches any selected option
+    if(!isTaskAny){
+      let matchedTaskOption = false;
+      for(const opt of c.task){
+        if(opt === 'Any') { matchedTaskOption = true; break; }
+        if(opt.toLowerCase() === 'guard'){
+          if(/guard/i.test(shotTask)) { matchedTaskOption = true; break; }
+        } else if(opt.toLowerCase() === 'front'){
+          if(/^front$/i.test(shotTask)) { matchedTaskOption = true; break; }
+        } else {
+          if(shotTask && shotTask.toLowerCase() === opt.toLowerCase()) { matchedTaskOption = true; break; }
+        }
+      }
+      if(!matchedTaskOption) return false;
+    }
+
+    // Turn matching: if Any it's fine; otherwise shot's turn must be included in selected turn options
+    if(!isTurnAny){
+      // normalize selected turns to uppercase
+      const selectedTurnsUpper = c.turn.map(x => x.toUpperCase());
+      if(!selectedTurnsUpper.includes(shotTurn)) return false;
+    }
+  }
+  return true;
+}
+
+/* scoring helpers */
+function scoreBucket(n){
+  if(n == null) return null;
+  if(n <= -3) return '-3+';
+  if(n === -2) return '-2';
+  if(n === -1) return '-1';
+  if(n === 0) return '0';
+  if(n === 1) return '1';
+  if(n === 2) return '2';
+  if(n >= 3) return '3+';
+  return null;
+}
+function computeEstimateFromCounts(countsArr, total){
+  if(!countsArr || total === 0) return null;
+  let sum = 0; for(let i=0;i<BUCKETS.length;i++){ sum += (BUCKET_VAL[BUCKETS[i]] * (countsArr[i] || 0)); }
+  return sum / total;
+}
+function formatEstimate(x){ if(x==null) return 'N/A'; return (Math.round(x*10)/10).toFixed(1); }
+
+/* toggle condensed/expanded */
+let condensed = true;
+toggleViewBtn.addEventListener('click', ()=>{
+  condensed = !condensed;
+  toggleViewBtn.textContent = condensed ? 'Expanded View' : 'Condensed View';
+  if(document.querySelector('#results table')) document.getElementById('analyzeBtn').click();
+});
+
+/* MAIN analyze - now supports gender & category multi-filters */
+document.getElementById('analyzeBtn').addEventListener('click', ()=>{
+  let dataset = mergedAll;
+  const dsChoice = datasetSelect.value;
+  if(dsChoice && dsChoice !== 'ALL' && byYearMap[dsChoice]) dataset = byYearMap[dsChoice];
+  const yf = yearFilter.value;
+  if(yf && yf !== 'ALL' && byYearMap[yf]) dataset = byYearMap[yf];
+
+  const cons = readConstraints();
+  const evalPos = Number(evalPosSelect.value);
+  const startDate = document.getElementById('startDate').value;
+  const endDate = document.getElementById('endDate').value;
+  const maxEndsRem = Number(document.getElementById('maxEndsRem').value || 10);
+  const playerName = playerSelect.value || '';
+
+  const sd = startDate ? new Date(startDate) : null;
+  const ed = endDate ? new Date(endDate) : null;
+
+  // read gender/category multi-select sets (if 'Any' returned treat as wildcard)
+  const genderSelected = getSelectedValues(genderSelect);
+  const categorySelected = getSelectedValues(categorySelect);
+  const genderIsAny = genderSelected.includes('Any') || genderSelected.length === 0;
+  const categoryIsAny = categorySelected.includes('Any') || categorySelected.length === 0;
+
+  // prepare accumulators
+  const candidateTasks = TASK_OPTIONS.filter(t => t !== 'Any');
+  const pairs = []; candidateTasks.forEach(t => ['CW','CCW'].forEach(turn => pairs.push({task:t, turn:turn})));
+  const accum = {}; pairs.forEach(p => { accum[`${p.task}||${p.turn}`] = { total:0, counts: BUCKETS.map(()=>0) }; });
+
+  let matchedEnds = 0;
+  for(const endRec of dataset){
+    // filter by date
+    if(sd || ed){
+      if(endRec.date){
+        const d = new Date(endRec.date);
+        if(sd && d < sd) continue;
+        if(ed && d > ed) continue;
+      }
+    }
+    // filter by ends_remaining
+    if(endRec.ends_remaining != null){
+      if(Number(endRec.ends_remaining) > maxEndsRem) continue;
+    }
+    // filter by gender
+    if(!genderIsAny){
+      const recGender = (endRec.gender || 'Unknown');
+      // match if any selected entry is contained in recGender (case-insensitive)
+      const ok = genderSelected.some(g => recGender && recGender.toString().toLowerCase().includes(g.toString().toLowerCase()));
+      if(!ok) continue;
+    }
+    // filter by category
+    if(!categoryIsAny){
+      const recCat = (endRec.category || 'Other');
+      const okc = categorySelected.some(c => recCat && recCat.toString().toLowerCase().includes(c.toString().toLowerCase()));
+      if(!okc) continue;
+    }
+
+    // constraint matching (task/turn per shot)
+    if(!matchesConstraint(endRec, cons)) continue;
+
+    // passed filters
+    matchedEnds++;
+    const evalShot = (endRec.shots || []).find(s => Number(s.shot_num) === evalPos);
+    if(!evalShot) continue;
+    const shotTask = (evalShot.task||'').toString();
+    const shotTurn = (evalShot.turn||'').toString().toUpperCase();
+    const signed = (endRec.signed_score == null) ? null : Number(endRec.signed_score);
+    if(signed == null) continue;
+
+    for(const p of pairs){
+      let matchTask=false;
+      if(p.task.toLowerCase() === 'guard') matchTask = /guard/i.test(shotTask);
+      else if(p.task.toLowerCase() === 'front') matchTask = /^front$/i.test(shotTask);
+      else matchTask = shotTask && shotTask.toLowerCase() === p.task.toLowerCase();
+      if(!matchTask) continue;
+      if(shotTurn !== p.turn) continue;
+      const key = `${p.task}||${p.turn}`;
+      const b = scoreBucket(signed);
+      if(!b) continue;
+      const idx = BUCKETS.indexOf(b);
+      if(idx >= 0){ accum[key].counts[idx] += 1; accum[key].total += 1; }
+    }
+  }
+
+  // Build rows (condensed combines turns)
+  const rowsPre = [];
+  if(condensed){
+    for(const task of TASK_OPTIONS.filter(t=>t!=='Any')){
+      const aCW = accum[`${task}||CW`] || {total:0, counts: BUCKETS.map(()=>0)};
+      const aCCW = accum[`${task}||CCW`] || {total:0, counts: BUCKETS.map(()=>0)};
+      const total = (aCW.total||0) + (aCCW.total||0);
+      const counts = BUCKETS.map((_,i) => (aCW.counts[i]||0) + (aCCW.counts[i]||0));
+      rowsPre.push({ task, turn:'BOTH', total, counts, parts:{cwTotal:aCW.total||0, ccwTotal:aCCW.total||0} });
+    }
+  } else {
+    for(const [key,entry] of Object.entries(accum)){
+      const total = entry.total || 0;
+      const [task, turn] = key.split('||');
+      rowsPre.push({ task, turn, total, counts: entry.counts });
+    }
+  }
+
+  // matchedEnds used to compute Support%
+  const rowsFiltered = [];
+  rowsPre.forEach(r => {
+    const supportPct = matchedEnds === 0 ? 0 : (r.total / matchedEnds * 100);
+    if(supportPct >= MIN_SUPPORT) rowsFiltered.push(Object.assign({}, r, { supportPct }));
+  });
+
+  // sort rows by support% descending
+  rowsFiltered.sort((a,b) => b.supportPct - a.supportPct);
+
+  // compute dynamic bucket scaling for expanded view
+  let bucketPctValues = [];
+  if(!condensed){
+    rowsFiltered.forEach(r => {
+      for(let i=0;i<r.counts.length;i++){
+        const pct = r.total === 0 ? null : (r.counts[i] / r.total * 100);
+        if(pct != null) bucketPctValues.push(pct);
+      }
+    });
+  }
+  let globalMin = bucketPctValues.length ? Math.min(...bucketPctValues) : 0;
+  let globalMax = bucketPctValues.length ? Math.max(...bucketPctValues) : 1;
+  if(globalMin === globalMax){ globalMin = 0; globalMax = globalMin + 1; }
+
+  // compute estimates & player-adjusted & maxima
+  let maxEstimate = -Infinity, maxPlayerAdj = -Infinity;
+  rowsFiltered.forEach(r => {
+    r.estimate = computeEstimateFromCounts(r.counts, r.total);
+    if(r.estimate != null && r.estimate > maxEstimate) maxEstimate = r.estimate;
+    let playerPct = null;
+    if(playerName && playerStatsObj && playerStatsObj[playerName]){
+      const pd = playerStatsObj[playerName].tasks || {};
+      if(condensed){
+        const pdEntry = pd[r.task] || {};
+        const cw = pdEntry.CW, ccw = pdEntry.CCW;
+        if(cw != null && ccw != null) playerPct = (cw + ccw) / 2.0;
+        else if(cw != null) playerPct = cw;
+        else if(ccw != null) playerPct = ccw;
+      } else {
+        const pdEntry = pd[r.task] || {};
+        playerPct = (r.turn === 'CW') ? pdEntry.CW : pdEntry.CCW;
+      }
+    }
+    r.playerPct = playerPct;
+    r.playerAdj = (playerPct == null || r.estimate == null) ? null : (r.estimate * (playerPct/100.0));
+    if(r.playerAdj != null && r.playerAdj > maxPlayerAdj) maxPlayerAdj = r.playerAdj;
+  });
+  if(!isFinite(maxEstimate)) maxEstimate = null;
+  if(!isFinite(maxPlayerAdj)) maxPlayerAdj = null;
+
+  // player header summary (if selected)
+  let playerHeaderHtml = '';
+  if(playerName && playerStatsObj && playerStatsObj[playerName]){
+    const p = playerStatsObj[playerName];
+    const avgcw = p.AVG_CW == null ? 'N/A' : (p.AVG_CW.toFixed(1) + '%');
+    const avgccw = p.AVG_CCW == null ? 'N/A' : (p.AVG_CCW.toFixed(1) + '%');
+    const shots = p.Shots || '';
+    playerHeaderHtml = `<div style="margin-top:8px"> CW ${avgcw}, CCW ${avgccw}, Shots: ${shots}</div>`;
+  }
+
+  // render table
+  resultsDiv.innerHTML = `${playerHeaderHtml}`;
+  if(rowsFiltered.length === 0){
+    resultsDiv.innerHTML += `<div class="muted" style="margin-top:8px">No rows meet the Support% threshold (${MIN_SUPPORT}%).</div>`;
+    statusDiv.textContent = `Matched ${matchedEnds} ends — 0 rows pass Support% ≥ ${MIN_SUPPORT}% `;
+    return;
+  }
+
+  const table = document.createElement('table');
+  const thead = document.createElement('thead');
+  if(condensed){
+    thead.innerHTML = `<tr><th>Shot</th><th>Estimate</th><th>Popularity</th><th>Player</th><th>Adjusted</th></tr>`;
+  } else {
+    thead.innerHTML = `<tr><th>Shot</th><th>Turn</th>${BUCKETS.map(b=>`<th>${b}</th>`).join('')}<th>Estimate</th><th>Popularity</th><th>Player</th><th>Adjusted</th></tr>`;
+  }
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  rowsFiltered.forEach(r => {
+    const tr = document.createElement('tr');
+    if(condensed){
+      const estimateDisp = r.estimate == null ? 'N/A' : formatEstimate(r.estimate);
+      const playerPctDisp = r.playerPct == null ? 'N/A' : (r.playerPct.toFixed(1) + '%');
+      const playerAdjDisp = r.playerAdj == null ? '' : (Math.round(r.playerAdj*10)/10).toFixed(1);
+      tr.innerHTML = `<td>${r.task}</td><td class="center ${r.estimate === maxEstimate ? 'highlight-est' : ''}">${estimateDisp}</td><td class="center">${r.supportPct.toFixed(2)}%</td><td class="center" data-pct="${r.playerPct==null?'':r.playerPct}">${playerPctDisp}</td><td class="center ${r.playerAdj === maxPlayerAdj ? 'highlight-player' : ''}">${playerAdjDisp}</td>`;
+      const pcell = tr.querySelector('td[data-pct]');
+      if(pcell){
+        const pctAttr = pcell.getAttribute('data-pct');
+        if(!pctAttr){ pcell.style.background='#f6f6f6'; pcell.style.color='#666'; }
+        else { const num = Number(pctAttr); pcell.style.background = percentToHSLStatic(num); pcell.style.color = pickTextColor(num); pcell.style.borderRadius='4px'; }
+      }
+    } else {
+      let html = `<td>${r.task}</td><td>${r.turn}</td>`;
+      for(let i=0;i<r.counts.length;i++){
+        const cnt = r.counts[i]; const pct = r.total === 0 ? null : (r.counts[i] / r.total * 100);
+        const disp = pct==null? 'N/A' : (pct.toFixed(1)+'%');
+        let styleAttr = '';
+        if(pct == null) {
+          styleAttr = 'style="background:#f6f6f6;color:#666"';
+        } else {
+          const norm = (pct - globalMin) / (globalMax - globalMin);
+          const hue = (norm * 120);
+          const bg = `hsl(${hue},78%,45%)`;
+          const text = (pct < 55) ? '#fff' : '#000';
+          styleAttr = `style="background:${bg};color:${text};border-radius:6px"`;
+        }
+        html += `<td ${styleAttr} data-pct="${pct==null?'':pct.toFixed(1)}">${disp}</td>`;
+      }
+      const estimateDisp = r.estimate==null? 'N/A' : formatEstimate(r.estimate);
+      const playerPctDisp = r.playerPct==null? 'N/A' : (r.playerPct.toFixed(1) + '%');
+      const playerAdjDisp = r.playerAdj==null? '' : (Math.round(r.playerAdj*10)/10).toFixed(1);
+      html += `<td class="center ${r.estimate === maxEstimate ? 'highlight-est' : ''}">${estimateDisp}</td><td class="center">${r.supportPct.toFixed(2)}%</td><td class="center" data-pct="${r.playerPct==null?'':r.playerPct}">${playerPctDisp}</td><td class="center ${r.playerAdj === maxPlayerAdj ? 'highlight-player' : ''}">${playerAdjDisp}</td>`;
+      tr.innerHTML = html;
+      // color player% cell
+      const pcell = tr.querySelector('td[data-pct]');
+      if(pcell){
+        const pctAttr = pcell.getAttribute('data-pct');
+        if(!pctAttr){ pcell.style.background='#f6f6f6'; pcell.style.color='#666'; }
+        else { const num = Number(pctAttr); pcell.style.background = percentToHSLStatic(num); pcell.style.color = pickTextColor(num); pcell.style.borderRadius='4px'; }
+      }
+    }
+    tbody.appendChild(tr);
+  });
+
+  table.appendChild(tbody);
+  resultsDiv.appendChild(table);
+
+  statusDiv.textContent = `Matched ${matchedEnds} ends.`;
+});
+
+/* CSV export */
+document.getElementById('downloadBtn').addEventListener('click', ()=>{
+  const tbl = document.querySelector('#results table');
+  if(!tbl){ alert('No results'); return; }
+  const rows = [];
+  rows.push(Array.from(tbl.tHead.rows[0].cells).map(c => c.textContent));
+  Array.from(tbl.tBodies[0].rows).forEach(r => rows.push(Array.from(r.cells).map(c => c.textContent.replace('%',''))));
+  const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'score_outcome_player_adjusted.csv'; a.click(); URL.revokeObjectURL(url);
+});
+
+/* initial load (keeps backend functionality intact) */
+fetchAndMergeAll();
+
+/* expose hidden load button action (programmatic) */
+document.getElementById('loadAllBtn').addEventListener('click', async ()=> { await fetchAndMergeAll(); });
+
+</script>
+</body>
+</html>
