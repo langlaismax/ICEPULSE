@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Curling Strategy Calculator — Single Column + Better Highlights</title>
+<title>Curling Strategy Calculator</title>
 <style>
   :root{
     --bg:#f6f8fa; --card:#fff; --muted:#6b7280; --text:#111827;
@@ -51,8 +51,6 @@
 
   <!-- controls & results (single column layout) -->
   <section class="card">
-    <h2>Analysis Controls</h2>
-
     <div class="controls" style="margin-bottom:8px">
 	  <div class="control w-110" style="align-self:flex-end"><label>&nbsp;</label><button id="analyzeBtn" class="btn btn-primary">Analyze</button></div>
   	  <div class="control w-200"><label>Player</label><select id="playerSelect"><option value="">-- none --</option></select></div>
@@ -555,4 +553,5 @@ analyzeBtn.addEventListener('click', analyze);
 </script>
 </body>
 </html>
+
 
