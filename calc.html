@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Curling Strategy Calculator</title>
+<title>Rock Equity Calculator</title>
 <style>
   :root{
     --bg:#f6f8fa; --card:#fff; --muted:#6b7280; --text:#111827;
@@ -45,8 +45,9 @@
 <body>
 <div class="wrap">
   <header>
-    <div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.5 7H8.5L12 2zM4 21h16l-8-8-8 8z" fill="white"/></svg><h1>Curling Strategy Calculator</h1></div>
-    <div class="muted" style="margin-left:auto">Tip: hold Ctrl/Cmd to multi-select</div>
+    <div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.5 7H8.5L12 2zM4 21h16l-8-8-8 8z" fill="white"/></svg><h1>Rock Equity Calculator</h1></div>
+	<button id="backHomeBtn" class="alt" title="Back to IcePulse">H2H Calc</button>
+    <div class="muted" style="margin-left:auto">Player stats are used for Adj Equity only.</div>
   </header>
 
   <!-- controls & results (single column layout) -->
@@ -61,9 +62,9 @@
     </div>
 
     <div class="controls" style="margin-bottom:8px">
-	  <div class="control w-180"><label>Ends Left (multi)</label><select id="endsLeftSelect" multiple></select></div>
-      <div class="control w-200"><label>Gender (multi)</label><select id="genderSelect" multiple><option value="Any">Any</option><option>Men</option><option>Women</option><option>Mixed</option></select></div>
-      <div class="control w-240"><label>Category (multi)</label><select id="categorySelect" multiple><option value="Any">Any</option><option>Olympics</option><option>Worlds</option><option>Brier</option><option>Scotties</option><option>Euros</option><option>CIS</option><option>U Sports</option><option>Canadian Jrs</option><option>Canadian U-18s</option><option>Pacific-Asia</option><option>Jr Worlds</option><option>Grand Slams</option><option>OQE</option></select></div>
+	  <div class="control w-180"><label>Ends Left</label><select id="endsLeftSelect" multiple></select></div>
+      <div class="control w-200"><label>Type</label><select id="genderSelect" multiple><option value="Any">Any</option><option>Men</option><option>Women</option><option>Mixed</option></select></div>
+      <div class="control w-240"><label>Event</label><select id="categorySelect" multiple><option value="Any">Any</option><option>Grand Slams</option><option>Olympics</option><option>Worlds</option><option>Brier</option><option>Scotties</option><option>Euros</option><option>CIS</option><option>U Sports</option><option>Canadian Jrs</option><option>Canadian U-18s</option><option>Pacific-Asia</option></select></div>
 
       <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
         <button id="downloadBtn" class="btn">Export CSV</button>
@@ -74,16 +75,17 @@
     <div class="progress-wrap" id="progressWrap"><div class="progress-bar" id="progressBar">0%</div></div>
 
     <div id="results" style="margin-top:12px"></div>
-
+    <div id="status" class="muted" style="margin-bottom:10px"></div>
     <div class="muted-xs" style="margin-top:12px">Results update when you click Analyze. Use Expanded View to see breakdown and edit player defaults.</div>
   </section>
 
   <!-- Player defaults card (used for editing and also now populated when player selected) -->
   <section class="card" id="playerDefaultsPanel" style="display:none;margin-top:12px">
-    <h2>Player Defaults</h2>
-    <div class="muted-xs">If a player is selected, these inputs will be filled with that player's stats</div>
+    <h2>Player</h2>
+    <div class="muted-xs">If a player is selected, these inputs will be filled with that player's stats. Save to input custom stats.</div>
     <div style="display:flex;gap:8px;margin-top:10px">
       <input id="defaultsName" placeholder="Defaults name (optional)" style="flex:1;padding:8px;border-radius:8px;border:1px solid #eef2f7"/>
+	  <button id="saveDefaultsBtn" class="btn btn-primary">Save</button>
       <button id="resetDefaultsBtn" class="btn">Reset</button>
     </div>
 
@@ -120,7 +122,7 @@ let mergedAll = [], byYearMap = {}, playerStatsObj = null;
 
 /* --- CATEGORY ALIASES (add more synonyms here as needed) --- */
 const CATEGORY_ALIASES = {
-  "Grand Slams": ["grand slam","grand slams","grand-slam","grandslam","grand-slam(s)"],
+  "Grand Slams": ["grand slam","grand slams","grand-slam","grandslam","grand-slam(s)","gsoc","other"],
   "Olympics": ["olympic","olympics","winter olympics"],
   "Worlds": ["world championship","worlds","world championships","worlds championship"],
   "Brier": ["brier"],
@@ -133,9 +135,6 @@ const CATEGORY_ALIASES = {
   "Canadian U-18s": ["u-18","u18","canadian u-18","canadian u18","u18s","u-18s"],
   "Pacific-Asia": ["pacific asia","pacific-asian","pacific","asia","pacific asia curling"],
   "Jr Worlds": ["jr worlds","jr. worlds","junior worlds","junior world","jrworlds","world junior"],
-  // also include some common alternate forms for UI-friendly labels
-  "Grand Slam": ["grand slam","grand slams"],
-  "Junior Worlds": ["jr worlds","junior worlds","junior world"]
 };
 
 // helper: normalize a string for comparisons: lowercase, remove punctuation, collapse whitespace
@@ -250,9 +249,11 @@ async function fetchAndMergeAll(){
 /* defaults storage */
 const DEFAULTS_KEY = 'curling_player_defaults_v1';
 function loadDefaultsFromStorage(){ try{ const r=localStorage.getItem(DEFAULTS_KEY); return r? JSON.parse(r): {}; }catch(e){return{}} }
+function saveDefaultsToStorage(obj){ try{ localStorage.setItem(DEFAULTS_KEY, JSON.stringify(obj)); return true;}catch(e){return false;} }
 function readCurrentDefaults(){ const out={}; document.querySelectorAll('.defInput').forEach(inp=>{ const k=`${inp.dataset.task}||${inp.dataset.turn}`; const v = inp.value===''? null: Number(inp.value); out[k] = v===null||isNaN(v) ? null : Math.max(0,Math.min(100,v)); }); return { name: document.getElementById('defaultsName').value||'', values: out }; }
 function applyDefaultsToUI(obj){ if(!obj) return; if(obj.name) document.getElementById('defaultsName').value = obj.name; document.querySelectorAll('.defInput').forEach(inp=>{ const k = `${inp.dataset.task}||${inp.dataset.turn}`; inp.value = (obj.values && obj.values[k] != null) ? String(obj.values[k]) : ''; }); }
 
+document.getElementById('saveDefaultsBtn').addEventListener('click', ()=>{ saveDefaultsToStorage(readCurrentDefaults()); statusDiv.textContent = 'Defaults saved.'; });
 document.getElementById('resetDefaultsBtn').addEventListener('click', ()=>{ if(!confirm('Reset defaults to blank (interpreted as 100%)?')) return; document.querySelectorAll('.defInput').forEach(i=>i.value=''); document.getElementById('defaultsName').value=''; saveDefaultsToStorage({}); statusDiv.textContent='Defaults reset.'; });
 
 /* get active player percent (player selection takes precedence; otherwise defaults or 100) */
@@ -476,9 +477,9 @@ async function analyze(){
   const table = document.createElement('table');
   const thead = document.createElement('thead');
   if(condensed){
-    thead.innerHTML = `<tr><th>Shot</th><th>Estimate</th><th>Popularity</th><th>Player %</th><th>Player-Adj</th></tr>`;
+    thead.innerHTML = `<tr><th>Shot</th><th>Rock Equity</th><th>Popularity</th><th>Player %</th><th>Adj Equity</th></tr>`;
   } else {
-    thead.innerHTML = `<tr><th>Shot</th><th>Turn</th>${BUCKETS.map(b=>`<th>${b}</th>`).join('')}<th>Estimate</th><th>Popularity</th><th>Player %</th><th>Player-Adj</th></tr>`;
+    thead.innerHTML = `<tr><th>Shot</th><th>Turn</th>${BUCKETS.map(b=>`<th>${b}</th>`).join('')}<th>Rock Equity</th><th>Popularity</th><th>Player %</th><th>Adj Equity</th></tr>`;
   }
   table.appendChild(thead);
   const tbody = document.createElement('tbody');
@@ -550,8 +551,11 @@ fetchAndMergeAll().then(()=>{
 
 /* wire analyze button */
 analyzeBtn.addEventListener('click', analyze);
+
+document.getElementById('backHomeBtn').addEventListener('click', function () {
+  window.location.href = 'https://icepulse.ca';
+});
 </script>
 </body>
 </html>
-
 
