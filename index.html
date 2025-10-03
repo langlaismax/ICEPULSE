@@ -70,6 +70,12 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
+<div class="wrap">
+  <header>
+    <div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.5 7H8.5L12 2zM4 21h16l-8-8-8 8z" fill="white"/></svg><h1>Hog to Hog Calculator</h1></div>
+	<button id="openCalcBtn" class="alt" title="Open IcePulse calculator">Rock Equity Calc</button>
+    <div class="muted" style="margin-left:auto">Enter split manually or use the stopwatch, then enter the final location.</div>
+  </header>
   <div class="card">
     <header>
       <div class="top-row">
@@ -528,8 +534,13 @@ setInterval(() => {
   sessionStorage.setItem('splitLog', JSON.stringify(splitLog));
 }, 500);
 
+document.getElementById('openCalcBtn').addEventListener('click', function () {
+window.location.href = 'https://icepulse.ca/calc';
+});
+
 </script>
 </body>
 </html>
+
 
 
