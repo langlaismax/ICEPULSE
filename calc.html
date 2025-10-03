@@ -76,6 +76,10 @@
       <label>Start date</label>
       <input id="startDate" type="date" />
     </div>
+    <div style="width:160px">
+      <label>End date</label>
+      <input id="endDate" type="date" />
+    </div>
 
     <div style="width:200px">
       <label>Player</label>
@@ -122,10 +126,6 @@
       <label>Year filter</label>
       <select id="yearFilter"><option value="ALL">All years</option></select>
     </div>
-    <div class="hide-ui" style="width:170px">
-      <label>End date</label>
-      <input id="endDate" type="date" />
-    </div>
     <div class="hide-ui" style="width:120px">
       <label>Load</label>
       <button id="loadAllBtn">Load all</button>
@@ -158,13 +158,23 @@
 /* ========== CONFIG ========== */
 /* include consolidated summary first */
 const AVAILABLE_SUMMARIES = [
-  "data/summary_consolidated.json",
-  "data/summary_2001.json","data/summary_2002.json","data/summary_2003.json","data/summary_2004.json",
-  "data/summary_2005.json","data/summary_2006.json","data/summary_2007.json","data/summary_2008.json",
-  "data/summary_2009.json","data/summary_2010.json","data/summary_2011.json","data/summary_2012.json",
-  "data/summary_2013.json","data/summary_2014.json","data/summary_2015.json","data/summary_2016.json",
-  "data/summary_2017.json","data/summary_2018.json","data/summary_2019.json","data/summary_2020.json",
-  "data/summary_2021.json","data/summary_2022.json","data/summary_2023.json","data/summary_2024.json",
+  "data/summary_2001.json","data/summary_2002.json",
+  "data/summary_2003.json","data/summary_2004.json",
+  "data/summary_2005.json","data/summary_2006.json",
+  "data/summary_2007.json","data/summary_2008.json",
+  "data/summary_2009.json","data/summary_2010.json",
+  "data/summary_2011.json","data/summary_2012.json",
+  "data/summary_2013.json","data/summary_2014.json",
+  "data/summary_2015.json","data/summary_2016_part1.json",
+  "data/summary_2016_part2.json","data/summary_2017_part1.json",
+  "data/summary_2017_part2.json","data/summary_2017_part3.json",
+  "data/summary_2018_part1.json","data/summary_2018_part2.json",
+  "data/summary_2019_part1.json","data/summary_2019_part2.json",
+  "data/summary_2020.json","data/summary_2021_part1.json",
+  "data/summary_2021_part2.json","data/summary_2022_part1.json",
+  "data/summary_2022_part2.json","data/summary_2023_part1.json",
+  "data/summary_2023_part2.json","data/summary_2023_part3.json",
+  "data/summary_2024_part1.json","data/summary_2024_part2.json",
   "data/summary_2025.json"
 ];
 
@@ -676,3 +686,4 @@ document.getElementById('loadAllBtn').addEventListener('click', async ()=> { awa
 </script>
 </body>
 </html>
+
