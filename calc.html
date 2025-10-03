@@ -1,176 +1,106 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>Curling Strategy Calculator</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Curling Strategy Calculator — Single Column + Better Highlights</title>
 <style>
-  :root{ --muted:#666; --card-pad:8px; --compact-font:12px; --accent:#1f9ef5; }
-  body{font-family:system-ui,Arial,Helvetica,sans-serif;margin:10px auto;max-width:1150px;padding:10px}
-  h2{font-size:1.05rem;margin:6px 0}
-  .card{background:#fff;border:1px solid #e6e6e6;border-radius:8px;padding:var(--card-pad);box-shadow:0 1px 2px rgba(0,0,0,0.03);margin-bottom:10px}
-  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:end}
-  label{font-size:0.78rem;color:var(--muted);display:block;margin-bottom:4px}
-  select,input,button{padding:6px;border:1px solid #dcdcdc;border-radius:6px;font-size:0.88rem}
-  select[multiple]{height:86px;padding:6px}
-  button{background:#fff;cursor:pointer}
-  .muted{color:var(--muted);font-size:0.82rem}
-  .legend{display:flex;gap:8px;align-items:center;margin-top:8px}
-  .swatch{width:120px;height:12px;border-radius:4px}
-  table{border-collapse:collapse;width:100%;font-size:0.88rem;margin-top:8px}
-  thead th{background:#fbfbfb;position:sticky;top:0;z-index:2}
-  th,td{padding:7px;border-bottom:1px solid #f0f0f0;text-align:left}
-  td[data-pct]{border-radius:6px}
-  .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .small{font-size:0.82rem}
-  .note{font-size:0.82rem;color:var(--muted)}
-  .mobile-colhide { display:table-cell; }
-  .center { text-align:center; }
-  .task-card { padding:6px; font-size: var(--compact-font); border-radius:6px; }
-  .task-card .task-title { font-weight:600; font-size:0.82rem; margin-bottom:4px; }
-  .task-card select { font-size:0.8rem; padding:5px; }
-  #constraints { display:grid; grid-template-columns: repeat(8, 1fr); gap:6px; margin-top:10px; }
-  @media (max-width:1200px){ #constraints { grid-template-columns: repeat(6, 1fr); } }
-  @media (max-width:900px){ #constraints { grid-template-columns: repeat(4, 1fr); } }
-  @media (max-width:600px){ #constraints { grid-template-columns: repeat(2, 1fr); } table{display:block;overflow:auto;white-space:nowrap} .mobile-colhide { display:none; } }
-  .hide-ui { display:none !important; }
-
-  /* Progress bar */
-  #progressWrap { height:14px; background:#f3f3f3; border-radius:8px; overflow:hidden; width:100%; margin-top:8px; border:1px solid #eee; }
-  #progressBar { height:100%; width:0%; background:linear-gradient(90deg,var(--accent),#3ad); transition:width 180ms linear; text-align:center;color:#fff;font-size:11px; line-height:14px; }
-
-  /* defaults grid */
-  .defaults-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin-top:8px; }
-  .def-item { border:1px solid #f0f0f0;padding:6px;border-radius:6px; background:#fafafa; }
-  .def-item label{font-size:0.75rem}
-  .muted-small{font-size:0.8rem;color:#666}
-  .btn-primary{background:var(--accent);color:#fff;border:none;padding:8px 10px;border-radius:6px;cursor:pointer}
-  .btn-ghost{background:#fff;color:var(--accent);border:1px solid var(--accent);padding:6px 8px;border-radius:6px;cursor:pointer}
-
-  .highlight-est { outline: 2px solid #ffd54f; border-radius:6px; box-shadow: 0 0 8px rgba(255,213,79,0.25); }
-  .highlight-player { outline: 2px solid #7bed9f; border-radius:6px; box-shadow: 0 0 8px rgba(123,237,159,0.18); }
+  :root{
+    --bg:#f6f8fa; --card:#fff; --muted:#6b7280; --text:#111827;
+    --accent:#0f6fff; --accent-2:#1fb6ff; --card-pad:14px; --radius:10px;
+  }
+  body{margin:18px; font-family:Inter,system-ui,Arial; background:linear-gradient(180deg,var(--bg),#f2f4f6); color:var(--text)}
+  .wrap{max-width:1180px;margin:0 auto}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .logo{display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;padding:8px 12px;border-radius:10px}
+  .logo h1{margin:0;font-size:1rem}
+  .muted{color:var(--muted)}
+  .card{background:var(--card);border-radius:10px;padding:14px;margin-bottom:12px;box-shadow:0 6px 18px rgba(15,23,42,0.06);border:1px solid rgba(15,23,42,0.04)}
+  .controls{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+  .control{display:flex;flex-direction:column}
+  label{font-size:0.78rem;color:var(--muted);margin-bottom:6px}
+  select,input,button{padding:8px;border-radius:8px;border:1px solid #e6e8eb;background:#fff;font-size:0.95rem}
+  select[multiple]{min-height:82px}
+  .w-110{width:110px}.w-160{width:160px}.w-180{width:180px}.w-200{width:200px}.w-240{width:240px}
+  .btn{padding:8px 12px;border-radius:8px;border:1px solid #e6e8eb;background:#fff;cursor:pointer}
+  .btn-primary{background:var(--accent);color:#fff;border:none;box-shadow:0 6px 20px rgba(15,111,255,0.12)}
+  #constraints{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+  @media(max-width:1000px){#constraints{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:700px){#constraints{grid-template-columns:repeat(2,1fr)}}
+  .task-card{padding:10px;border-radius:8px;border:1px solid #f0f2f4;background:linear-gradient(180deg,#fff,#fbfdff)}
+  .task-title{font-weight:700;margin-bottom:8px}
+  table{width:100%;border-collapse:collapse;margin-top:12px;font-size:0.92rem}
+  thead th{background:linear-gradient(180deg,#f8fafc,#fff);position:sticky;top:0;padding:10px;text-align:left;color:var(--muted)}
+  td,th{padding:8px 10px;border-bottom:1px solid #f0f2f4}
+  .center{text-align:center}
+  .swatch{width:160px;height:14px;border-radius:6px;background:linear-gradient(90deg,hsl(0,78%,45%),hsl(60,78%,45%),hsl(120,78%,45%))}
+  .progress-wrap{height:14px;background:#eef2f7;border-radius:10px;margin-top:10px;overflow:hidden;border:1px solid #eef3fb;display:none}
+  .progress-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));width:0%;color:white;font-size:11px;display:flex;align-items:center;justify-content:center}
+  /* new highlight cell styles */
+  .cell-best-est{background:linear-gradient(90deg,#ffe5b4,#ffcf6b);color:#111;font-weight:700;border-radius:6px}
+  .cell-best-player{background:linear-gradient(90deg,#bff3d0,#50d88a);color:#022;font-weight:700;border-radius:6px}
+  .muted-xs{color:var(--muted);font-size:0.86rem}
 </style>
 </head>
 <body>
-<h2>Curling Strategy Calculator</h2>
+<div class="wrap">
+  <header>
+    <div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.5 7H8.5L12 2zM4 21h16l-8-8-8 8z" fill="white"/></svg><h1>Curling Strategy Calculator</h1></div>
+    <div class="muted" style="margin-left:auto">Tip: hold Ctrl/Cmd to multi-select</div>
+  </header>
 
-<div class="card" id="top-controls">
-  <div class="controls">
-    <div style="width:110px">
-      <label>Evaluate shot</label>
-      <select id="evalPos"></select>
+  <!-- controls & results (single column layout) -->
+  <section class="card">
+    <h2>Analysis Controls</h2>
+
+    <div class="controls" style="margin-bottom:8px">
+	  <div class="control w-110" style="align-self:flex-end"><label>&nbsp;</label><button id="analyzeBtn" class="btn btn-primary">Analyze</button></div>
+  	  <div class="control w-200"><label>Player</label><select id="playerSelect"><option value="">-- none --</option></select></div>
+      <div class="control w-110"><label>Evaluate shot</label><select id="evalPos"></select></div>
+      <div class="control w-160"><label>Start date</label><input id="startDate" type="date" /></div>
+      <div class="control w-160"><label>End date</label><input id="endDate" type="date" /></div> 
+	  <div class="control w-240"><label>Minimum Popularity</label><div style="display:flex;gap:8px;align-items:center"><input id="supportSlider" type="range" min="0" max="5" step="0.1" value="0.1" /><div id="supportVal" style="min-width:64px;text-align:center;font-weight:600">0.1%</div></div></div>
     </div>
 
-    <div style="width:160px">
-      <label>Ends filter mode</label>
-      <select id="endsMode">
-        <option value="Any">Any</option>
-        <option value="AtMost">At most N</option>
-        <option value="Exactly">Exactly N</option>
-        <option value="LastN">Last N</option>
-      </select>
-    </div>
-    <div style="width:120px">
-      <label>N (for mode)</label>
-      <input id="endsNum" type="number" min="0" value="10" />
-    </div>
+    <div class="controls" style="margin-bottom:8px">
+	  <div class="control w-180"><label>Ends Left (multi)</label><select id="endsLeftSelect" multiple></select></div>
+      <div class="control w-200"><label>Gender (multi)</label><select id="genderSelect" multiple><option value="Any">Any</option><option>Men</option><option>Women</option><option>Mixed</option></select></div>
+      <div class="control w-240"><label>Category (multi)</label><select id="categorySelect" multiple><option value="Any">Any</option><option>Olympics</option><option>Worlds</option><option>Brier</option><option>Scotties</option><option>Euros</option><option>CIS</option><option>U Sports</option><option>Canadian Jrs</option><option>Canadian U-18s</option><option>Pacific-Asia</option><option>Jr Worlds</option><option>Grand Slams</option><option>OQE</option></select></div>
 
-    <div style="width:180px">
-      <label>Support% (min)</label>
-      <div style="display:flex;gap:8px;align-items:center">
-        <input id="supportSlider" type="range" min="0" max="5" step="0.1" value="0.1" style="flex:1" />
-        <div style="width:72px;text-align:center;font-weight:600" id="supportVal">0.1%</div>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <button id="downloadBtn" class="btn">Export CSV</button>
+        <button id="toggleViewBtn" class="btn">Expanded View</button>
       </div>
     </div>
 
-    <div style="width:120px">
-      <label>Click</label>
-      <button id="analyzeBtn">Analyze</button>
+    <div class="progress-wrap" id="progressWrap"><div class="progress-bar" id="progressBar">0%</div></div>
+
+    <div id="results" style="margin-top:12px"></div>
+
+    <div class="muted-xs" style="margin-top:12px">Results update when you click Analyze. Use Expanded View to see breakdown and edit player defaults.</div>
+  </section>
+
+  <!-- Player defaults card (used for editing and also now populated when player selected) -->
+  <section class="card" id="playerDefaultsPanel" style="display:none;margin-top:12px">
+    <h2>Player Defaults</h2>
+    <div class="muted-xs">If a player is selected, these inputs will be filled with that player's stats</div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <input id="defaultsName" placeholder="Defaults name (optional)" style="flex:1;padding:8px;border-radius:8px;border:1px solid #eef2f7"/>
+      <button id="resetDefaultsBtn" class="btn">Reset</button>
     </div>
 
-    <div style="width:160px">
-      <label>Start date</label>
-      <input id="startDate" type="date" />
-    </div>
-    <div style="width:160px">
-      <label>End date</label>
-      <input id="endDate" type="date" />
-    </div>
+    <div id="defaultsGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px"></div>
+  </section>
 
-    <div style="width:200px">
-      <label>Player</label>
-      <select id="playerSelect"><option value="">-- none --</option></select>
-    </div>
-
-    <div style="width:200px">
-      <label>Gender (multi)</label>
-      <select id="genderSelect" multiple title="Hold Ctrl/Cmd to multi-select (or tap)">
-        <option value="Any">Any</option>
-        <option value="Men">Men</option>
-        <option value="Women">Women</option>
-        <option value="Mixed">Mixed</option>
-      </select>
-    </div>
-
-    <div style="width:260px">
-      <label>Category (multi)</label>
-      <select id="categorySelect" multiple title="Hold Ctrl/Cmd to multi-select">
-        <option value="Any">Any</option>
-        <option value="Grand Slams">Grand Slams</option>
-        <option value="Olympics">Olympics</option>
-        <option value="Worlds">Worlds</option>
-        <option value="Brier">Brier</option>
-        <option value="Scotties">Scotties</option>
-        <option value="Euros">Euros</option>
-        <option value="OQE">OQE</option>
-        <option value="CIS">CIS</option>
-        <option value="U Sports">U Sports</option>
-        <option value="Canadian Jrs">Canadian Jrs</option>
-        <option value="Canadian U-18s">Canadian U-18s</option>
-        <option value="Pacific-Asia">Pacific-Asia</option>
-        <option value="Jr Worlds">Jr Worlds</option>
-      </select>
-    </div>
-
-    <div style="margin-left:auto; display:flex; gap:8px; align-items:center">
-      <button id="downloadBtn">Export CSV</button>
-      <button id="toggleViewBtn">Expanded View</button>
-    </div>
-  </div>
-
-  <div id="progressWrap" style="display:none"><div id="progressBar">0%</div></div>
-  <div id="status" class="muted" style="margin-top:8px"></div>
-  <div id="results" style="margin-top:8px"></div>
-</div>
-
-<!-- Player Defaults card -->
-<div class="card" id="playerDefaultsCard">
-  <div style="display:flex;justify-content:space-between;align-items:center">
-    <div><strong>Player Defaults</strong> — used when no player selected (blank = 100%)</div>
-    <div style="display:flex;gap:8px">
-      <input id="defaultsName" placeholder="Default name (optional)" style="padding:6px;border-radius:6px;border:1px solid #ddd" />
-      <button id="saveDefaultsBtn" class="btn-primary">Save Defaults</button>
-      <button id="resetDefaultsBtn" class="btn-ghost">Reset 100%</button>
-    </div>
-  </div>
-
-  <div class="muted-small" style="margin-top:6px">Enter per-task percentages (0–100). Leave blank for 100%. Example: Guard_CW = 95 means 95%.</div>
-
-  <div class="defaults-grid" id="defaultsGrid"></div>
-</div>
-
-<!-- Shot selection (bottom) -->
-<div class="card">
-  <div style="font-weight:600;margin-bottom:6px">Shot selection (bottom)</div>
-  <div id="constraints"></div>
-  <div class="legend" style="margin-top:10px">
-    <div class="small">Bucket color legend (dynamic per-table)</div>
-    <div class="swatch" id="legendSwatch"></div>
-  </div>
+  <!-- shot selection (bottom) -->
+  <section class="card" style="margin-top:12px">
+    <h2>Shot selection</h2>
+    <div id="constraints"></div>
+  </section>
 </div>
 
 <script>
-/* ========= Configuration (keeps your summary filenames) ========= */
+/* ========== Config & small helpers ========== */
 const AVAILABLE_SUMMARIES = [
   "data/summary_2001.json","data/summary_2002.json","data/summary_2003.json","data/summary_2004.json",
   "data/summary_2005.json","data/summary_2006.json","data/summary_2007.json","data/summary_2008.json",
@@ -183,487 +113,368 @@ const AVAILABLE_SUMMARIES = [
   "data/summary_2024_part1.json","data/summary_2024_part2.json","data/summary_2025.json"
 ];
 
-const TASK_OPTIONS = ["Any","Draw","Guard","Front","Take-out","Hit-roll","Double","Raise","Freeze","Clearing","Through","Wick","Promotion","Other"];
-const TURN_OPTIONS = ["Any","CW","CCW","UNKNOWN"];
+const TASK_OPTIONS = ["Any","Draw","Guard","Front","Take-out","Hit-roll","Double","Raise","Freeze","Clearing","Through","Wick","Promotion"];
+const TURN_OPTIONS = ["Any","CW","CCW"];
 const BUCKETS = ['-3+','-2','-1','0','1','2','3+'];
-const BUCKET_VAL = {'-3+': -3, '-2': -2, '-1': -1, '0': 0, '1': 1, '2': 2, '3+': 3 };
+const BUCKET_VAL = {'-3+': -3,'-2': -2,'-1': -1,'0':0,'1':1,'2':2,'3+':3};
 
-/* ========= DOM refs ========= */
-const evalPosSelect = document.getElementById('evalPos');
-const statusDiv = document.getElementById('status');
-const resultsDiv = document.getElementById('results');
-const playerSelect = document.getElementById('playerSelect');
-const constraintsDiv = document.getElementById('constraints');
-const toggleViewBtn = document.getElementById('toggleViewBtn');
-const genderSelect = document.getElementById('genderSelect');
-const categorySelect = document.getElementById('categorySelect');
+let mergedAll = [], byYearMap = {}, playerStatsObj = null;
+
+/* --- CATEGORY ALIASES (add more synonyms here as needed) --- */
+const CATEGORY_ALIASES = {
+  "Grand Slams": ["grand slam","grand slams","grand-slam","grandslam","grand-slam(s)"],
+  "Olympics": ["olympic","olympics","winter olympics"],
+  "Worlds": ["world championship","worlds","world championships","worlds championship"],
+  "Brier": ["brier"],
+  "Scotties": ["scotties","scotties tournament","scotties tournament of hearts","tournament of hearts"],
+  "Euros": ["european","euros","europeans","european championships"],
+  "OQE": ["oqe","olympic qualifying","olympic qualifier"],
+  "CIS": ["cis","canadian interuniversity","u sports older name cis"],
+  "U Sports": ["u sports","u-sports"],
+  "Canadian Jrs": ["canadian juniors","canadian jrs","juniors","junior canada","canadian jr"],
+  "Canadian U-18s": ["u-18","u18","canadian u-18","canadian u18","u18s","u-18s"],
+  "Pacific-Asia": ["pacific asia","pacific-asian","pacific","asia","pacific asia curling"],
+  "Jr Worlds": ["jr worlds","jr. worlds","junior worlds","junior world","jrworlds","world junior"],
+  // also include some common alternate forms for UI-friendly labels
+  "Grand Slam": ["grand slam","grand slams"],
+  "Junior Worlds": ["jr worlds","junior worlds","junior world"]
+};
+
+// helper: normalize a string for comparisons: lowercase, remove punctuation, collapse whitespace
+function normalizeStr(s){
+  if(!s) return '';
+  return String(s).toLowerCase().replace(/[^\w\s]/g,' ').replace(/\s+/g,' ').trim();
+}
+
+/* DOM refs */
+const evalPos = document.getElementById('evalPos');
+const endsLeftSelect = document.getElementById('endsLeftSelect');
 const supportSlider = document.getElementById('supportSlider');
 const supportVal = document.getElementById('supportVal');
-const endsMode = document.getElementById('endsMode');
-const endsNum = document.getElementById('endsNum');
+const analyzeBtn = document.getElementById('analyzeBtn');
+const resultsDiv = document.getElementById('results');
+const statusDiv = document.getElementById('status');
 const progressWrap = document.getElementById('progressWrap');
 const progressBar = document.getElementById('progressBar');
+const playerSelect = document.getElementById('playerSelect');
+const playerDefaultsPanel = document.getElementById('playerDefaultsPanel');
+const defaultsGrid = document.getElementById('defaultsGrid');
+const toggleViewBtn = document.getElementById('toggleViewBtn');
+const downloadBtn = document.getElementById('downloadBtn');
+const genderSelect = document.getElementById('genderSelect');
+const categorySelect = document.getElementById('categorySelect');
+const startDateEl = document.getElementById('startDate');
+const endDateEl = document.getElementById('endDate');
+const constraintsDiv = document.getElementById('constraints');
 
-let mergedAll = [];
-let byYearMap = {};
-let playerStatsObj = null;
+/* init UI */
+for(let i=1;i<=16;i++) evalPos.appendChild(new Option(i,i));
+endsLeftSelect.appendChild(new Option('Any','Any',true,true));
+for(let v=10; v>=0; v--) endsLeftSelect.appendChild(new Option(String(v), String(v)));
+supportVal.textContent = supportSlider.value + '%';
+supportSlider.addEventListener('input', ()=> supportVal.textContent = supportSlider.value + '%');
 
-/* ========= init UI ========= */
-for (let i=1;i<=16;i++) evalPosSelect.appendChild(new Option(i,i));
-document.querySelectorAll('.taskSel') // none yet; constraints built below
-
-/* build constraints UI (16 task+turn selectors in small cards) */
-for (let i=0;i<16;i++){
-  const wrapper = document.createElement('div');
-  wrapper.className = 'task-card card';
-  wrapper.style.padding = '6px';
+/* build shot cards */
+for(let i=0;i<16;i++){
+  const wrapper = document.createElement('div'); wrapper.className='task-card';
   wrapper.innerHTML = `<div class="task-title">Shot ${i+1}</div>
-    <select data-index="${i}" class="taskSel" title="Task ${i+1}" multiple size="4"></select>
-    <div style="height:6px"></div>
-    <select data-index="${i}" class="turnSel" title="Turn ${i+1}" multiple size="3"></select>`;
+    <select data-index="${i}" class="taskSel" multiple size="4"></select>
+    <div style="height:8px"></div>
+    <select data-index="${i}" class="turnSel" multiple size="3"></select>`;
   constraintsDiv.appendChild(wrapper);
 }
-document.querySelectorAll('.taskSel').forEach(s=> { TASK_OPTIONS.forEach(t=> s.add(new Option(t,t))); s.value='Any'; s.style.width='100%'; });
-document.querySelectorAll('.turnSel').forEach(s=> { TURN_OPTIONS.forEach(t=> s.add(new Option(t,t))); s.value='Any'; s.style.width='100%'; });
+document.querySelectorAll('.taskSel').forEach(s=> { TASK_OPTIONS.forEach(t=> s.add(new Option(t,t))); s.value='Any'; });
+document.querySelectorAll('.turnSel').forEach(s=> { TURN_OPTIONS.forEach(t=> s.add(new Option(t,t))); s.value='Any'; });
 
-/* defaults grid creation */
-const defaultsGrid = document.getElementById('defaultsGrid');
-const DEFAULT_TASKS = TASK_OPTIONS.filter(t => t !== 'Any');
-DEFAULT_TASKS.forEach(task => {
-  const div = document.createElement('div');
-  div.className = 'def-item';
-  div.innerHTML = `<div style="font-weight:600;margin-bottom:6px">${task}</div>
-    <label> CW <input data-task="${task}" data-turn="CW" class="defInput" type="number" min="0" max="100" placeholder="100" style="width:78px;padding:4px;margin-right:6px" /></label>
-    <label> CCW <input data-task="${task}" data-turn="CCW" class="defInput" type="number" min="0" max="100" placeholder="100" style="width:78px;padding:4px" /></label>`;
+/* defaults grid */
+const DEFAULT_TASKS = TASK_OPTIONS.filter(t=>t!=='Any');
+DEFAULT_TASKS.forEach(task=>{
+  const div = document.createElement('div'); div.style.background='linear-gradient(180deg,#fff,#fbfdff)'; div.style.padding='8px'; div.style.borderRadius='8px';
+  div.innerHTML = `<div style="font-weight:700;margin-bottom:6px">${task}</div>
+    <div style="display:flex;gap:8px;align-items:center"><label class="muted-xs" style="width:40px">CW</label><input data-task="${task}" data-turn="CW" class="defInput" placeholder="100" type="number" min="0" max="100" /></div>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:6px"><label class="muted-xs" style="width:40px">CCW</label><input data-task="${task}" data-turn="CCW" class="defInput" placeholder="100" type="number" min="0" max="100" /></div>`;
   defaultsGrid.appendChild(div);
 });
 
-/* ========= players CSV parsing (keeps dropdown) ========= */
-function splitCSVLine(line){
-  const out=[]; let cur=''; let inQuote=false;
-  for(let i=0;i<line.length;i++){
-    const ch=line[i];
-    if(inQuote){
-      if(ch==='\"'){
-        if(line[i+1]==='\"'){ cur += '\"'; i++; }
-        else { inQuote=false; }
-      } else cur += ch;
-    } else {
-      if(ch===','){ out.push(cur); cur=''; }
-      else if(ch==='"'){ inQuote=true; }
-      else cur += ch;
-    }
-  }
-  out.push(cur);
-  return out;
-}
-function parseCSV(text){
-  const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
-  if(lines.length===0) return {header:[],rows:[]};
-  const header = splitCSVLine(lines[0]).map(h=>h.trim());
-  const rows = [];
-  for(let i=1;i<lines.length;i++){
-    const cols = splitCSVLine(lines[i]);
-    if(cols.length===0) continue;
-    const obj = {};
-    for(let j=0;j<header.length;j++) obj[header[j]] = (cols[j]===undefined? '': cols[j]);
-    rows.push(obj);
-  }
-  return {header, rows};
-}
+/* CSV parsing (for players) */
+function splitCSVLine(line){ const out=[]; let cur=''; let inQ=false; for(let i=0;i<line.length;i++){ const ch=line[i]; if(inQ){ if(ch==='\"'){ if(line[i+1]==='\"'){ cur+='"'; i++; } else inQ=false; } else cur+=ch; } else { if(ch===','){ out.push(cur); cur=''; } else if(ch==='"'){ inQ=true; } else cur+=ch; } } out.push(cur); return out; }
+function parseCSV(text){ const lines=text.split(/\r?\n/).filter(l=>l.trim()!==''); if(lines.length===0) return {header:[],rows:[]}; const header = splitCSVLine(lines[0]).map(h=>h.trim()); const rows=[]; for(let i=1;i<lines.length;i++){ const cols=splitCSVLine(lines[i]); if(cols.length===0) continue; const obj={}; for(let j=0;j<header.length;j++) obj[header[j]] = cols[j]===undefined? '' : cols[j]; rows.push(obj);} return {header, rows}; }
+function parsePercent(s){ if(s===null||s===undefined) return null; let t=String(s).trim(); if(!t || t.toUpperCase()==='N/A') return null; t=t.replace('%','').replace(/,/g,'').trim(); const n=Number(t); return isNaN(n)? null : n; }
+
+/* ======== loadPlayersCSV (UPDATED to show count) ======== */
 async function loadPlayersCSV(path='/data/players_stats_spreadsheet.csv'){
-  try {
-    const r = await fetch(path);
-    if(!r.ok) throw new Error('not found');
-    const txt = await r.text();
-    const parsed = parseCSV(txt);
-    const headers = parsed.header;
-    const rows = parsed.rows;
+  try{
+    const r = await fetch(path); if(!r.ok) throw new Error('not found'); const txt = await r.text();
+    const parsed = parseCSV(txt); const headers = parsed.header; const rows = parsed.rows;
     const taskCols = {};
-    headers.forEach(h => {
-      const m = h.match(/^(.*)_(CW|CCW)$/i);
-      if(m){
-        const t = m[1].trim();
-        const turn = m[2].toUpperCase();
-        taskCols[t] = taskCols[t] || {taskName: t, CW: null, CCW: null};
-        taskCols[t][turn] = h;
-      }
-    });
+    headers.forEach(h=>{ const m = h.match(/^(.*)_(CW|CCW)$/i); if(m){ const t=m[1].trim(); const turn=m[2].toUpperCase(); taskCols[t] = taskCols[t] || {taskName:t, CW:null, CCW:null}; taskCols[t][turn] = h; } });
     playerStatsObj = {};
-    rows.forEach(row => {
-      const name = row['Player'] || row['player'] || Object.values(row)[0];
-      if(!name) return;
+    rows.forEach(row=>{
+      const name = row['Player'] || row['player'] || Object.values(row)[0]; if(!name) return;
       const entry = { Shots: row['Shots']||'', AVG_CW: parsePercent(row['AVG_CW']||''), AVG_CCW: parsePercent(row['AVG_CCW']||''), tasks:{} };
-      Object.values(taskCols).forEach(tc => {
-        const cw = tc.CW ? parsePercent(row[tc.CW]) : null;
-        const ccw = tc.CCW ? parsePercent(row[tc.CCW]) : null;
-        entry.tasks[tc.taskName] = { CW: cw, CCW: ccw };
-      });
+      Object.values(taskCols).forEach(tc=>{ const cw = tc.CW ? parsePercent(row[tc.CW]) : null; const ccw = tc.CCW ? parsePercent(row[tc.CCW]) : null; entry.tasks[tc.taskName] = {CW:cw, CCW:ccw}; });
       playerStatsObj[name] = entry;
     });
-    // populate dropdown
+
+    // repopulate player select
     playerSelect.innerHTML = '<option value="">-- none --</option>';
-    Object.keys(playerStatsObj).sort().forEach(p => playerSelect.appendChild(new Option(p,p)));
-    statusDiv.textContent = (statusDiv.textContent || '') + ' | players loaded';
-  } catch(err){ console.warn('player csv not loaded', err); }
-}
-function parsePercent(s){
-  if(s===null||s===undefined) return null;
-  let t = String(s).trim();
-  if(!t || t.toUpperCase()==='N/A') return null;
-  t = t.replace('%','').replace(/,/g,'').trim();
-  const n = Number(t); if(isNaN(n)) return null; return n;
-}
+    Object.keys(playerStatsObj).sort().forEach(p=> playerSelect.appendChild(new Option(p,p)));
 
-/* ========= progress-aware fetch & merge ========= */
-async function fetchAndMergeAll(){
-  progressWrap.style.display = 'block';
-  progressBar.style.width = '0%';
-  progressBar.textContent = '0%';
-  statusDiv.textContent = 'Loading summary files...';
-
-  mergedAll = []; byYearMap = {};
-  const total = AVAILABLE_SUMMARIES.length;
-  let done = 0;
-  for(const path of AVAILABLE_SUMMARIES){
-    try {
-      const r = await fetch(path);
-      if(!r.ok){ console.warn('skip', path, r.status); }
-      else {
-        const arr = await r.json();
-        if(Array.isArray(arr)){
-          const year = path.split('/').pop().replace('summary_','').replace('.json','');
-          byYearMap[year] = arr;
-          mergedAll = mergedAll.concat(arr);
-        }
-      }
-    } catch(err){ console.warn('fetch error', path, err); }
-    done++;
-    const pct = Math.round((done/total)*100);
-    progressBar.style.width = pct + '%';
-    progressBar.textContent = `${pct}%`;
-    // small delay so users see progress on very fast loads (optional)
-    await new Promise(r => setTimeout(r, 80));
-  }
-  progressBar.style.width = '100%';
-  progressBar.textContent = `Loaded ${mergedAll.length} ends`;
-  statusDiv.textContent = `Loaded ${mergedAll.length} ends across ${Object.keys(byYearMap).length} files.`;
-  // load players CSV after summaries
-  try { await loadPlayersCSV('/data/players_stats_spreadsheet.csv'); } catch(e){ console.warn('player CSV auto-load failed', e); }
-}
-
-/* ========= default-player storage helpers ========= */
-const DEFAULTS_KEY = 'curling_player_defaults_v1';
-function loadDefaultsFromStorage(){
-  try {
-    const raw = localStorage.getItem(DEFAULTS_KEY);
-    if(!raw) return {};
-    return JSON.parse(raw);
-  } catch(e){ return {}; }
-}
-function saveDefaultsToStorage(obj){
-  try { localStorage.setItem(DEFAULTS_KEY, JSON.stringify(obj)); return true; } catch(e){ return false; }
-}
-function resetDefaultsTo100(){
-  document.querySelectorAll('.defInput').forEach(inp => inp.value = '');
-  document.getElementById('defaultsName').value = '';
-  saveCurrentDefaults(); // save blank → interpreted as 100%
-}
-function readCurrentDefaults(){
-  const out = {};
-  document.querySelectorAll('.defInput').forEach(inp => {
-    const t = inp.getAttribute('data-task'), turn = inp.getAttribute('data-turn');
-    const k = `${t}||${turn}`;
-    const v = inp.value === '' ? null : Number(inp.value);
-    out[k] = (v === null || isNaN(v)) ? null : Math.max(0, Math.min(100, v));
-  });
-  const name = document.getElementById('defaultsName').value || '';
-  return { name, values: out };
-}
-function saveCurrentDefaults(){
-  const obj = readCurrentDefaults();
-  saveDefaultsToStorage(obj);
-  statusDiv.textContent = `Saved defaults${obj.name ? ' ('+obj.name+')' : ''}.`;
-}
-function applyDefaultsToUI(obj){
-  if(!obj) return;
-  if(obj.name) document.getElementById('defaultsName').value = obj.name;
-  document.querySelectorAll('.defInput').forEach(inp => {
-    const t = inp.getAttribute('data-task'), turn = inp.getAttribute('data-turn');
-    const k = `${t}||${turn}`;
-    const v = obj.values && obj.values[k] != null ? obj.values[k] : '';
-    inp.value = (v===''? '' : String(v));
-  });
-}
-
-/* get active player pct (prefers selected player; else custom defaults; else 100) */
-function getActivePlayerPct(task, turn){
-  // if player selected and present in playerStatsObj, prefer their value
-  const sel = playerSelect.value;
-  if(sel && playerStatsObj && playerStatsObj[sel]){
-    const pd = playerStatsObj[sel].tasks || {};
-    const tentry = pd[task];
-    if(tentry){
-      const val = (turn==='CW') ? tentry.CW : tentry.CCW;
-      if(val != null) return val;
+    // ====== FIX: show number of players loaded ======
+    const playerCount = Object.keys(playerStatsObj).length;
+    statusDiv.textContent = (statusDiv.textContent || '') + ` • ${playerCount} players loaded`;
+    // if we have a visible progress bar, append players loaded there too
+    if(progressBar){
+      progressBar.textContent = progressBar.textContent + ` • ${playerCount} players`;
     }
+  } catch(e){
+    console.warn('players csv failed', e);
   }
-  // otherwise custom defaults
+}
+
+/* merge summaries with progress */
+async function fetchAndMergeAll(){
+  progressWrap.style.display = 'block'; mergedAll=[]; byYearMap={}; const total = AVAILABLE_SUMMARIES.length; let done=0;
+  for(const path of AVAILABLE_SUMMARIES){
+    try{ const r=await fetch(path); if(r.ok){ const arr = await r.json(); if(Array.isArray(arr)){ const year = path.split('/').pop().replace('summary_','').replace('.json',''); byYearMap[year]=arr; mergedAll = mergedAll.concat(arr); } } else console.warn('skip', path, r.status); }catch(err){ console.warn('fetch',path,err); }
+    done++; const pct = Math.round((done/total)*100); progressBar.style.width = pct+'%'; progressBar.textContent = pct+'%';
+    await new Promise(r=>setTimeout(r,30));
+  }
+  // now attempt to load players CSV and report count (loadPlayersCSV updates statusDiv)
+  try{ await loadPlayersCSV('/data/players_stats_spreadsheet.csv'); }catch(e){ console.warn('player CSV load failed at end', e); }
+
+  progressBar.style.width = '100%';
+  const playersText = (playerStatsObj && Object.keys(playerStatsObj).length) ? ` • ${Object.keys(playerStatsObj).length} players` : '';
+  progressBar.textContent = `Loaded ${mergedAll.length} ends` + playersText;
+  statusDiv.textContent = `Loaded ${mergedAll.length} ends across ${Object.keys(byYearMap).length} files.` + (playersText || '');
+}
+
+/* defaults storage */
+const DEFAULTS_KEY = 'curling_player_defaults_v1';
+function loadDefaultsFromStorage(){ try{ const r=localStorage.getItem(DEFAULTS_KEY); return r? JSON.parse(r): {}; }catch(e){return{}} }
+function readCurrentDefaults(){ const out={}; document.querySelectorAll('.defInput').forEach(inp=>{ const k=`${inp.dataset.task}||${inp.dataset.turn}`; const v = inp.value===''? null: Number(inp.value); out[k] = v===null||isNaN(v) ? null : Math.max(0,Math.min(100,v)); }); return { name: document.getElementById('defaultsName').value||'', values: out }; }
+function applyDefaultsToUI(obj){ if(!obj) return; if(obj.name) document.getElementById('defaultsName').value = obj.name; document.querySelectorAll('.defInput').forEach(inp=>{ const k = `${inp.dataset.task}||${inp.dataset.turn}`; inp.value = (obj.values && obj.values[k] != null) ? String(obj.values[k]) : ''; }); }
+
+document.getElementById('resetDefaultsBtn').addEventListener('click', ()=>{ if(!confirm('Reset defaults to blank (interpreted as 100%)?')) return; document.querySelectorAll('.defInput').forEach(i=>i.value=''); document.getElementById('defaultsName').value=''; saveDefaultsToStorage({}); statusDiv.textContent='Defaults reset.'; });
+
+/* get active player percent (player selection takes precedence; otherwise defaults or 100) */
+function getActivePlayerPct(task, turn){
+  if(playerSelect.value && playerStatsObj && playerStatsObj[playerSelect.value]){
+    const pd = playerStatsObj[playerSelect.value].tasks || {}; const te = pd[task];
+    if(te){ const val = (turn==='CW') ? te.CW : te.CCW; if(val != null) return val; }
+  }
   const stored = loadDefaultsFromStorage();
   const k = `${task}||${turn}`;
   if(stored && stored.values && stored.values[k] != null) return stored.values[k];
-  // fallback to 100
   return 100.0;
 }
 
-/* ========= helpers reused from previous app ========= */
-function percentToHSLStatic(pct){
-  const v = Math.max(0, Math.min(100, Number(pct)));
-  const hue = (v/100) * 120;
-  return `hsl(${hue},78%,45%)`;
-}
-function pickTextColor(pct){
-  return (pct === null || pct === undefined) ? '#333' : ((Number(pct) < 55) ? '#fff' : '#000');
-}
-function scoreBucket(n){
-  if(n == null) return null;
-  if(n <= -3) return '-3+';
-  if(n === -2) return '-2';
-  if(n === -1) return '-1';
-  if(n === 0) return '0';
-  if(n === 1) return '1';
-  if(n === 2) return '2';
-  if(n >= 3) return '3+';
-  return null;
-}
-function computeEstimateFromCounts(countsArr, total){
-  if(!countsArr || total === 0) return null;
-  let sum = 0; for(let i=0;i<BUCKETS.length;i++){ sum += (BUCKET_VAL[BUCKETS[i]] * (countsArr[i] || 0)); }
-  return sum / total;
-}
+/* helpers */
+function percentToHSLStatic(pct){ const v=Math.max(0,Math.min(100,Number(pct))); const hue=(v/100)*120; return `hsl(${hue},78%,45%)`; }
+function pickTextColor(pct){ if(pct===null||pct===undefined) return '#333'; return (Number(pct) < 55) ? '#fff' : '#000'; }
+function scoreBucket(n){ if(n==null) return null; if(n<=-3) return '-3+'; if(n===-2) return '-2'; if(n===-1) return '-1'; if(n===0) return '0'; if(n===1) return '1'; if(n===2) return '2'; if(n>=3) return '3+'; return null; }
+function computeEstimateFromCounts(counts, total){ if(!counts || total===0) return null; let sum=0; for(let i=0;i<BUCKETS.length;i++) sum += BUCKET_VAL[BUCKETS[i]] * (counts[i]||0); return sum / total; }
 function formatEstimate(x){ if(x==null) return 'N/A'; return (Math.round(x*10)/10).toFixed(1); }
+function getSelectedValues(selectEl){ if(!selectEl) return []; const vals=[]; for(const opt of Array.from(selectEl.options)) if(opt.selected) vals.push(opt.value); return vals.length?vals:['Any']; }
 
-/* multi-select utilities (same behaviour: hide Any when others chosen) */
-function getSelectedValues(selectEl){
-  if(!selectEl) return [];
-  const vals = [];
-  for(const opt of Array.from(selectEl.options)) if(opt.selected) vals.push(opt.value);
-  return vals.length ? vals : ['Any'];
-}
-function syncAnyOption(selectEl){
-  const anyOpt = Array.from(selectEl.options).find(o=>o.value === 'Any');
-  const selectedNonAny = Array.from(selectEl.options).some(o=>o.selected && o.value !== 'Any');
-  if(selectedNonAny && anyOpt){ anyOpt.disabled = true; anyOpt.hidden = true; anyOpt.selected = false; }
-  else if(anyOpt){ anyOpt.disabled = false; anyOpt.hidden = false; }
-}
-document.querySelectorAll('select[multiple]').forEach(sel=>{ syncAnyOption(sel); sel.addEventListener('change', ()=> syncAnyOption(sel)); });
-
-/* constraints reading (multi) */
-function readConstraints(){
-  const tasks = document.querySelectorAll('.taskSel');
-  const turns = document.querySelectorAll('.turnSel');
-  const out = [];
-  for(let i=0;i<16;i++){
-    const taskVals = getSelectedValues(tasks[i]);
-    const turnVals = getSelectedValues(turns[i]);
-    out.push({ task: taskVals, turn: turnVals });
-  }
-  return out;
-}
+/* constraints reading & matching (multi-select aware) */
+function readConstraints(){ const tasks = document.querySelectorAll('.taskSel'); const turns = document.querySelectorAll('.turnSel'); const out=[]; for(let i=0;i<16;i++){ const taskVals = getSelectedValues(tasks[i]); const turnVals = getSelectedValues(turns[i]); out.push({task:taskVals, turn:turnVals}); } return out; }
 function matchesConstraint(endRec, cons){
   for(let i=0;i<cons.length;i++){
-    const c = cons[i];
-    const isTaskAny = c.task.includes('Any');
-    const isTurnAny = c.turn.includes('Any');
+    const c=cons[i]; const isTaskAny = c.task.includes('Any'); const isTurnAny = c.turn.includes('Any');
     if(isTaskAny && isTurnAny) continue;
-    const shot = (endRec.shots||[]).find(s => Number(s.shot_num) === i+1);
-    if(!shot) return false;
-    const shotTask = (shot.task||'').toString();
-    const shotTurn = (shot.turn||'').toString().toUpperCase();
+    const shot = (endRec.shots||[]).find(s=>Number(s.shot_num)===i+1); if(!shot) return false;
+    const shotTask = (shot.task||'').toString(); const shotTurn = (shot.turn||'').toString().toUpperCase();
     if(!isTaskAny){
-      let matchedTaskOption = false;
+      let matched=false;
       for(const opt of c.task){
-        if(opt === 'Any'){ matchedTaskOption = true; break; }
-        if(opt.toLowerCase() === 'guard'){ if(/guard/i.test(shotTask)){ matchedTaskOption = true; break; } }
-        else if(opt.toLowerCase()==='front'){ if(/^front$/i.test(shotTask)){ matchedTaskOption = true; break; } }
-        else { if(shotTask && shotTask.toLowerCase() === opt.toLowerCase()){ matchedTaskOption = true; break; } }
+        if(opt==='Any'){ matched=true; break; }
+        if(opt.toLowerCase()==='guard'){ if(/guard/i.test(shotTask)){ matched=true; break; } }
+        else if(opt.toLowerCase()==='front'){ if(/^front$/i.test(shotTask)){ matched=true; break; } }
+        else { if(shotTask && shotTask.toLowerCase()===opt.toLowerCase()){ matched=true; break; } }
       }
-      if(!matchedTaskOption) return false;
+      if(!matched) return false;
     }
     if(!isTurnAny){
-      const selectedTurnsUpper = c.turn.map(x => x.toUpperCase());
-      if(!selectedTurnsUpper.includes(shotTurn)) return false;
+      const selTurns = c.turn.map(x=>x.toUpperCase());
+      if(!selTurns.includes(shotTurn)) return false;
     }
   }
   return true;
 }
 
-/* ========= Analyze logic (keeps prior behaviour) ========= */
+/* condensed toggle */
 let condensed = true;
 toggleViewBtn.addEventListener('click', ()=>{
   condensed = !condensed;
-  toggleViewBtn.textContent = condensed ? 'Expanded View' : 'Condensed View';
-  if(document.querySelector('#results table')) document.getElementById('analyzeBtn').click();
+  toggleViewBtn.textContent = condensed? 'Expanded View' : 'Condensed View';
+  if(condensed){
+    if(!playerSelect.value) playerDefaultsPanel.style.display = 'none';
+  } else {
+    playerDefaultsPanel.style.display = 'block';
+  }
+  if(document.querySelector('#results table')) analyze();
 });
 
-document.getElementById('analyzeBtn').addEventListener('click', ()=>{
-  const dataset = mergedAll.length ? mergedAll : [];
+/* when player selected: populate defaults inputs and reveal panel */
+playerSelect.addEventListener('change', ()=>{
+  const pname = playerSelect.value;
+  if(!pname){
+    if(condensed) playerDefaultsPanel.style.display = 'none';
+    const stored = loadDefaultsFromStorage(); if(stored) applyDefaultsToUI(stored);
+    return;
+  }
+  playerDefaultsPanel.style.display = 'block';
+  const p = playerStatsObj && playerStatsObj[pname];
+  if(!p){ document.getElementById('defaultsName').value = pname; document.querySelectorAll('.defInput').forEach(inp=> inp.value = ''); return; }
+  document.getElementById('defaultsName').value = pname;
+  document.querySelectorAll('.defInput').forEach(inp=>{
+    const task = inp.dataset.task; const turn = inp.dataset.turn;
+    const val = (p.tasks && p.tasks[task]) ? ((turn==='CW')? p.tasks[task].CW : p.tasks[task].CCW) : null;
+    inp.value = val == null ? '' : String(val);
+  });
+});
+
+/* analysis core (with category alias normalization) */
+async function analyze(){
+  const dataset = mergedAll;
   const cons = readConstraints();
-  const evalPos = Number(evalPosSelect.value);
-  const startDate = document.getElementById('startDate').value;
-  const endDateVal = document.getElementById('endDate').value;
-  const sd = startDate ? new Date(startDate) : null;
-  const ed = endDateVal ? new Date(endDateVal) : null;
-
+  const evalShot = Number(evalPos.value || 1);
+  const sd = startDateEl.value? new Date(startDateEl.value) : null;
+  const ed = endDateEl.value? new Date(endDateEl.value) : null;
   const minSupport = Number(supportSlider.value);
-  const endsModeVal = endsMode.value;
-  const endsN = Number(endsNum.value || 0);
-  const genderSelected = getSelectedValues(genderSelect);
+  const endsSelected = getSelectedValues(endsLeftSelect); const endsIsAny = endsSelected.includes('Any');
+  const genderSelected = getSelectedValues(genderSelect); const genderIsAny = genderSelected.includes('Any');
+
+  /* --- inside analyze(): read selected categories (multi) --- */
   const categorySelected = getSelectedValues(categorySelect);
-  const genderIsAny = genderSelected.includes('Any');
-  const categoryIsAny = categorySelected.includes('Any');
-  const playerName = playerSelect.value || '';
+  const categoryIsAny = categorySelected.includes('Any') || categorySelected.length === 0;
 
-  // accumulators
-  const candidateTasks = TASK_OPTIONS.filter(t => t !== 'Any');
-  const pairs = []; candidateTasks.forEach(t => ['CW','CCW'].forEach(turn => pairs.push({task:t, turn:turn})));
-  const accum = {}; pairs.forEach(p => { accum[`${p.task}||${p.turn}`] = { total:0, counts: BUCKETS.map(()=>0) }; });
-
-  let matchedEnds = 0;
-  for(const endRec of dataset){
-    if(sd || ed){
-      if(endRec.date){
-        const d = new Date(endRec.date);
-        if(sd && d < sd) continue;
-        if(ed && d > ed) continue;
+  // build normalized alias list for selected categories (only once)
+  let selectedCategoryAliases = null;
+  if(!categoryIsAny){
+    selectedCategoryAliases = [];
+    for(const sel of categorySelected){
+      const mapped = CATEGORY_ALIASES[sel] || CATEGORY_ALIASES[sel.trim()] || null;
+      if(mapped && Array.isArray(mapped)){
+        mapped.forEach(m => {
+          const norm = normalizeStr(m);
+          if(norm && !selectedCategoryAliases.includes(norm)) selectedCategoryAliases.push(norm);
+        });
+      } else {
+        const norm = normalizeStr(sel);
+        if(norm && !selectedCategoryAliases.includes(norm)) selectedCategoryAliases.push(norm);
       }
-    }
-    // ends_remaining filter
-    if(typeof endRec.ends_remaining !== 'undefined' && endRec.ends_remaining !== null){
-      const er = Number(endRec.ends_remaining);
-      if(endsModeVal === 'AtMost'){ if(!(er <= endsN)) continue; }
-      else if(endsModeVal === 'Exactly'){ if(!(er === endsN)) continue; }
-      else if(endsModeVal === 'LastN'){ if(!(er <= Math.max(0, endsN - 1))) continue; }
-    } else {
-      if(endsModeVal !== 'Any') continue;
-    }
-    // gender/category filters
-    if(!genderIsAny){
-      const recGender = (endRec.gender || '');
-      const ok = genderSelected.some(g => recGender && recGender.toString().toLowerCase().includes(g.toString().toLowerCase()));
-      if(!ok) continue;
-    }
-    if(!categoryIsAny){
-      const recCat = (endRec.category || '');
-      const okc = categorySelected.some(c => recCat && recCat.toString().toLowerCase().includes(c.toString().toLowerCase()));
-      if(!okc) continue;
-    }
-    // constraint match
-    if(!matchesConstraint(endRec, cons)) continue;
-    matchedEnds++;
-    const evalShot = (endRec.shots || []).find(s => Number(s.shot_num) === evalPos);
-    if(!evalShot) continue;
-    const shotTask = (evalShot.task||'').toString();
-    const shotTurn = (evalShot.turn||'').toString().toUpperCase();
-    const signed = (endRec.signed_score == null) ? null : Number(endRec.signed_score);
-    if(signed == null) continue;
-    for(const p of pairs){
-      let matchTask=false;
-      if(p.task.toLowerCase() === 'guard') matchTask = /guard/i.test(shotTask);
-      else if(p.task.toLowerCase() === 'front') matchTask = /^front$/i.test(shotTask);
-      else matchTask = shotTask && shotTask.toLowerCase() === p.task.toLowerCase();
-      if(!matchTask) continue;
-      if(shotTurn !== p.turn) continue;
-      const key = `${p.task}||${p.turn}`;
-      const b = scoreBucket(signed);
-      if(!b) continue;
-      const idx = BUCKETS.indexOf(b);
-      if(idx >= 0){ accum[key].counts[idx] += 1; accum[key].total += 1; }
     }
   }
 
-  // Build rows (condensed combines turns)
+  const candidateTasks = TASK_OPTIONS.filter(t=>t!=='Any');
+  const pairs=[]; candidateTasks.forEach(t=>['CW','CCW'].forEach(turn=> pairs.push({task:t, turn:turn})));
+  const accum = {}; pairs.forEach(p=> accum[`${p.task}||${p.turn}`] = { total:0, counts: BUCKETS.map(()=>0) });
+
+  let matchedEnds = 0;
+  for(const endRec of dataset){
+    if(sd || ed){ if(endRec.date){ const d=new Date(endRec.date); if(sd && d<sd) continue; if(ed && d>ed) continue; } }
+
+    // ends filter
+    if(!endsIsAny){ if(endRec.ends_remaining==null) continue; const er = Number(endRec.ends_remaining); if(!endsSelected.map(x=>Number(x)).includes(er)) continue; }
+
+    // gender filter
+    if(!genderIsAny){ const recGender = (endRec.gender||''); const ok = genderSelected.some(g => recGender && recGender.toString().toLowerCase().includes(g.toString().toLowerCase())); if(!ok) continue; }
+
+    // category filter: use normalized aliases for robust matching
+    if(!categoryIsAny){
+      const recCatRaw = (endRec.category || '');
+      const recCat = normalizeStr(recCatRaw);
+      if(!recCat) continue;
+      const okc = selectedCategoryAliases.some(alias => recCat.indexOf(alias) !== -1);
+      if(!okc) continue;
+    }
+
+    if(!matchesConstraint(endRec, cons)) continue;
+
+    matchedEnds++;
+    const shot = (endRec.shots||[]).find(s=>Number(s.shot_num)===evalShot); if(!shot) continue;
+    const shotTask = (shot.task||'').toString(); const shotTurn = (shot.turn||'').toString().toUpperCase();
+    const signed = (endRec.signed_score == null) ? null : Number(endRec.signed_score);
+    if(signed==null) continue;
+
+    for(const p of pairs){
+      let matchTask=false;
+      if(p.task.toLowerCase()==='guard') matchTask = /guard/i.test(shotTask);
+      else if(p.task.toLowerCase()==='front') matchTask = /^front$/i.test(shotTask);
+      else matchTask = shotTask && shotTask.toLowerCase() === p.task.toLowerCase();
+      if(!matchTask) continue;
+      if(shotTurn !== p.turn) continue;
+      const key = `${p.task}||${p.turn}`; const b = scoreBucket(signed); if(!b) continue;
+      const idx = BUCKETS.indexOf(b); if(idx>=0){ accum[key].counts[idx] += 1; accum[key].total += 1; }
+    }
+  }
+
+  // build rows (condensed combines turns)
   const rowsPre = [];
   if(condensed){
     for(const task of TASK_OPTIONS.filter(t=>t!=='Any')){
       const aCW = accum[`${task}||CW`] || {total:0, counts: BUCKETS.map(()=>0)};
       const aCCW = accum[`${task}||CCW`] || {total:0, counts: BUCKETS.map(()=>0)};
       const total = (aCW.total||0) + (aCCW.total||0);
-      const counts = BUCKETS.map((_,i) => (aCW.counts[i]||0) + (aCCW.counts[i]||0));
-      rowsPre.push({ task, turn:'BOTH', total, counts, parts:{cwTotal:aCW.total||0, ccwTotal:aCCW.total||0} });
+      const counts = BUCKETS.map((_,i)=> (aCW.counts[i]||0) + (aCCW.counts[i]||0));
+      rowsPre.push({task, turn:'BOTH', total, counts, parts:{cwTotal:aCW.total||0, ccwTotal:aCCW.total||0}});
     }
   } else {
     for(const [key,entry] of Object.entries(accum)){
-      const total = entry.total || 0;
-      const [task, turn] = key.split('||');
-      rowsPre.push({ task, turn, total, counts: entry.counts });
+      const total = entry.total || 0; const [task, turn] = key.split('||'); rowsPre.push({task, turn, total, counts: entry.counts});
     }
   }
 
-  // filter by support%
   const rowsFiltered = [];
-  rowsPre.forEach(r => {
-    const supportPct = matchedEnds === 0 ? 0 : (r.total / matchedEnds * 100);
-    if(supportPct >= Number(supportSlider.value)) rowsFiltered.push(Object.assign({}, r, { supportPct }));
-  });
-  rowsFiltered.sort((a,b) => b.supportPct - a.supportPct);
+  rowsPre.forEach(r=>{ const supportPct = matchedEnds===0?0:(r.total / matchedEnds * 100); if(supportPct >= minSupport) rowsFiltered.push(Object.assign({}, r, { supportPct })); });
+  rowsFiltered.sort((a,b)=> b.supportPct - a.supportPct);
 
-  // compute dynamic bucket scaling for expanded view
+  // dynamic scaling values (expanded)
   let bucketPctValues = [];
-  if(!condensed){
-    rowsFiltered.forEach(r => {
-      for(let i=0;i<r.counts.length;i++){
-        const pct = r.total === 0 ? null : (r.counts[i] / r.total * 100);
-        if(pct != null) bucketPctValues.push(pct);
-      }
-    });
-  }
-  let globalMin = bucketPctValues.length ? Math.min(...bucketPctValues) : 0;
-  let globalMax = bucketPctValues.length ? Math.max(...bucketPctValues) : 1;
-  if(globalMin === globalMax){ globalMin = 0; globalMax = globalMin + 1; }
+  if(!condensed){ rowsFiltered.forEach(r=>{ for(let i=0;i<r.counts.length;i++){ const pct = r.total===0?null:(r.counts[i]/r.total*100); if(pct!=null) bucketPctValues.push(pct); } }); }
+  let globalMin = bucketPctValues.length? Math.min(...bucketPctValues):0;
+  let globalMax = bucketPctValues.length? Math.max(...bucketPctValues):1;
+  if(globalMin === globalMax){ globalMin=0; globalMax = globalMin + 1; }
 
-  // compute estimates & player-adjusted & maxima (use getActivePlayerPct)
+  // compute estimates & player-adjusted
   let maxEstimate = -Infinity, maxPlayerAdj = -Infinity;
-  rowsFiltered.forEach(r => {
+  rowsFiltered.forEach(r=>{
     r.estimate = computeEstimateFromCounts(r.counts, r.total);
-    if(r.estimate != null && r.estimate > maxEstimate) maxEstimate = r.estimate;
+    if(r.estimate!=null && r.estimate > maxEstimate) maxEstimate = r.estimate;
+    // player %
     let playerPct = null;
-    // if player selected, prefer CSV player; else use defaults via getActivePlayerPct
     if(playerSelect.value && playerStatsObj && playerStatsObj[playerSelect.value]){
       const pd = playerStatsObj[playerSelect.value].tasks || {};
       if(condensed){
-        const pdEntry = pd[r.task] || {};
-        const cw = pdEntry.CW, ccw = pdEntry.CCW;
+        const pdEntry = pd[r.task] || {}; const cw = pdEntry.CW, ccw = pdEntry.CCW;
         if(cw != null && ccw != null) playerPct = (cw + ccw) / 2.0;
         else if(cw != null) playerPct = cw;
         else if(ccw != null) playerPct = ccw;
       } else {
-        const pdEntry = pd[r.task] || {};
-        playerPct = (r.turn === 'CW') ? pdEntry.CW : pdEntry.CCW;
+        const pdEntry = pd[r.task] || {}; playerPct = (r.turn === 'CW') ? pdEntry.CW : pdEntry.CCW;
       }
     } else {
-      // no player selected → use defaults (100 fallback)
       if(condensed){
-        const cw = getActivePlayerPct(r.task, 'CW');
-        const ccw = getActivePlayerPct(r.task, 'CCW');
-        if(cw != null && ccw != null) playerPct = (cw + ccw) / 2.0;
-        else playerPct = (cw != null) ? cw : (ccw != null ? ccw : 100);
+        const cw = getActivePlayerPct(r.task, 'CW'); const ccw = getActivePlayerPct(r.task, 'CCW');
+        if(cw!=null && ccw!=null) playerPct = (cw+ccw)/2.0; else playerPct = cw!=null?cw:(ccw!=null?ccw:100);
       } else {
         playerPct = getActivePlayerPct(r.task, r.turn);
       }
     }
     r.playerPct = playerPct;
-    r.playerAdj = (playerPct == null || r.estimate == null) ? null : (r.estimate * (playerPct/100.0));
-    if(r.playerAdj != null && r.playerAdj > maxPlayerAdj) maxPlayerAdj = r.playerAdj;
+    r.playerAdj = (playerPct==null || r.estimate==null) ? null : (r.estimate * (playerPct/100.0));
+    if(r.playerAdj!=null && r.playerAdj > maxPlayerAdj) maxPlayerAdj = r.playerAdj;
   });
 
+  // render
   if(rowsFiltered.length === 0){
-    resultsDiv.innerHTML = `<div class="muted" style="margin-top:8px">No rows meet the Support% threshold (${supportSlider.value}%).</div>`;
-    statusDiv.textContent = `Matched ${matchedEnds} ends — 0 rows pass Support% ≥ ${supportSlider.value}% `;
+    resultsDiv.innerHTML = `<div class="muted-xs" style="padding:10px">No rows match current filters (min support ${minSupport}%).</div>`;
+    statusDiv.textContent = `Matched ${matchedEnds} ends — 0 rows pass`;
     return;
   }
 
-  // render condensed/expanded table (same style as prior)
   const table = document.createElement('table');
   const thead = document.createElement('thead');
   if(condensed){
@@ -674,26 +485,29 @@ document.getElementById('analyzeBtn').addEventListener('click', ()=>{
   table.appendChild(thead);
   const tbody = document.createElement('tbody');
 
-  rowsFiltered.forEach(r => {
+  rowsFiltered.forEach(r=>{
     const tr = document.createElement('tr');
     if(condensed){
-      const estimateDisp = r.estimate == null ? 'N/A' : formatEstimate(r.estimate);
-      const playerPctDisp = r.playerPct == null ? 'N/A' : (r.playerPct.toFixed(1) + '%');
-      const playerAdjDisp = r.playerAdj == null ? '' : (Math.round(r.playerAdj*10)/10).toFixed(1);
-      tr.innerHTML = `<td>${r.task}</td><td class="center ${r.estimate === maxEstimate ? 'highlight-est' : ''}">${estimateDisp}</td><td class="center">${r.supportPct.toFixed(2)}%</td><td class="center" data-pct="${r.playerPct==null?'':r.playerPct}">${playerPctDisp}</td><td class="center ${r.playerAdj === maxPlayerAdj ? 'highlight-player' : ''}">${playerAdjDisp}</td>`;
+      const estimateDisp = r.estimate==null?'N/A':formatEstimate(r.estimate);
+      const playerPctDisp = r.playerPct==null?'N/A':(r.playerPct.toFixed(1)+'%');
+      const playerAdjDisp = r.playerAdj==null?'':(Math.round(r.playerAdj*10)/10).toFixed(1);
+      // apply highlight cell classes
+      const estClass = (r.estimate===maxEstimate) ? 'cell-best-est' : '';
+      const playerClass = (r.playerAdj===maxPlayerAdj) ? 'cell-best-player' : '';
+      tr.innerHTML = `<td>${r.task}</td><td class="center ${estClass}">${estimateDisp}</td><td class="center">${r.supportPct.toFixed(2)}%</td><td class="center" data-pct="${r.playerPct==null?'':r.playerPct}">${playerPctDisp}</td><td class="center ${playerClass}">${playerAdjDisp}</td>`;
       const pcell = tr.querySelector('td[data-pct]');
       if(pcell){
         const pctAttr = pcell.getAttribute('data-pct');
         if(!pctAttr){ pcell.style.background='#f6f6f6'; pcell.style.color='#666'; }
-        else { const num = Number(pctAttr); pcell.style.background = percentToHSLStatic(num); pcell.style.color = pickTextColor(num); pcell.style.borderRadius='4px'; }
+        else { const num = Number(pctAttr); pcell.style.background = percentToHSLStatic(num); pcell.style.color = pickTextColor(num); pcell.style.borderRadius='6px'; }
       }
     } else {
       let html = `<td>${r.task}</td><td>${r.turn}</td>`;
       for(let i=0;i<r.counts.length;i++){
-        const cnt = r.counts[i]; const pct = r.total === 0 ? null : (r.counts[i] / r.total * 100);
+        const cnt = r.counts[i]; const pct = r.total===0 ? null : (r.counts[i] / r.total * 100);
         const disp = pct==null? 'N/A' : (pct.toFixed(1)+'%');
         let styleAttr = '';
-        if(pct == null) styleAttr = 'style="background:#f6f6f6;color:#666"';
+        if(pct==null) styleAttr = 'style="background:#f6f6f6;color:#666"';
         else {
           const norm = (pct - globalMin) / (globalMax - globalMin || 1);
           const hue = (norm * 120);
@@ -703,16 +517,18 @@ document.getElementById('analyzeBtn').addEventListener('click', ()=>{
         }
         html += `<td ${styleAttr} data-pct="${pct==null?'':pct.toFixed(1)}">${disp}</td>`;
       }
+      const estClass = (r.estimate===maxEstimate) ? 'cell-best-est' : '';
+      const playerClass = (r.playerAdj===maxPlayerAdj) ? 'cell-best-player' : '';
       const estimateDisp = r.estimate==null? 'N/A' : formatEstimate(r.estimate);
       const playerPctDisp = r.playerPct==null? 'N/A' : (r.playerPct.toFixed(1) + '%');
       const playerAdjDisp = r.playerAdj==null? '' : (Math.round(r.playerAdj*10)/10).toFixed(1);
-      html += `<td class="center ${r.estimate === maxEstimate ? 'highlight-est' : ''}">${estimateDisp}</td><td class="center">${r.supportPct.toFixed(2)}%</td><td class="center" data-pct="${r.playerPct==null?'':r.playerPct}">${playerPctDisp}</td><td class="center ${r.playerAdj === maxPlayerAdj ? 'highlight-player' : ''}">${playerAdjDisp}</td>`;
+      html += `<td class="center ${estClass}">${estimateDisp}</td><td class="center">${r.supportPct.toFixed(2)}%</td><td class="center" data-pct="${r.playerPct==null?'':r.playerPct}">${playerPctDisp}</td><td class="center ${playerClass}">${playerAdjDisp}</td>`;
       tr.innerHTML = html;
       const pcell = tr.querySelector('td[data-pct]');
       if(pcell){
         const pctAttr = pcell.getAttribute('data-pct');
         if(!pctAttr){ pcell.style.background='#f6f6f6'; pcell.style.color='#666'; }
-        else { const num = Number(pctAttr); pcell.style.background = percentToHSLStatic(num); pcell.style.color = pickTextColor(num); pcell.style.borderRadius='4px'; }
+        else { const num = Number(pctAttr); pcell.style.background = percentToHSLStatic(num); pcell.style.color = pickTextColor(num); pcell.style.borderRadius='6px'; }
       }
     }
     tbody.appendChild(tr);
@@ -721,39 +537,21 @@ document.getElementById('analyzeBtn').addEventListener('click', ()=>{
   table.appendChild(tbody);
   resultsDiv.innerHTML = '';
   resultsDiv.appendChild(table);
-  statusDiv.textContent = `Matched ${matchedEnds} ends. Showing ${rowsFiltered.length} rows (min support ${supportSlider.value}%).`;
+  statusDiv.textContent = `Matched ${matchedEnds} ends. Showing ${rowsFiltered.length} rows (min support ${minSupport}%).`;
+}
+
+/* download CSV */
+downloadBtn.addEventListener('click', ()=>{ const tbl = document.querySelector('#results table'); if(!tbl){ alert('No results'); return; } const rows=[]; rows.push(Array.from(tbl.tHead.rows[0].cells).map(c=>c.textContent)); Array.from(tbl.tBodies[0].rows).forEach(r=> rows.push(Array.from(r.cells).map(c=>c.textContent.replace('%','')))); const csv = rows.map(r => r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n'); const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'score_outcome_player_adjusted.csv'; a.click(); URL.revokeObjectURL(url); });
+
+/* when page loads */
+fetchAndMergeAll().then(()=>{
+  try{ const st = loadDefaultsFromStorage(); if(st) applyDefaultsToUI(st); }catch(e){}
+  // by default condensed and hide playerDefaultsPanel
+  playerDefaultsPanel.style.display = 'none';
 });
 
-/* ========= save/load defaults UI actions ========= */
-document.getElementById('saveDefaultsBtn').addEventListener('click', ()=>{
-  saveCurrentDefaults();
-});
-document.getElementById('resetDefaultsBtn').addEventListener('click', ()=>{
-  if(!confirm('Reset all defaults to blank (interpreted as 100%)?')) return;
-  resetDefaultsTo100();
-});
-
-/* load stored defaults into UI on start */
-const storedDefaults = loadDefaultsFromStorage();
-if(storedDefaults) applyDefaultsToUI(storedDefaults);
-
-/* CSV export (same as before) */
-document.getElementById('downloadBtn').addEventListener('click', ()=>{
-  const tbl = document.querySelector('#results table');
-  if(!tbl){ alert('No results'); return; }
-  const rows = [];
-  rows.push(Array.from(tbl.tHead.rows[0].cells).map(c => c.textContent));
-  Array.from(tbl.tBodies[0].rows).forEach(r => rows.push(Array.from(r.cells).map(c => c.textContent.replace('%',''))));
-  const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(',')).join('\n');
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'score_outcome_player_adjusted.csv'; a.click(); URL.revokeObjectURL(url);
-});
-
-/* initial load */
-fetchAndMergeAll();
-
+/* wire analyze button */
+analyzeBtn.addEventListener('click', analyze);
 </script>
 </body>
 </html>
-
