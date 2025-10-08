@@ -1,0 +1,1615 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Strategy Calc</title>
+<style>
+  :root{
+    --bg:#f6f8fa; --card:#fff; --muted:#6b7280; --text:#111827;
+    --accent:#0f6fff; --accent-2:#1fb6ff; --card-pad:14px; --radius:10px;
+  }
+  body{margin:18px; font-family:Inter,system-ui,Arial; background:linear-gradient(180deg,var(--bg),#f2f4f6); color:var(--text)}
+  .wrap{max-width:1180px;margin:0 auto}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .logo{display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;padding:8px 12px;border-radius:10px}
+  .logo h1{margin:0;font-size:1rem}
+  .muted{color:var(--muted)}
+  .card{background:var(--card);border-radius:10px;padding:14px;margin-bottom:12px;box-shadow:0 6px 18px rgba(15,23,42,0.06);border:1px solid rgba(15,23,42,0.04)}
+  .controls{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+  .control{display:flex;flex-direction:column}
+  label{font-size:0.78rem;color:var(--muted);margin-bottom:6px}
+  select,input,button{padding:8px;border-radius:8px;border:1px solid #e6e8eb;background:#fff;font-size:0.95rem}
+  select[multiple]{min-height:82px}
+  .w-110{width:110px}.w-160{width:160px}.w-180{width:180px}.w-200{width:200px}.w-240{width:240px}
+  .btn{padding:8px 12px;border-radius:8px;border:1px solid #e6e8eb;background:#fff;cursor:pointer}
+  .btn-primary{background:var(--accent);color:#fff;border:none;box-shadow:0 6px 20px rgba(15,111,255,0.12)}
+  #constraints{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+  @media(max-width:1000px){#constraints{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:700px){#constraints{grid-template-columns:repeat(2,1fr)}}
+  .task-card{padding:10px;border-radius:8px;border:1px solid #f0f2f4;background:linear-gradient(180deg,#fff,#fbfdff)}
+  .task-title{font-weight:700;margin-bottom:8px}
+  table{width:100%;border-collapse:collapse;margin-top:12px;font-size:0.92rem}
+  thead th{background:linear-gradient(180deg,#f8fafc,#fff);position:sticky;top:0;padding:10px;text-align:left;color:var(--muted)}
+  td,th{padding:8px 10px;border-bottom:1px solid #f0f2f4}
+  .center{text-align:center}
+  .swatch{width:160px;height:14px;border-radius:6px;background:linear-gradient(90deg,hsl(0,78%,45%),hsl(60,78%,45%),hsl(120,78%,45%))}
+  .progress-wrap{height:14px;background:#eef2f7;border-radius:10px;margin-top:10px;overflow:hidden;border:1px solid #eef3fb;display:none}
+  .progress-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));width:0%;color:white;font-size:11px;display:flex;align-items:center;justify-content:center}
+  /* new highlight cell styles */
+  .cell-best-est{background:linear-gradient(90deg,#ffe5b4,#ffcf6b);color:#111;font-weight:700;border-radius:6px}
+  .cell-best-player{background:linear-gradient(90deg,#bff3d0,#50d88a);color:#022;font-weight:700;border-radius:6px}
+  .muted-xs{color:var(--muted);font-size:0.86rem}
+  /* Horizontal scroll rails that keep wide content inside cards */
+.h-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid #eef2f7;
+  border-radius: 10px;
+}
+
+/* Give the inner wide content breathing room so borders aren't flush */
+.h-scroll > * {
+  min-width: 720px;           /* ensures a useful scroll target on small screens */
+}
+
+
+/* Make sure cards contain their children and don't "leak" shadows/content */
+.card { overflow: hidden; }
+
+/* Let the shot grid scroll inside a rail on narrow screens */
+@media (max-width: 900px) {
+  #constraintsContainer { overflow-x: auto; }
+  #constraints { min-width: 720px; } /* so it scrolls horizontally instead of breaking the card */
+}
+
+/* Controls: keep widths reasonable on small screens */
+@media (max-width: 600px) {
+  .w-110, .w-160, .w-180, .w-200, .w-240 {
+    width: clamp(140px, 44vw, 240px);
+  }
+  .wrap { margin: 12px; }
+  body { margin: 12px; }
+}
+
+/* Results table: make sure it can be wider without breaking layout */
+#results table { width: max(100%, 720px); }
+
+</style>
+
+<style id="pro-light-skin">
+
+/* === Pro Light Skin (non-destructive) === */
+:root{
+  --pro-bg:#f7f9fc;
+  --pro-surface:#ffffff;
+  --pro-surface-2:#fbfdff;
+  --pro-card:#ffffff;
+  --pro-text:#111318;
+  --pro-muted:#5f6672;
+  --pro-border:#e7ecf3;
+  --pro-accent:#0f6fff;
+  --pro-accent-2:#58b6ff;
+  --pro-radius:12px;
+  --pro-shadow:0 10px 30px rgba(14,30,65,.08);
+}
+html,body{background:var(--pro-bg) !important;color:var(--pro-text)}
+/* Cards */
+.card, .panel, section.card, .box{
+  background: var(--pro-card) !important;
+  border: 1px solid var(--pro-border) !important;
+  border-radius: var(--pro-radius) !important;
+  box-shadow: var(--pro-shadow) !important;
+}
+/* Inputs */
+input,select,textarea{
+  background:#fff !important;
+  color:var(--pro-text) !important;
+  border:1px solid var(--pro-border) !important;
+  border-radius:10px !important;
+  padding:10px 12px !important;
+  transition:border-color .15s ease, box-shadow .15s ease;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--pro-accent)!important;box-shadow:0 0 0 3px rgba(15,111,255,.18)!important;outline:0}
+/* Buttons */
+button,.btn,.button{
+  border-radius:10px !important;
+  border:1px solid var(--pro-border) !important;
+  background: linear-gradient(180deg, var(--pro-accent), var(--pro-accent-2)) !important;
+  color:#fff !important;
+  font-weight:600 !important;
+  box-shadow:0 8px 20px rgba(15,111,255,.18) !important;
+  transition:transform .05s ease;
+}
+button:active,.btn:active{transform:translateY(1px)}
+/* Secondary/alt buttons keep light look */
+.alt,.btn.secondary,.ghost,.outline{background:#fff !important;color:var(--pro-text)!important;box-shadow:none!important}
+/* Tables */
+table{width:100%;border-collapse:separate;border-spacing:0}
+th,td{border-bottom:1px solid var(--pro-border);padding:10px 12px;white-space:nowrap;text-align:left}
+thead th{position:sticky;top:0;background:var(--pro-surface);color:var(--pro-muted);font-weight:600;font-size:12px;text-transform:uppercase}
+tbody tr:nth-child(odd) td{background:#fafbfe}
+/* Scroll rails for wide content */
+.table-wrap-auto{border:1px solid var(--pro-border);border-radius:10px;overflow:auto;background:#fff;box-shadow:var(--pro-shadow)}
+/* Mobile density */
+@media(max-width:600px){ th,td{padding:8px 10px;font-size:13px} }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.5 7H8.5L12 2zM4 21h16l-8-8-8 8z" fill="white"/></svg><h1>Strategy Calculator</h1></div>
+	<button id="backHomeBtn" class="alt" title="Back to IcePulse">H2H Calc</button>
+    <div class="muted" style="margin-left:auto">
+        <button id="toggleViewBtn" class="btn">Expanded View</button>
+		<button id="analyzeBtn" class="btn btn-primary">Analyze</button></div>
+  </header>
+
+  <!-- controls & results (single column layout) -->
+  <section class="card">
+    <div class="controls" style="margin-bottom:8px">
+  	  <div class="control w-200"><label>Player</label><select id="playerSelect"><option value="">-- none --</option></select></div>
+      <div class="control w-110"><label>Evaluate Shot</label><select id="evalPos"></select></div>
+      <div class="control w-160"><label>Start Date</label><input id="startDate" type="date" /></div>
+      <div class="control w-160"><label>End Date</label><input id="endDate" type="date" /></div> 
+	        <div class="control w-160"><label>Time of Day</label><select id="timeSelect"><option value="all">All</option><option value="morning">Morning</option><option value="afternoon">Afternoon</option><option value="evening">Evening</option></select></div>
+	  <div class="control w-240"><label>Minimum Popularity</label><div style="display:flex;gap:8px;align-items:center"><input id="supportSlider" type="range" min="0" max="5" step="0.1" value="5" /><div id="supportVal" style="min-width:64px;text-align:center;font-weight:600">0.1%</div></div></div>
+    </div>
+
+    <div class="controls" style="margin-bottom:8px">
+	  <div class="control w-180"><label>Ends Left</label><select id="endsLeftSelect" multiple></select></div>
+	  <div class="control w-200"><label>Hammer Differential</label><select id="hammerStartSelect" multiple><option value="all">All</option></select></div>
+      <div class="control w-200"><label>Type</label><select id="genderSelect" multiple><option value="Any">Any</option><option>Men</option><option>Women</option><option>Mixed</option></select></div>
+      <div class="control w-240"><label>Event</label><select id="categorySelect" multiple><option value="Any">Any</option><option>Grand Slams</option><option>Olympics</option><option>Worlds</option><option>Brier</option><option>Scotties</option><option>Euros</option><option>Pacific-Asia</option><option>University</option><option>Jr Worlds</option><option>Canadian Jrs</option><option>Canadian U18</option></select></div>
+      <div class="control w-200"><label>Tournament</label><select id="tournamentSelect" multiple><option value="all">All</option></select></div>
+    </div>
+
+    <div class="progress-wrap" id="progressWrap"><div class="progress-bar" id="progressBar">0%</div></div>
+
+    <div id="results" style="margin-top:12px"></div>
+    <div id="status" class="muted" style="margin-bottom:10px"></div>
+  </section>
+
+  <!-- Player defaults card (used for editing and also now populated when player selected) -->
+  <section class="card" id="playerDefaultsPanel" style="display:block;margin-top:12px">
+<div class="muted-xs">Load to input custom stats.</div>
+    
+    <div style="display:flex;gap:8px;margin-top:10px">
+      
+	  <button id="saveDefaultsBtn" class="btn btn-primary">Load</button>
+      <button id="resetDefaultsBtn" class="btn">Reset</button>
+	  <button id="downloadBtn" class="btn">Export Results</button>
+	  <input id="defaultsName" placeholder="Custom" style="flex:1;padding:8px;border-radius:8px;border:1px solid #eef2f7"/>
+    </div>
+
+    <div id="defaultsGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px"></div>
+  </section>
+
+  <!-- shot selection (bottom) -->
+  <section class="card" style="margin-top:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h2 style="margin:0">Shot selection</h2>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="toggleConstraintsBtn" class="btn">Show shots</button>
+      </div>
+    </div>
+
+    <!-- wrapper is hidden by default; inner #constraints remains (so existing JS that appends into #constraints keeps working) -->
+    <div id="constraintsContainer" style="display:none;margin-top:12px">
+      <div id="constraints"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ========== Config & small helpers ========== */
+const AVAILABLE_SUMMARIES = [
+  "data/summary_others_2001.json",
+  "data/summary_others_2002.json",
+  "data/summary_others_2003.json",
+  "data/summary_others_2004.json",
+  "data/summary_others_2005.json",
+  "data/summary_others_2006.json",
+  "data/summary_others_2007.json",
+  "data/summary_others_2008.json",
+  "data/summary_others_2009.json",
+  "data/summary_others_2010.json",
+  "data/summary_others_2011.json",
+  "data/summary_others_2012.json",
+  "data/summary_others_2013.json",
+  "data/summary_others_2014.json",
+  "data/summary_others_2015.json",
+  "data/summary_others_2016_part1.json",
+  "data/summary_others_2016_part2.json",
+  "data/summary_others_2017_part1.json",
+  "data/summary_others_2017_part2.json",
+  "data/summary_others_2017_part3.json",
+  "data/summary_others_2018_part1.json",
+  "data/summary_others_2018_part2.json",
+  "data/summary_others_2019_part1.json",
+  "data/summary_others_2019_part2.json",
+  "data/summary_others_2020.json",
+  "data/summary_others_2021_part1.json",
+  "data/summary_others_2021_part2.json",
+  "data/summary_others_2022_part1.json",
+  "data/summary_others_2022_part2.json",
+  "data/summary_others_2022_part3.json",
+  "data/summary_others_2023_part1.json",
+  "data/summary_others_2023_part2.json",
+  "data/summary_others_2023_part3.json",
+  "data/summary_others_2024_part1.json",
+  "data/summary_others_2024_part2.json",
+  "data/summary_others_2024_part3.json",
+  "data/summary_others_2025.json"
+];
+
+
+const TASK_OPTIONS = ["Any","Draw","Guard","Front","Take-out","Hit-roll","Double","Raise","Freeze","Clearing","Through","Wick","Promotion"];
+const TURN_OPTIONS = ["Any","CW","CCW"];
+const BUCKETS = ['-3+','-2','-1','0','1','2','3+'];
+const BUCKET_VAL = {'-3+': -3,'-2': -2,'-1': -1,'0':0,'1':1,'2':2,'3+':3};
+
+let mergedAll = [], byYearMap = {}, playerStatsObj = null;
+
+/* --- CATEGORY ALIASES (add more synonyms here as needed) --- */
+const CATEGORY_ALIASES = {
+  "Grand Slams": ["grand slam","grand slams","grand-slam","grandslam","grand-slam(s)","gsoc","other"],
+  "Olympics": ["olympic","olympics","winter olympics","oqe","olympic qualifying","olympic qualifier"],
+  "Worlds": ["world championship","worlds","world championships","worlds championship"],
+  "Brier": ["brier"],
+  "Scotties": ["scotties","scotties tournament","scotties tournament of hearts","tournament of hearts"],
+  "Euros": ["european","euros","europeans","european championships"],
+  "University": ["u sports","u-sports","cis","canadian interuniversity","u sports older name cis"],
+  "Canadian Jrs": ["canadian juniors","canadian jrs","juniors","junior canada","canadian jr"],
+  "Canadian U18": ["u-18","u18","canadian u-18","canadian u18","u18s","u-18s"],
+  "Pacific-Asia": ["pacific asia","pacific-asian","pacific","asia","pacific asia curling"],
+  "Jr Worlds": ["jr worlds","jr. worlds","junior worlds","junior world","jrworlds","world junior"],
+};
+
+// helper: normalize a string for comparisons: lowercase, remove punctuation, collapse whitespace
+function normalizeStr(s){
+  if(!s) return '';
+  return String(s).toLowerCase().replace(/[^\w\s]/g,' ').replace(/\s+/g,' ').trim();
+}
+
+// robust gender matching so "Men" does NOT match "Women"
+function genderMatches(recGender, selGender){
+  if(!selGender || selGender === 'Any') return true;
+  if(!recGender) return false;
+
+  const rg = String(recGender).toLowerCase();
+  const sg = String(selGender).toLowerCase();
+
+  // normalized token checks
+  if(sg === 'men' || sg === "men's" || sg === "mens"){
+    // match 'men' as a whole word but reject if 'women' is present
+    return (/\bmen\b/.test(rg) || /\bmen's\b/.test(rg)) && !/\bwomen\b/.test(rg);
+  }
+
+  if(sg === 'women' || sg === "women's" || sg === "womens"){
+    return /\bwomen\b/.test(rg) || /\bwomen's\b/.test(rg) || /\bwomens\b/.test(rg);
+  }
+
+  // Mixed doubles explicit
+  if(sg.includes('mixed') && sg.includes('doubles') || sg.includes('mixed-doubles') ){
+    return /\bmixed\b/.test(rg) && /\bdoubl/i.test(rg);
+  }
+
+  // generic mixed
+  if(sg.includes('mixed')){
+    return /\bmixed\b/.test(rg);
+  }
+
+  // fallback: match whole word token equality
+  return rg.split(/\W+/).includes(sg);
+}
+
+/* DOM refs */
+const evalPos = document.getElementById('evalPos');
+const endsLeftSelect = document.getElementById('endsLeftSelect');
+const supportSlider = document.getElementById('supportSlider');
+const supportVal = document.getElementById('supportVal');
+const analyzeBtn = document.getElementById('analyzeBtn');
+const resultsDiv = document.getElementById('results');
+const statusDiv = document.getElementById('status');
+const progressWrap = document.getElementById('progressWrap');
+const progressBar = document.getElementById('progressBar');
+const playerSelect = document.getElementById('playerSelect');
+const playerDefaultsPanel = document.getElementById('playerDefaultsPanel');
+const defaultsGrid = document.getElementById('defaultsGrid');
+const toggleViewBtn = document.getElementById('toggleViewBtn');
+const downloadBtn = document.getElementById('downloadBtn');
+const genderSelect = document.getElementById('genderSelect');
+const categorySelect = document.getElementById('categorySelect');
+const startDateEl = document.getElementById('startDate');
+const endDateEl = document.getElementById('endDate');
+const constraintsDiv = document.getElementById('constraints');
+const timeSelect = document.getElementById('timeSelect');
+const hammerStartSelect = document.getElementById('hammerStartSelect');
+const tournamentSelect = document.getElementById('tournamentSelect');
+
+/* init UI */
+for(let i=1;i<=16;i++) evalPos.appendChild(new Option(i,i));
+endsLeftSelect.appendChild(new Option('Any','Any',true,true));
+for(let v=10; v>=0; v--) endsLeftSelect.appendChild(new Option(String(v), String(v)));
+supportVal.textContent = supportSlider.value + '%';
+supportSlider.addEventListener('input', ()=> supportVal.textContent = supportSlider.value + '%');
+
+// populate hammer start select (-6..6)
+for(let i=-6;i<=6;i++){ hammerStartSelect.appendChild(new Option(String(i), String(i))); }
+
+/* build shot cards */
+for(let i=0;i<16;i++){
+  const wrapper = document.createElement('div'); wrapper.className='task-card';
+  wrapper.innerHTML = `<div class="task-title">Shot ${i+1}</div>` +
+    `<select data-index="${i}" class="taskSel" multiple size="4"></select>` +
+    `<div style="height:8px"></div>` +
+    `<select data-index="${i}" class="turnSel" multiple size="3"></select>`;
+  constraintsDiv.appendChild(wrapper);
+}
+// ===== shot selection collapse/expand behavior =====
+// constraintsContainer holds the visible shot controls; defaults to hidden.
+// The #constraints element itself is used by existing code to append the cards.
+const constraintsContainer = document.getElementById('constraintsContainer');
+const toggleConstraintsBtn = document.getElementById('toggleConstraintsBtn');
+
+// sanity check (in case markup not present)
+if(toggleConstraintsBtn && constraintsContainer){
+  // default folded (already set via HTML), but set button text to match
+  function setConstraintsState(expanded){
+    if(expanded){
+      constraintsContainer.style.display = 'block';
+      toggleConstraintsBtn.textContent = 'Hide shots';
+      toggleConstraintsBtn.classList.add('btn-primary');
+    } else {
+      constraintsContainer.style.display = 'none';
+      toggleConstraintsBtn.textContent = 'Show shots';
+      toggleConstraintsBtn.classList.remove('btn-primary');
+    }
+  }
+
+  // default state: folded
+  let constraintsExpanded = false;
+  setConstraintsState(constraintsExpanded);
+
+  toggleConstraintsBtn.addEventListener('click', (e)=>{
+    constraintsExpanded = !constraintsExpanded;
+    setConstraintsState(constraintsExpanded);
+    // if we expand and a results table exists, re-run analyze to make sure UI syncs
+    if(constraintsExpanded && document.querySelector('#results table')){
+      // keep a very small delay so layout stabilizes
+      setTimeout(()=>{ analyze(); }, 50);
+    }
+  });
+}
+document.querySelectorAll('.taskSel').forEach(s=> { TASK_OPTIONS.forEach(t=> s.add(new Option(t,t))); s.value='Any'; });
+document.querySelectorAll('.turnSel').forEach(s=> { TURN_OPTIONS.forEach(t=> s.add(new Option(t,t))); s.value='Any'; });
+
+/* defaults grid (REPLACE existing defaults grid block with this) */
+const DEFAULT_TASKS = TASK_OPTIONS.filter(t=>t!=='Any');
+
+// create expanded defaultsGrid (per-task inputs) as before
+DEFAULT_TASKS.forEach(task=>{
+  const div = document.createElement('div');
+  div.style.background='linear-gradient(180deg,#fff,#fbfdff)';
+  div.style.padding='8px';
+  div.style.borderRadius='8px';
+  div.innerHTML = `<div style="font-weight:700;margin-bottom:6px">${task}</div>` +
+    `<div style="display:flex;gap:8px;align-items:center"><label class="muted-xs" style="width:40px">CW</label><input data-task="${task}" data-turn="CW" class="defInput" placeholder="100" type="number" min="0" max="100" /></div>` +
+    `<div style="display:flex;gap:8px;align-items:center;margin-top:6px"><label class="muted-xs" style="width:40px">CCW</label><input data-task="${task}" data-turn="CCW" class="defInput" placeholder="100" type="number" min="0" max="100" /></div>`;
+  defaultsGrid.appendChild(div);
+});
+
+// --- CONDENSED CONTROLS (updated: two bins, no turns) ---
+// Bins:
+// Draws: ["Draw","Guard","Front","Freeze"]
+// Takeouts: ["Take-out","Hit-roll","Double","Raise","Clearing","Through","Wick","Promotion"]
+
+const condensedControls = document.createElement('div');
+condensedControls.id = 'condensedControls';
+condensedControls.style.display = 'block';
+condensedControls.style.marginTop = '8px';
+condensedControls.style.padding = '8px';
+condensedControls.style.borderRadius = '8px';
+condensedControls.style.background = 'linear-gradient(180deg,#fff,#fbfdff)';
+condensedControls.style.border = '1px solid #eef2f7';
+
+condensedControls.innerHTML = `
+  <div style="font-weight:700;margin-bottom:8px">Player Inputs</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:center">
+    <div>
+      <div style="font-weight:600;margin-bottom:6px">Draw %</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="cond_draw" placeholder="auto" type="number" min="0" max="100" />
+      </div>
+    </div>
+    <div>
+      <div style="font-weight:600;margin-bottom:6px">Takeouts %</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="cond_take" placeholder="auto" type="number" min="0" max="100" />
+      </div>
+    </div>
+  </div>
+`;
+
+// insert condensedControls right above the expanded defaultsGrid
+playerDefaultsPanel.insertBefore(condensedControls, defaultsGrid);
+
+// helper maps for bins (unchanged)
+const BIN_DRAW = ['Draw','Guard','Front','Freeze'];
+const BIN_TAKE = ['Take-out','Hit-roll','Double','Raise','Clearing','Through','Wick','Promotion'];
+
+// utility: get all defInput elements
+function getAllDefInputs(){
+  return Array.from(document.querySelectorAll('.defInput'))
+    .map(inp => ({ el: inp, task: inp.dataset.task, turn: inp.dataset.turn }));
+}
+
+// compute bin average across BOTH turns from per-shot inputs or playerStatsObj
+function computeBinAveragesForPlayerBothTurns(playerName){
+  const out = { draw:null, take:null };
+  const mean = arr => {
+    const nums = arr.filter(n=>n!=null && !isNaN(n)).map(Number);
+    return nums.length ? nums.reduce((a,b)=>a+b,0)/nums.length : null;
+  };
+
+  const p = (playerName && playerStatsObj && playerStatsObj[playerName]) ? playerStatsObj[playerName] : null;
+
+  let drawVals = [], takeVals = [];
+
+  if (p && p.tasks){
+    BIN_DRAW.forEach(t => {
+      const e = p.tasks[t]; if(!e) return;
+      if(e.CW!=null) drawVals.push(e.CW);
+      if(e.CCW!=null) drawVals.push(e.CCW);
+    });
+    BIN_TAKE.forEach(t => {
+      const e = p.tasks[t]; if(!e) return;
+      if(e.CW!=null) takeVals.push(e.CW);
+      if(e.CCW!=null) takeVals.push(e.CCW);
+    });
+  }
+
+  // fallback to current UI values if playerStatsObj is missing or sparse
+  if(drawVals.length===0 || takeVals.length===0){
+    const inputs = getAllDefInputs();
+    inputs.forEach(i=>{
+      const val = i.el.value==='' ? null : Number(i.el.value);
+      if(BIN_DRAW.includes(i.task)) drawVals.push(val);
+      if(BIN_TAKE.includes(i.task)) takeVals.push(val);
+    });
+  }
+
+  out.draw = mean(drawVals);
+  out.take = mean(takeVals);
+  return out;
+}
+
+// condensed -> expanded: write a single % to BOTH CW & CCW for tasks in each bin
+function propagateCondensedToExpanded(){
+  const draw = document.getElementById('cond_draw').value;
+  const take = document.getElementById('cond_take').value;
+
+  const inputs = getAllDefInputs();
+  inputs.forEach(i=>{
+    if(BIN_DRAW.includes(i.task) && draw !== ''){
+      i.el.value = draw; // applies to both CW and CCW inputs (each element is one turn)
+    }
+    if(BIN_TAKE.includes(i.task) && take !== ''){
+      i.el.value = take;
+    }
+  });
+}
+
+// expanded -> condensed: average all CW+CCW inputs in a bin
+function propagateExpandedToCondensed(){
+  const avg = computeBinAveragesForPlayerBothTurns(playerSelect.value);
+  document.getElementById('cond_draw').value = (avg.draw!=null) ? Math.round(avg.draw*10)/10 : '';
+  document.getElementById('cond_take').value = (avg.take!=null) ? Math.round(avg.take*10)/10 : '';
+}
+
+// wire condensed inputs to update expanded inputs live
+['cond_draw','cond_take'].forEach(id=>{
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.addEventListener('input', ()=> {
+    propagateCondensedToExpanded();
+  });
+});
+
+// also wire per-shot .defInput changes to update condensed panel
+document.querySelectorAll('.defInput').forEach(inp=>{
+  inp.addEventListener('input', ()=>{ propagateExpandedToCondensed(); });
+});
+
+// switch between condensed/expanded views (keep your existing toggle logic)
+function updatePlayerDefaultsView(){
+  if(condensed){
+    condensedControls.style.display = 'block';
+    defaultsGrid.style.display = 'none';
+  } else {
+    condensedControls.style.display = 'block'; // keep visible if you want both; change to 'none' to hide
+    defaultsGrid.style.display = 'grid';
+  }
+}
+
+// ensure grid styling remains intact
+defaultsGrid.style.display = 'grid';
+defaultsGrid.style.gridTemplateColumns = 'repeat(3,1fr)';
+defaultsGrid.style.gap = '8px';
+
+// Save: push condensed values into expanded first, then persist
+document.getElementById('saveDefaultsBtn')
+  .addEventListener('click', ()=>{ 
+    propagateCondensedToExpanded();
+    saveDefaultsToStorage(readCurrentDefaults());
+    statusDiv.textContent = 'Defaults saved.';
+  });
+
+// Reset: clear both condensed and expanded
+document.getElementById('resetDefaultsBtn')
+  .addEventListener('click', ()=>{ 
+    if(!confirm('Reset defaults to blank (interpreted as 100%)?')) return; 
+    document.querySelectorAll('.defInput').forEach(i=>i.value=''); 
+    document.getElementById('defaultsName').value=''; 
+    document.getElementById('cond_draw').value='';
+    document.getElementById('cond_take').value='';
+    saveDefaultsToStorage({});
+    statusDiv.textContent='Defaults reset.'; 
+  });
+
+// When player changes: fill expanded from player stats, then reflect into condensed
+playerSelect.addEventListener('change', ()=>{
+  const pname = playerSelect.value;
+
+  // Keep panel visible in condensed mode even with no player selected
+  if(!pname){
+    if(condensed) playerDefaultsPanel.style.display = 'block';
+    const stored = loadDefaultsFromStorage(); 
+    if(stored) applyDefaultsToUI(stored);
+    document.getElementById('cond_draw').value='';
+    document.getElementById('cond_take').value='';
+    return;
+  }
+
+  playerDefaultsPanel.style.display = 'block';
+
+  const p = playerStatsObj && playerStatsObj[pname];
+  if(!p){
+    document.getElementById('defaultsName').value = pname;
+    document.querySelectorAll('.defInput').forEach(inp=> inp.value = '');
+    propagateExpandedToCondensed();
+    return;
+  }
+
+  document.getElementById('defaultsName').value = pname;
+
+  // populate expanded per-shot inputs from player stats across both turns
+  document.querySelectorAll('.defInput').forEach(inp=>{
+    const task = inp.dataset.task; 
+    const turn = inp.dataset.turn; // not used for averaging here, but each input still maps to a specific turn
+    const e = (p.tasks && p.tasks[task]) ? p.tasks[task] : null;
+    const val = e ? (turn==='CW' ? e.CW : e.CCW) : null;
+    inp.value = (val==null ? '' : String(val));
+  });
+
+  // compute and show condensed 2-bin values
+  const avg = computeBinAveragesForPlayerBothTurns(pname);
+  document.getElementById('cond_draw').value = (avg.draw!=null) ? Math.round(avg.draw*10)/10 : '';
+  document.getElementById('cond_take').value = (avg.take!=null) ? Math.round(avg.take*10)/10 : '';
+
+  updatePlayerDefaultsView();
+});
+
+/* CSV parsing (for players) */
+function splitCSVLine(line){ const out=[]; let cur=''; let inQ=false; for(let i=0;i<line.length;i++){ const ch=line[i]; if(inQ){ if(ch==='"'){ if(line[i+1]==='"'){ cur+='"'; i++; } else inQ=false; } else cur+=ch; } else { if(ch===','){ out.push(cur); cur=''; } else if(ch==='"'){ inQ=true; } else cur+=ch; } } out.push(cur); return out; }
+function parseCSV(text){ const lines=text.split(/\r?\n/).filter(l=>l.trim()!==''); if(lines.length===0) return {header:[],rows:[]}; const header = splitCSVLine(lines[0]).map(h=>h.trim()); const rows=[]; for(let i=1;i<lines.length;i++){ const cols=splitCSVLine(lines[i]); if(cols.length===0) continue; const obj={}; for(let j=0;j<header.length;j++) obj[header[j]] = cols[j]===undefined? '' : cols[j]; rows.push(obj);} return {header, rows}; }
+function parsePercent(s){ if(s===null||s===undefined) return null; let t=String(s).trim(); if(!t || t.toUpperCase()==='N/A') return null; t=t.replace('%','').replace(/,/g,'').trim(); const n=Number(t); return isNaN(n)? null : n; }
+
+/* ======== loadPlayersCSV (UPDATED to show count) ======== */
+async function loadPlayersCSV(path='/data/players_stats_spreadsheet_extended.csv'){
+  try{
+    const r = await fetch(path); if(!r.ok) throw new Error('not found'); const txt = await r.text();
+    const parsed = parseCSV(txt); const headers = parsed.header; const rows = parsed.rows;
+    const taskCols = {};
+    headers.forEach(h=>{ const m = h.match(/^(.*)_(CW|CCW)$/i); if(m){ const t=m[1].trim(); const turn=m[2].toUpperCase(); taskCols[t] = taskCols[t] || {taskName:t, CW:null, CCW:null}; taskCols[t][turn] = h; } });
+    playerStatsObj = {};
+    rows.forEach(row=>{
+      const name = row['Player'] || row['player'] || Object.values(row)[0]; if(!name) return;
+      const entry = { Shots: row['Shots']||'', AVG_CW: parsePercent(row['AVG_CW']||''), AVG_CCW: parsePercent(row['AVG_CCW']||''), tasks:{} };
+      Object.values(taskCols).forEach(tc=>{ const cw = tc.CW ? parsePercent(row[tc.CW]) : null; const ccw = tc.CCW ? parsePercent(row[tc.CCW]) : null; entry.tasks[tc.taskName] = {CW:cw, CCW:ccw}; });
+      playerStatsObj[name] = entry;
+    });
+
+    // repopulate player select
+    playerSelect.innerHTML = '<option value="">-- none --</option>';
+    Object.keys(playerStatsObj).sort().forEach(p=> playerSelect.appendChild(new Option(p,p)));
+
+    // ====== FIX: show number of players loaded ======
+    const playerCount = Object.keys(playerStatsObj).length;
+    statusDiv.textContent = (statusDiv.textContent || '') + ` • ${playerCount} players loaded`;
+    if(progressBar){ progressBar.textContent = progressBar.textContent + ` • ${playerCount} players`; }
+  } catch(e){ console.warn('players csv failed', e); }
+}
+
+/* merge summaries with progress */
+async function fetchAndMergeAll(){
+  progressWrap.style.display = 'block'; mergedAll=[]; byYearMap={}; const total = AVAILABLE_SUMMARIES.length; let done=0;
+  for(const path of AVAILABLE_SUMMARIES){
+    try{ const r=await fetch(path); if(r.ok){ const arr = await r.json(); if(Array.isArray(arr)){ const year = path.split('/').pop().replace('summary_','').replace('.json',''); byYearMap[year]=arr; mergedAll = mergedAll.concat(arr); } } else console.warn('skip', path, r.status); }catch(err){ console.warn('fetch',path,err); }
+    done++; const pct = Math.round((done/total)*100); progressBar.style.width = pct+'%'; progressBar.textContent = pct+'%';
+    await new Promise(r=>setTimeout(r,30));
+  }
+  try{ await loadPlayersCSV('/data/players_stats_spreadsheet_extended.csv'); }catch(e){ console.warn('player CSV load failed at end', e); }
+
+  progressBar.style.width = '100%';
+  const playersText = (playerStatsObj && Object.keys(playerStatsObj).length) ? ` • ${Object.keys(playerStatsObj).length} players` : '';
+  progressBar.textContent = `Loaded ${mergedAll.length} ends` + playersText;
+  statusDiv.textContent = `Loaded ${mergedAll.length} ends across ${Object.keys(byYearMap).length} files.` + (playersText || '');
+  // populate Tournament filter from loaded data
+  try{ initTournamentFilterFromData(mergedAll); if(tournamentSelect){ tournamentSelect.addEventListener('change', ()=>{ if (typeof analyze==='function') analyze(); }); } }catch(e){}
+
+  try{ wireAutoAnalyze(); }catch(e){}
+
+}
+
+/* defaults storage */
+const DEFAULTS_KEY = 'curling_player_defaults_v1';
+function loadDefaultsFromStorage(){ try{ const r=localStorage.getItem(DEFAULTS_KEY); return r? JSON.parse(r): {}; }catch(e){return{} } }
+function saveDefaultsToStorage(obj){ try{ localStorage.setItem(DEFAULTS_KEY, JSON.stringify(obj)); return true;}catch(e){return false;} }
+function readCurrentDefaults(){ const out={}; document.querySelectorAll('.defInput').forEach(inp=>{ const k=`${inp.dataset.task}||${inp.dataset.turn}`; const v = inp.value===''? null: Number(inp.value); out[k] = v===null||isNaN(v) ? null : Math.max(0,Math.min(100,v)); }); return { name: document.getElementById('defaultsName').value||'', values: out }; }
+function applyDefaultsToUI(obj){ if(!obj) return; if(obj.name) document.getElementById('defaultsName').value = obj.name; document.querySelectorAll('.defInput').forEach(inp=>{ const k = `${inp.dataset.task}||${inp.dataset.turn}`; inp.value = (obj.values && obj.values[k] != null) ? String(obj.values[k]) : ''; }); }
+
+document.getElementById('saveDefaultsBtn').addEventListener('click', ()=>{ saveDefaultsToStorage(readCurrentDefaults()); statusDiv.textContent = 'Defaults saved.'; });
+document.getElementById('resetDefaultsBtn').addEventListener('click', ()=>{ if(!confirm('Reset defaults to blank (interpreted as 100%)?')) return; document.querySelectorAll('.defInput').forEach(i=>i.value=''); document.getElementById('defaultsName').value=''; saveDefaultsToStorage({}); statusDiv.textContent='Defaults reset.'; });
+
+/* get active player percent (player selection takes precedence; otherwise defaults or 100) */
+function getActivePlayerPct(task, turn){
+  if(playerSelect.value && playerStatsObj && playerStatsObj[playerSelect.value]){
+    const pd = playerStatsObj[playerSelect.value].tasks || {}; const te = pd[task];
+    if(te){ const val = (turn==='CW') ? te.CW : te.CCW; if(val != null) return val; }
+  }
+  const stored = loadDefaultsFromStorage();
+  const k = `${task}||${turn}`;
+  if(stored && stored.values && stored.values[k] != null) return stored.values[k];
+  return 100.0;
+}
+
+/* helpers */
+function percentToHSLStatic(pct){ const v=Math.max(0,Math.min(100,Number(pct))); const hue=(v/100)*120; return `hsl(${hue},78%,45%)`; }
+function pickTextColor(pct){ if(pct===null||pct===undefined) return '#333'; return (Number(pct) < 55) ? '#fff' : '#000'; }
+function scoreBucket(n){ if(n==null) return null; if(n<=-3) return '-3+'; if(n===-2) return '-2'; if(n===-1) return '-1'; if(n===0) return '0'; if(n===1) return '1'; if(n===2) return '2'; if(n>=3) return '3+'; return null; }
+function computeEstimateFromCounts(counts, total){ if(!counts || total===0) return null; let sum=0; for(let i=0;i<BUCKETS.length;i++) sum += BUCKET_VAL[BUCKETS[i]] * (counts[i]||0); return sum / total; }
+function formatEstimate(x){ if(x==null) return 'N/A'; return (Math.round(x*10)/10).toFixed(1); }
+function getSelectedValues(selectEl){ if(!selectEl) return []; const vals=[]; for(const opt of Array.from(selectEl.options)) if(opt.selected) vals.push(opt.value); return vals.length?vals:['Any']; }
+
+function initTournamentFilterFromData(arr){
+  try{
+    if(!tournamentSelect) return;
+    // clear old (keep "All")
+    tournamentSelect.innerHTML = '<option value="all">All</option>';
+    const set = new Set();
+    (arr||[]).forEach(r => {
+      const t = (r && r.tournament != null) ? String(r.tournament).trim() : '';
+      if(t) set.add(t);
+    });
+    Array.from(set).sort((a,b)=>a.localeCompare(b)).forEach(name=>{
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      tournamentSelect.appendChild(opt);
+    });
+  }catch(e){ console.warn('initTournamentFilterFromData error', e); }
+
+function wireAutoAnalyze(){
+  try{
+    if (window._autoAnalyzeWired) return;
+    window._autoAnalyzeWired = true;
+    const reAnalyze = ()=>{ try{ if (typeof analyze === 'function') analyze(); }catch(e){} };
+
+    const ids = [
+      'playerSelect','evalPos','startDate','endDate',
+      'timeSelect','supportSlider','endsLeftSelect',
+      'hammerStartSelect','genderSelect','categorySelect',
+      'tournamentSelect'
+    ];
+    ids.forEach(id=>{
+      const el = document.getElementById(id);
+      if(!el) return;
+      let evt = 'change';
+      if (el.tagName === 'INPUT'){
+        if (el.type === 'range') evt = 'input';       // live updates for slider
+        else if (el.type === 'date') evt = 'change'; // on date pick
+      }
+      el.addEventListener(evt, reAnalyze);
+    });
+  }catch(err){ console.warn('wireAutoAnalyze error', err); }
+}
+
+}
+
+/* constraints reading & matching (multi-select aware) */
+function readConstraints(){ const tasks = document.querySelectorAll('.taskSel'); const turns = document.querySelectorAll('.turnSel'); const out=[]; for(let i=0;i<16;i++){ const taskVals = getSelectedValues(tasks[i]); const turnVals = getSelectedValues(turns[i]); out.push({task:taskVals, turn:turnVals}); } return out; }
+function matchesConstraint(endRec, cons){
+  for(let i=0;i<cons.length;i++){
+    const c=cons[i]; const isTaskAny = c.task.includes('Any'); const isTurnAny = c.turn.includes('Any');
+    if(isTaskAny && isTurnAny) continue;
+    const shot = (endRec.shots||[]).find(s=>Number(s.shot_num)===i+1); if(!shot) return false;
+    const shotTask = (shot.task||'').toString(); const shotTurn = (shot.turn||'').toString().toUpperCase();
+    if(!isTaskAny){
+      let matched=false;
+      for(const opt of c.task){
+        if(opt==='Any'){ matched=true; break; }
+        if(opt.toLowerCase()==='guard'){ if(/guard/i.test(shotTask)){ matched=true; break; } }
+        else if(opt.toLowerCase()==='front'){ if(/^front$/i.test(shotTask)){ matched=true; break; } }
+        else { if(shotTask && shotTask.toLowerCase()===opt.toLowerCase()){ matched=true; break; } }
+      }
+      if(!matched) return false;
+    }
+    if(!isTurnAny){
+      const selTurns = c.turn.map(x=>x.toUpperCase());
+      if(!selTurns.includes(shotTurn)) return false;
+    }
+  }
+  return true;
+}
+
+/* condensed <-> expanded player defaults toggle (REPLACE the old block with this) */
+let condensed = true;
+
+// Update UI helper used for both initial setup and when toggling
+function updatePlayerPanelUI() {
+  try {
+    // toggle button present?
+    if (!toggleViewBtn) return;
+
+    // defaultsGrid is a grid for expanded inputs; condensedControls is optional (if you create it)
+    const condensedControls = document.getElementById('condensedControls');
+
+    if (condensed) {
+      // condensed mode UI
+      toggleViewBtn.textContent = 'Expanded View';
+      toggleViewBtn.classList.remove('btn-primary');
+
+      // hide the full defaults grid (expanded controls)
+      if (defaultsGrid) defaultsGrid.style.display = 'none';
+
+      // show condensed controls if provided (optional)
+      if (condensedControls) condensedControls.style.display = 'block';
+
+      // hide the whole player panel unless a player is selected (keeps page tidy)
+      if (playerSelect && !playerSelect.value) {
+        playerDefaultsPanel.style.display = 'none';
+      } else {
+        // if a player IS selected, still show condensed summary in the panel
+        playerDefaultsPanel.style.display = 'block';
+      }
+    } else {
+      // expanded mode UI
+      toggleViewBtn.textContent = 'Condensed View';
+      toggleViewBtn.classList.add('btn-primary');
+
+      // show the full defaults grid
+      if (defaultsGrid) defaultsGrid.style.display = 'grid';
+
+      // hide condensed controls (if they exist)
+      if (condensedControls) condensedControls.style.display = 'block';
+
+      // always show the panel in expanded mode so user can edit everything
+      playerDefaultsPanel.style.display = 'block';
+    }
+  } catch (err) {
+    console.warn('updatePlayerPanelUI error', err);
+  }
+}
+
+// Wire up the toggle button to flip condensed <-> expanded and re-run analysis if results present
+if (toggleViewBtn) {
+  toggleViewBtn.addEventListener('click', () => {
+    condensed = !condensed;
+    updatePlayerPanelUI();
+
+    // re-run analysis only if there is an existing results table to update visuals
+    if (document.querySelector('#results table')) {
+      // tiny timeout so panel/showing changes can settle visually
+      setTimeout(() => { analyze(); }, 40);
+    }
+  });
+}
+
+// Ensure condensed view on first load
+// (call once after defaultsGrid exists — it is safe to call here because defaultsGrid is declared earlier)
+condensed = true;
+updatePlayerPanelUI();
+
+
+/* when player selected: populate defaults inputs and reveal panel */
+playerSelect.addEventListener('change', ()=>{
+  const pname = playerSelect.value;
+  if(!pname){
+    // Keep player panel visible in condensed mode even with no player selected
+    if(condensed) playerDefaultsPanel.style.display = 'block'; const stored = loadDefaultsFromStorage(); if(stored) applyDefaultsToUI(stored); return; }
+  playerDefaultsPanel.style.display = 'block';
+  const p = playerStatsObj && playerStatsObj[pname];
+  if(!p){ document.getElementById('defaultsName').value = pname; document.querySelectorAll('.defInput').forEach(inp=> inp.value = ''); return; }
+  document.getElementById('defaultsName').value = pname;
+  document.querySelectorAll('.defInput').forEach(inp=>{
+    const task = inp.dataset.task; const turn = inp.dataset.turn;
+    const val = (p.tasks && p.tasks[task]) ? ((turn==='CW')? p.tasks[task].CW : p.tasks[task].CCW) : null;
+    inp.value = val == null ? '' : String(val);
+  });
+});
+
+/* analysis core (with category alias normalization) */
+async function analyze(){
+  const dataset = mergedAll;
+  const cons = readConstraints();
+  const evalShot = Number(evalPos.value || 1);
+  const sd = startDateEl.value? new Date(startDateEl.value) : null;
+  const ed = endDateEl.value? new Date(endDateEl.value) : null;
+  const minSupport = Number(supportSlider.value);
+  const endsSelected = getSelectedValues(endsLeftSelect); const endsIsAny = endsSelected.includes('Any');
+  const genderSelected = getSelectedValues(genderSelect); const genderIsAny = genderSelected.includes('Any');
+
+  /* --- inside analyze(): read selected categories (multi) --- */
+  const categorySelected = getSelectedValues(categorySelect);
+  const categoryIsAny = categorySelected.includes('Any') || categorySelected.length === 0;
+
+  // read new filters
+  const timeSelected = (timeSelect && timeSelect.value) ? timeSelect.value : 'all';
+  const hammerSelected = (hammerStartSelect && hammerStartSelect.value) ? hammerStartSelect.value : 'all';
+
+  const tournamentSelected = (tournamentSelect && tournamentSelect.value) ? tournamentSelect.value : 'all';
+
+  // build normalized alias list for selected categories (only once)
+let selectedCategoryAliases = null;
+  let selectedCategoryExact = null;
+  if (!categoryIsAny) {
+    selectedCategoryAliases = [];
+    selectedCategoryExact = new Set();
+
+    for (const selRaw of categorySelected) {
+      if (!selRaw || selRaw === 'Any') continue;
+      const sel = String(selRaw).trim();
+      // exact label (lowercase) for direct equality checks later
+      selectedCategoryExact.add(sel.toLowerCase());
+
+      // normalized whole selection (e.g. "Grand Slams" -> "grand slams")
+      const wholeNorm = normalizeStr(sel);
+      if (wholeNorm && !selectedCategoryAliases.includes(wholeNorm)) selectedCategoryAliases.push(wholeNorm);
+
+      // also add individual words/tokens from the selection (e.g. "Grand" "Slams")
+      sel.split(/\W+/).forEach(tok => {
+        const tnorm = normalizeStr(tok);
+        if (tnorm && !selectedCategoryAliases.includes(tnorm)) selectedCategoryAliases.push(tnorm);
+      });
+
+      // add any mapped aliases from CATEGORY_ALIASES (and their tokens)
+      const mapped = CATEGORY_ALIASES[sel] || CATEGORY_ALIASES[sel.trim()] || null;
+      if (mapped && Array.isArray(mapped)) {
+        mapped.forEach(m => {
+          const mn = normalizeStr(m);
+          if (mn && !selectedCategoryAliases.includes(mn)) selectedCategoryAliases.push(mn);
+          m.split(/\W+/).forEach(tok => {
+            const t2 = normalizeStr(tok);
+            if (t2 && !selectedCategoryAliases.includes(t2)) selectedCategoryAliases.push(t2);
+          });
+        });
+      }
+    }
+  }
+
+  const candidateTasks = TASK_OPTIONS.filter(t=>t!=='Any');
+  const pairs=[]; candidateTasks.forEach(t=>['CW','CCW'].forEach(turn=> pairs.push({task:t, turn:turn})));
+  // accum now tracks totals, counts per bucket and wins per bucket
+  const accum = {}; pairs.forEach(p=> accum[`${p.task}||${p.turn}`] = { total:0, counts: BUCKETS.map(()=>0), wins: BUCKETS.map(()=>0), totalWins:0 });
+
+  let matchedEnds = 0;
+  for(const endRec of dataset){
+    if(sd || ed){ if(endRec.date){ const d=new Date(endRec.date); if(sd && d<sd) continue; if(ed && d>ed) continue; } }
+
+    // time filter
+    if(timeSelected && timeSelected !== 'all'){
+      const recTime = (endRec.time || '').toString().toLowerCase();
+      if(recTime !== timeSelected) continue;
+    }
+
+    // hammer_team_start_score filter
+    if(hammerSelected && hammerSelected !== 'all'){
+      const val = endRec.hammer_team_start_score;
+      const num = (val === null || val === undefined || val === '') ? null : Number(val);
+      if(num === null || isNaN(num) || num !== Number(hammerSelected)) continue;
+    }
+
+    
+
+    // tournament filter
+    if(tournamentSelected && tournamentSelected !== 'all'){
+      const t = (endRec.tournament == null) ? '' : String(endRec.tournament);
+      if(t !== tournamentSelected) continue;
+    }
+// ends filter
+    if(!endsIsAny){ if(endRec.ends_remaining==null) continue; const er = Number(endRec.ends_remaining); if(!endsSelected.map(x=>Number(x)).includes(er)) continue; }
+
+    // gender filter
+    // gender filter (improved: exact/word-boundary matching so "Men" won't match "Women")
+	if(!genderIsAny){
+	const recGender = (endRec.gender || '').toString();
+	const ok = genderSelected.some(g => genderMatches(recGender, g));
+	if(!ok) continue;
+	}
+
+
+    // category filter: use normalized aliases for robust matching
+    if(!categoryIsAny){
+      const recCatRaw = (endRec.category || '');
+      const recCat = normalizeStr(recCatRaw);
+      if(!recCat) continue;
+      const okc = selectedCategoryAliases.some(alias => recCat.indexOf(alias) !== -1);
+      if(!okc) continue;
+    }
+
+    if(!matchesConstraint(endRec, cons)) continue;
+
+    matchedEnds++;
+    const shot = (endRec.shots||[]).find(s=>Number(s.shot_num)===evalShot); if(!shot) continue;
+    const shotTask = (shot.task||'').toString(); const shotTurn = (shot.turn||'').toString().toUpperCase();
+    const signed = (endRec.signed_score == null) ? null : Number(endRec.signed_score);
+    if(signed==null) continue;
+
+    for(const p of pairs){
+      let matchTask=false;
+      if(p.task.toLowerCase()==='guard') matchTask = /guard/i.test(shotTask);
+      else if(p.task.toLowerCase()==='front') matchTask = /^front$/i.test(shotTask);
+      else matchTask = shotTask && shotTask.toLowerCase() === p.task.toLowerCase();
+      if(!matchTask) continue;
+      if(shotTurn !== p.turn) continue;
+      const key = `${p.task}||${p.turn}`; const b = scoreBucket(signed); if(!b) continue;
+      const idx = BUCKETS.indexOf(b); if(idx>=0){
+        accum[key].counts[idx] += 1; accum[key].total += 1;
+        // win calculation: if endRec.winner equals the team who played the shot
+        try{
+          const winner = (endRec.winner || '').toString().trim();
+          const shotTeam = (shot.team || '').toString().trim();
+          if(winner && shotTeam && normalizeStr(winner) === normalizeStr(shotTeam)){
+            accum[key].wins[idx] += 1; accum[key].totalWins += 1;
+          }
+        }catch(e){}
+      }
+    }
+  }
+
+  // build rows (condensed combines turns)
+  const rowsPre = [];
+  if(condensed){
+    for(const task of TASK_OPTIONS.filter(t=>t!=='Any')){
+      const aCW = accum[`${task}||CW`] || {total:0, counts: BUCKETS.map(()=>0), wins: BUCKETS.map(()=>0), totalWins:0};
+      const aCCW = accum[`${task}||CCW`] || {total:0, counts: BUCKETS.map(()=>0), wins: BUCKETS.map(()=>0), totalWins:0};
+      const total = (aCW.total||0) + (aCCW.total||0);
+      const counts = BUCKETS.map((_,i)=> (aCW.counts[i]||0) + (aCCW.counts[i]||0));
+      const wins = BUCKETS.map((_,i)=> (aCW.wins[i]||0) + (aCCW.wins[i]||0));
+      const totalWins = (aCW.totalWins||0) + (aCCW.totalWins||0);
+      rowsPre.push({task, turn:'BOTH', total, counts, wins, totalWins, parts:{cwTotal:aCW.total||0, ccwTotal:aCCW.total||0}});
+    }
+  } else {
+    for(const [key,entry] of Object.entries(accum)){
+      const total = entry.total || 0; const [task, turn] = key.split('||'); rowsPre.push({task, turn, total, counts: entry.counts, wins: entry.wins, totalWins: entry.totalWins});
+    }
+  }
+
+  const rowsFiltered = [];
+  rowsPre.forEach(r=>{ const supportPct = matchedEnds===0?0:(r.total / matchedEnds * 100); if(supportPct >= minSupport) rowsFiltered.push(Object.assign({}, r, { supportPct })); });
+  rowsFiltered.sort((a,b)=> b.supportPct - a.supportPct);
+
+  // dynamic scaling values (expanded)
+  let bucketPctValues = [];
+  if(!condensed){ rowsFiltered.forEach(r=>{ for(let i=0;i<r.counts.length;i++){ const pct = r.total===0?null:(r.counts[i]/r.total*100); if(pct!=null) bucketPctValues.push(pct); } }); }
+  let globalMin = bucketPctValues.length? Math.min(...bucketPctValues):0;
+  let globalMax = bucketPctValues.length? Math.max(...bucketPctValues):1;
+  if(globalMin === globalMax){ globalMin=0; globalMax = globalMin + 1; }
+
+  // compute estimates & player-adjusted
+  let maxEstimate = -Infinity, maxPlayerAdj = -Infinity;
+  rowsFiltered.forEach(r=>{
+    r.estimate = computeEstimateFromCounts(r.counts, r.total);
+    if(r.estimate!=null && r.estimate > maxEstimate) maxEstimate = r.estimate;
+    // player %
+    let playerPct = null;
+    if(playerSelect.value && playerStatsObj && playerStatsObj[playerSelect.value]){
+      const pd = playerStatsObj[playerSelect.value].tasks || {};
+      if(condensed){
+        const pdEntry = pd[r.task] || {}; const cw = pdEntry.CW, ccw = pdEntry.CCW;
+        if(cw != null && ccw != null) playerPct = (cw + ccw) / 2.0;
+        else if(cw != null) playerPct = cw;
+        else if(ccw != null) playerPct = ccw;
+      } else {
+        const pdEntry = pd[r.task] || {}; playerPct = (r.turn === 'CW') ? pdEntry.CW : pdEntry.CCW;
+      }
+    } else {
+      if(condensed){
+        const cw = getActivePlayerPct(r.task, 'CW'); const ccw = getActivePlayerPct(r.task, 'CCW');
+        if(cw!=null && ccw!=null) playerPct = (cw+ccw)/2.0; else playerPct = cw!=null?cw:(ccw!=null?ccw:100);
+      } else {
+        playerPct = getActivePlayerPct(r.task, r.turn);
+      }
+    }
+    r.playerPct = playerPct;
+
+    // compute win percent for this row (keep it as percent 0..100)
+    r.winPct = (r.total === 0) ? null : (((r.totalWins || 0) / r.total) * 100);
+
+    // Determine PP factor source:
+    // preference: window.extPlayers (if your extended CSV loader exposes it),
+    // fallback: playerStatsObj (if it contains PP fields), else 1.0
+    let ppFactor = 1.0;
+    const pname = playerSelect && playerSelect.value ? playerSelect.value : null;
+
+    try {
+      // try global extended players map if present
+      if (typeof window !== 'undefined' && window.extPlayers && pname) {
+        const extRow = findKeyInsensitive(window.extPlayers, pname) ? window.extPlayers[findKeyInsensitive(window.extPlayers, pname)] : null;
+        if(extRow) {
+          const keyTeam = Object.keys(extRow).find(k => k && k.toString().toLowerCase().indexOf('pp_team_throws16') !== -1);
+          const keyOpp  = Object.keys(extRow).find(k => k && k.toString().toLowerCase().indexOf('pp_opp_throws16') !== -1);
+          const raw = (evalShot % 2 === 1) ? (extRow[keyTeam] || extRow['PP_team_throws16_hammer']) : (extRow[keyOpp] || extRow['PP_opp_throws16_hammer']);
+          const numeric = raw === undefined || raw === null || raw === '' ? null : Number(String(raw).replace('%','').trim());
+          if(!isNaN(numeric) && numeric !== null) ppFactor = Number(numeric);
+        }
+      }
+
+      // fallback to playerStatsObj (older loader)
+      if(ppFactor === 1.0 && playerStatsObj && pname && playerStatsObj[pname]) {
+        const prow = playerStatsObj[pname];
+        // try several possible column names
+        const candNames = ['PP_team_throws16_hammer','pp_team_throws16_hammer','PP_opp_throws16_hammer','pp_opp_throws16_hammer'];
+        for(const c of candNames){
+          if(prow[c] !== undefined && prow[c] !== null && prow[c] !== ''){
+            const n = Number(String(prow[c]).replace('%','').trim());
+            if(!isNaN(n)){ ppFactor = n; break; }
+          }
+        }
+      }
+    } catch(e){ /* ignore and use 1.0 */ }
+
+    // ensure ppFactor is a usable number; if not, default to 1.0
+    if(ppFactor === null || ppFactor === undefined || isNaN(Number(ppFactor))) ppFactor = 1.0;
+    ppFactor = Number(ppFactor);
+
+    // Convert percents to fractions
+    const winFrac = (r.winPct == null) ? null : (Number(r.winPct) / 100.0);
+    const playerFrac = (r.playerPct == null) ? null : (Number(r.playerPct) / 100.0);
+    const avgScore = (r.estimate == null) ? null : Number(r.estimate);
+
+    // If any core factor is missing, we can't compute the adjusted score
+    if(winFrac == null || playerFrac == null || avgScore == null) {
+      r.playerAdj = null;
+    } else {
+      // final formula: win% * player% * avgScore * ppFactor
+      // note: ppFactor is used as-is (e.g. 1.31) — if your CSV stores it as percent (e.g. "131%")
+      // you may need to divide by 100 here. This code assumes ppFactor is a numeric multiplier already.
+	  r.playerAdj = 1.2919896640826873385012919896641 * playerFrac * avgScore * ppFactor;
+      // keep numeric formatting consistent with previous behavior
+      if(r.playerAdj != null && r.playerAdj > maxPlayerAdj) maxPlayerAdj = r.playerAdj;
+    }
+
+    if(r.playerAdj!=null && r.playerAdj > maxPlayerAdj) maxPlayerAdj = r.playerAdj;
+    // compute win percent for this row
+    r.winPct = (r.total === 0) ? null : ( (r.totalWins || 0) / r.total * 100 );
+  });
+
+  // render
+  if(rowsFiltered.length === 0){
+    resultsDiv.innerHTML = `<div class="muted-xs" style="padding:10px">No rows match current filters (min support ${minSupport}%).</div>`;
+    statusDiv.textContent = `Matched ${matchedEnds} ends — 0 rows pass`;
+    return;
+  }
+
+  const table = document.createElement('table');
+  const thead = document.createElement('thead');
+  if(condensed){
+    thead.innerHTML = `<tr><th>Shot</th><th>Avg Hmr Score</th><th>Popularity</th><th>Win %</th><th>Player %</th><th>Adj Hmr Score</th></tr>`;
+  } else {
+    thead.innerHTML = `<tr><th>Shot</th><th>Turn</th>${BUCKETS.map(b=>`<th>${b}</th>`).join('')}<th>Avg Hmr Score</th><th>Popularity</th><th>Win %</th><th>Player %</th><th>Adj Hmr Score</th></tr>`;
+  }
+  table.appendChild(thead);
+  const tbody = document.createElement('tbody');
+
+  rowsFiltered.forEach(r=>{
+    const tr = document.createElement('tr');
+if(condensed){
+  const estimateDisp = r.estimate==null?'N/A':formatEstimate(r.estimate);
+  const playerPctDisp = r.playerPct==null?'N/A':(r.playerPct.toFixed(1)+'%');
+  const playerAdjDisp = r.playerAdj==null?'':(Math.round(r.playerAdj*10)/10).toFixed(1);
+  const winDisp = r.winPct==null? 'N/A' : (r.winPct.toFixed(1)+'%');
+  const estClass = (r.estimate===maxEstimate) ? 'cell-best-est' : '';
+  const playerClass = (r.playerAdj===maxPlayerAdj) ? 'cell-best-player' : '';
+  // NOTE: give the win cell a numeric data attribute (data-win) and the player cell keeps data-pct
+  tr.innerHTML = `<td>${r.task}</td>` +
+                 `<td class="center ${estClass}">${estimateDisp}</td>` +
+                 `<td class="center">${r.supportPct.toFixed(2)}%</td>` +
+                 `<td class="center" data-win="${r.winPct==null?'':r.winPct}">${winDisp}</td>` +
+                 `<td class="center" data-pct="${r.playerPct==null?'':r.playerPct}">${playerPctDisp}</td>` +
+                 `<td class="center ${playerClass}">${playerAdjDisp}</td>`;
+
+  // colorize player % cell (existing behavior)
+  const pcell = tr.querySelector('td[data-pct]');
+  if(pcell){
+    const pctAttr = pcell.getAttribute('data-pct');
+    if(!pctAttr){ pcell.style.background='#f6f6f6'; pcell.style.color='#666'; }
+    else { const num = Number(pctAttr); pcell.style.background = percentToHSLStatic(num); pcell.style.color = pickTextColor(num); pcell.style.borderRadius='6px'; }
+  }
+
+  // colorize win % cell to match player % styling
+  const wcell = tr.querySelector('td[data-win]');
+  if(wcell){
+    const winAttr = wcell.getAttribute('data-win');
+    if(!winAttr){ wcell.style.background='#f6f6f6'; wcell.style.color='#666'; }
+    else { const num = Number(winAttr); wcell.style.background = percentToHSLStatic(num); wcell.style.color = pickTextColor(num); wcell.style.borderRadius='6px'; }
+}
+
+} else {
+  let html = `<td>${r.task}</td><td>${r.turn}</td>`;
+  for(let i=0;i<r.counts.length;i++){
+    const cnt = r.counts[i];
+    const pct = r.total===0 ? null : (r.counts[i] / r.total * 100);
+    const disp = pct==null? 'N/A' : (pct.toFixed(1)+'%');
+    let styleAttr = '';
+    if(pct==null) styleAttr = 'style="background:#f6f6f6;color:#666"';
+    else {
+      const norm = (pct - globalMin) / (globalMax - globalMin || 1);
+      const hue = (norm * 120);
+      const bg = `hsl(${hue},78%,45%)`;
+      const text = (pct < 55) ? '#fff' : '#000';
+      styleAttr = `style="background:${bg};color:${text};border-radius:6px"`;
+    }
+    html += `<td ${styleAttr} data-pct="${pct==null?'':pct.toFixed(1)}">${disp}</td>`;
+  }
+
+  const estClass = (r.estimate===maxEstimate) ? 'cell-best-est' : '';
+  const playerClass = (r.playerAdj===maxPlayerAdj) ? 'cell-best-player' : '';
+  const estimateDisp = r.estimate==null? 'N/A' : formatEstimate(r.estimate);
+  const playerPctDisp = r.playerPct==null? 'N/A' : (r.playerPct.toFixed(1) + '%');
+  const playerAdjDisp = r.playerAdj==null? '' : (Math.round(r.playerAdj*10)/10).toFixed(1);
+  const winDisp = r.winPct==null? 'N/A' : (r.winPct.toFixed(1)+'% ('+(r.totalWins||0)+'/'+r.total+')');
+
+  // NOTE: use data-player-pct for player % cell so it's not confused with bucket data-pct
+  html += `<td class="center ${estClass}">${estimateDisp}</td>` +
+          `<td class="center">${r.supportPct.toFixed(2)}%</td>` +
+          `<td class="center" data-win="${r.winPct==null?'':r.winPct}">${winDisp}</td>` +
+          `<td class="center" data-player-pct="${r.playerPct==null?'':r.playerPct}">${playerPctDisp}</td>` +
+          `<td class="center ${playerClass}">${playerAdjDisp}</td>`;
+
+  tr.innerHTML = html;
+
+  // colorize player % cell (prefer data-player-pct, fallback to data-pct)
+  let pcell = tr.querySelector('td[data-player-pct]') || tr.querySelector('td[data-pct]');
+  if(pcell){
+    // determine which attribute we actually have
+    const attrName = pcell.hasAttribute('data-player-pct') ? 'data-player-pct' : 'data-pct';
+    const pctAttr = pcell.getAttribute(attrName);
+    if(!pctAttr){ pcell.style.background='#f6f6f6'; pcell.style.color='#666'; }
+    else {
+      const num = Number(pctAttr);
+      pcell.style.background = percentToHSLStatic(num);
+      pcell.style.color = pickTextColor(num);
+      pcell.style.borderRadius = '6px';
+    }
+  }
+
+  // colorize win % cell to match player % styling
+  const wcell = tr.querySelector('td[data-win]');
+  if(wcell){
+    const winAttr = wcell.getAttribute('data-win');
+    if(!winAttr){ wcell.style.background='#f6f6f6'; wcell.style.color='#666'; }
+    else {
+      const num = Number(winAttr);
+      wcell.style.background = percentToHSLStatic(num);
+      wcell.style.color = pickTextColor(num);
+      wcell.style.borderRadius='6px';
+    }
+  }
+}
+tbody.appendChild(tr);
+
+  });
+
+  table.appendChild(tbody);
+  
+  resultsDiv.innerHTML = '';
+  const rail = document.createElement('div');
+  rail.className = 'h-scroll';
+  rail.appendChild(table);
+  resultsDiv.appendChild(rail);
+
+  statusDiv.textContent = `Matched ${matchedEnds} ends. Showing ${rowsFiltered.length} rows (min support ${minSupport}%). Meta average player curls 77.42%`;
+}
+
+/* download CSV */
+downloadBtn.addEventListener('click', ()=>{ const tbl = document.querySelector('#results table'); if(!tbl){ alert('No results'); return; } const rows=[]; rows.push(Array.from(tbl.tHead.rows[0].cells).map(c=>c.textContent)); Array.from(tbl.tBodies[0].rows).forEach(r=> rows.push(Array.from(r.cells).map(c=>c.textContent.replace('%','')))); const csv = rows.map(r => r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n'); const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'score_outcome_player_adjusted.csv'; a.click(); URL.revokeObjectURL(url); });
+
+/* when page loads */
+fetchAndMergeAll().then(()=>{
+  try{ const st = loadDefaultsFromStorage(); if(st) applyDefaultsToUI(st); }catch(e){}
+  // Ensure condensed view and show the player panel on load (no player selected)
+  condensed = true;
+  updatePlayerPanelUI && updatePlayerPanelUI();
+  playerDefaultsPanel.style.display = 'block';
+});
+
+
+try{ wireAutoAnalyze(); }catch(e){}
+/* wire analyze button */
+analyzeBtn.addEventListener('click', analyze);
+
+document.getElementById('backHomeBtn').addEventListener('click', function () {
+  window.location.href = 'https://icepulse.ca';
+});
+/* ---------- Extended Player Info (CSV-only) ----------
+   Loads only:
+     - /data/players_stats_spreadsheet_extended.csv
+   Renders extended info inside #playerDefaultsPanel when #playerSelect changes
+*/
+(function(){
+  const DEFAULT_CSV = '/data/players_stats_spreadsheet_extended.csv';
+
+  // prefer existing normalizeStr on page, otherwise fallback
+  const normalizeStrLocal = (typeof normalizeStr === 'function')
+    ? normalizeStr
+    : (s => (s||'').toString().toLowerCase().replace(/[^\w\s]/g,' ').replace(/\s+/g,' ').trim());
+
+  // prefer existing parseCSV on page, else provide a lightweight parser
+  function parseCSVFlexible(text){
+    if(typeof parseCSV === 'function') return parseCSV(text);
+    const lines = text.split(/\r?\n/).filter(l=>l.trim()!=='');
+    if(lines.length === 0) return { header: [], rows: [] };
+    // detect delimiter
+    const delim = lines[0].indexOf('\t') !== -1 ? '\t' : ',';
+    const header = lines[0].split(delim).map(h => h.trim());
+    const rows = [];
+    for(let i=1;i<lines.length;i++){
+      // simple split — assumes no embedded commas/quotes (the CSV generated by your scripts should be OK)
+      const cols = lines[i].split(delim);
+      if(cols.length === 0) continue;
+      const obj = {};
+      for(let j=0;j<header.length;j++){
+        obj[header[j]] = (cols[j] === undefined) ? '' : cols[j].trim();
+      }
+      rows.push(obj);
+    }
+    return { header, rows };
+  }
+
+  // small utility: safe JSON parse accepting single-quotes and already-parsed objects
+  function safeParseJSON(val){
+    if(val === null || val === undefined || val === '') return null;
+    if(typeof val === 'object') return val;
+    let s = String(val).trim();
+    if(!s) return null;
+    // if already starts with { or [ try parse
+    try { if(s[0] === '{' || s[0] === '[') return JSON.parse(s); } catch(e){}
+    // try replacing single-quotes with double quotes (common export mess)
+    try { return JSON.parse(s.replace(/'/g,'"')); } catch(e){}
+    // try replacing curly single-quotes
+    try { return JSON.parse(s.replace(/[\u2018\u2019]/g,"'").replace(/'/g,'"')); } catch(e){}
+    return null;
+  }
+
+  // find key insensitive (exact then normalized) in a map
+  function findKeyInsensitive(map, name){
+    if(!map || !name) return null;
+    if(map[name]) return name;
+    const target = normalizeStrLocal(name);
+    // exact normalized match
+    for(const k of Object.keys(map)){
+      if(normalizeStrLocal(k) === target) return k;
+    }
+    // contains match (fallback)
+    for(const k of Object.keys(map)){
+      if(normalizeStrLocal(k).indexOf(target) !== -1) return k;
+    }
+    return null;
+  }
+
+  // UI: locate player panel and add controls + extended area
+  const playerPanel = document.getElementById('playerDefaultsPanel');
+  if(!playerPanel){
+    console.warn('playerDefaultsPanel not found - extended player info will not be shown.');
+    return;
+  }
+
+  // Extended info container
+  let extendedInfoDiv = document.getElementById('extendedInfo_csvonly');
+  if(!extendedInfoDiv){
+    extendedInfoDiv = document.createElement('div');
+    extendedInfoDiv.id = 'extendedInfo_csvonly';
+    extendedInfoDiv.style.marginTop = '12px';
+    extendedInfoDiv.style.paddingTop = '8px';
+    extendedInfoDiv.style.borderTop = '1px dashed #eef2f4';
+    playerPanel.appendChild(extendedInfoDiv);
+  }
+
+  // Data store
+  let extCsvMap = null;
+  let extCsvHeaders = [];
+
+  // load CSV
+  async function loadPlayerExtendedCSV(path){
+    extCsvMap = null; extCsvHeaders = [];
+    try{
+      const r = await fetch(path || DEFAULT_CSV);
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      const txt = await r.text();
+      const parsed = parseCSVFlexible(txt);
+      extCsvHeaders = parsed.header || [];
+      const map = {};
+      (parsed.rows || []).forEach(row => {
+        // Try to determine player name column robustly
+        const name = row['Player'] || row['player'] || row['Name'] || row['name'] || Object.values(row)[0];
+        if(!name) return;
+        map[String(name).trim()] = row;
+      });
+      extCsvMap = map;
+      console.info('Loaded extended CSV rows:', Object.keys(extCsvMap).length);
+    }catch(err){
+      console.warn('loadPlayerExtendedCSV failed', err);
+      extCsvMap = null;
+    }
+  }
+
+  // helpers to format Positions_JSON and Teams_JSON into readable lists
+  function formatPositions(positionsJson){
+    const parsed = safeParseJSON(positionsJson);
+    if(!parsed) return [];
+    // if it's an array of entries
+    if(Array.isArray(parsed)){
+      return parsed.map(it => {
+        // expected item maybe like {position:"Third", start:"yyyy-mm-dd", end:"yyyy-mm-dd", count: N}
+        const pos = it.position || it.role || it.name || it.key || Object.values(it)[0] || '';
+        const start = it.start || it.from || '';
+        const end = it.end || it.to || '';
+        const count = it.count || it.games || it.n || '';
+        const cntStr = count ? ` (${count} ${count==1? 'game':'games'})` : '';
+        const range = start && end ? `${start} -> ${end}` : (start ? `${start}` : '');
+        return `${pos}${range ? ': ' + range : ''}${cntStr}`;
+      });
+    }
+    // if it's an object mapping pos -> meta
+    if(typeof parsed === 'object'){
+      const out = [];
+      for(const key of Object.keys(parsed)){
+        const val = parsed[key];
+        // val may be object: {start,end,count}
+        if(val && typeof val === 'object'){
+          const start = val.start || val.from || '';
+          const end = val.end || val.to || '';
+          const count = val.count || val.games || '';
+          const cntStr = count ? ` (${count} ${count==1? 'game':'games'})` : '';
+          const range = start && end ? `${start} -> ${end}` : (start ? `${start}` : '');
+          out.push(`${key}: ${range}${cntStr}`);
+        } else {
+          // primitive -> just show
+          out.push(`${key}: ${String(val)}`);
+        }
+      }
+      return out;
+    }
+    return [];
+  }
+
+  function formatTeams(teamsJson){
+    const parsed = safeParseJSON(teamsJson);
+    if(!parsed) return [];
+    // if array of entries
+    if(Array.isArray(parsed)){
+      return parsed.map(it => {
+        // expected {team: "PE (MacKenzie)", start:..., end:..., count: N}
+        const team = it.team || it.name || it.key || Object.values(it)[0] || '';
+        const start = it.start || it.from || '';
+        const end = it.end || it.to || '';
+        const count = it.count || it.games || it.n || '';
+        const cntStr = count ? ` (${count} ${count==1? 'game':'games'})` : '';
+        const range = start && end ? `${start} -> ${end}` : (start ? `${start}` : '');
+        return `${team}${range ? ': ' + range : ''}${cntStr}`;
+      });
+    }
+    // if object mapping team -> meta
+    if(typeof parsed === 'object'){
+      const out = [];
+      for(const key of Object.keys(parsed)){
+        const val = parsed[key];
+        if(val && typeof val === 'object'){
+          const start = val.start || val.from || '';
+          const end = val.end || val.to || '';
+          const count = val.count || val.games || '';
+          const cntStr = count ? ` (${count} ${count==1? 'game':'games'})` : '';
+          const range = start && end ? `${start} -> ${end}` : (start ? `${start}` : '');
+          out.push(`${key}: ${range}${cntStr}`);
+        } else {
+          out.push(`${key}: ${String(val)}`);
+        }
+      }
+      return out;
+    }
+    return [];
+  }
+
+  // render nice info for a player name
+  function showExtendedForPlayer(name){
+    extendedInfoDiv.innerHTML = ''; // clear
+    if(!name){ extendedInfoDiv.textContent = 'No player selected'; return; }
+    const resolvedKey = findKeyInsensitive(extCsvMap, name) || name;
+    const row = extCsvMap ? extCsvMap[resolvedKey] : null;
+
+    // Title row
+    const title = document.createElement('div');
+    title.style.display = 'flex';
+    title.style.justifyContent = 'space-between';
+    title.style.alignItems = 'baseline';
+
+    const left = document.createElement('div');
+    left.style.fontWeight = '700';
+    left.style.fontSize = '1.05rem';
+    left.textContent = name;
+    title.appendChild(left);
+
+    const right = document.createElement('div');
+    right.style.textAlign = 'right';
+    right.style.fontSize = '0.95rem';
+    right.style.color = '#666';
+
+    // AVG_TOTAL and CLUTCH (two values shown)
+    if(row){
+      const avg = row['AVG_TOTAL'] || row['Avg_Total'] || row['AVG'] || '';
+      const clutch = row['CLUTCH'] || row['Clutch'] || '';
+      right.innerHTML = `${avg ? ('Avg: ' + avg) : ''}${avg && clutch ? ' • ' : ''}${clutch ? ('Clutch: ' + clutch) : ''}`;
+    } else {
+      right.textContent = '';
+    }
+    title.appendChild(right);
+    extendedInfoDiv.appendChild(title);
+
+    // Shots
+    if(row){
+      const shots = row['Shots'] || row['shots'] || '';
+      const sdiv = document.createElement('div');
+      sdiv.style.marginTop = '8px';
+      sdiv.textContent = `Shots: ${shots}`;
+      extendedInfoDiv.appendChild(sdiv);
+    }
+
+    // Positions
+    const posRaw = row ? (row['Positions_JSON'] || row['Positions'] || row['positions_json'] || row['positions'] || '') : '';
+    const positions = formatPositions(posRaw);
+    if(positions && positions.length){
+      const h = document.createElement('div'); h.style.fontWeight='700'; h.style.marginTop='10px'; h.textContent = 'Positions (career)';
+      extendedInfoDiv.appendChild(h);
+      const ul = document.createElement('div');
+      ul.style.marginTop = '6px';
+      ul.style.lineHeight = '1.3';
+      positions.forEach(p => {
+        const d = document.createElement('div');
+        d.textContent = '• ' + p;
+        ul.appendChild(d);
+      });
+      extendedInfoDiv.appendChild(ul);
+    }
+
+    // Teams
+    const teamsRaw = row ? (row['Teams_JSON'] || row['Teams'] || row['teams_json'] || row['teams'] || '') : '';
+    const teams = formatTeams(teamsRaw);
+    if(teams && teams.length){
+      const h = document.createElement('div'); h.style.fontWeight='700'; h.style.marginTop='10px'; h.textContent = 'Teams';
+      extendedInfoDiv.appendChild(h);
+      const ul = document.createElement('div');
+      ul.style.marginTop = '6px';
+      ul.style.lineHeight = '1.3';
+      teams.forEach(t => {
+        const d = document.createElement('div');
+        d.textContent = '• ' + t;
+        ul.appendChild(d);
+      });
+      extendedInfoDiv.appendChild(ul);
+    }
+
+    // PP metrics
+    if(row){
+      const ppTeam = row['PP_team_throws16_hammer'] || row['pp_team_throws16_hammer'] || row['PP_team'] || '';
+      const ppOpp = row['PP_opp_throws16_hammer'] || row['pp_opp_throws16_hammer'] || row['PP_opp'] || '';
+      if(ppTeam || ppOpp){
+        const h = document.createElement('div'); h.style.fontWeight='700'; h.style.marginTop='10px'; h.textContent = 'Estimated points-per-end';
+        extendedInfoDiv.appendChild(h);
+        const tbl = document.createElement('div');
+        tbl.style.display = 'grid';
+        tbl.style.gridTemplateColumns = '1fr 1fr';
+        tbl.style.gap = '6px';
+        tbl.style.marginTop = '6px';
+        const addRow = (label, value) => {
+          const a = document.createElement('div'); a.style.color = '#444'; a.textContent = label;
+          const b = document.createElement('div'); b.style.textAlign = 'right'; b.style.color = '#000'; b.textContent = (value==null || value==='') ? 'N/A' : String(value);
+          tbl.appendChild(a); tbl.appendChild(b);
+        };
+        addRow('Hammer:', ppTeam);
+        addRow('Non-Hammer:', ppOpp);
+        extendedInfoDiv.appendChild(tbl);
+      }
+    }
+
+    // small tip/footer
+    const tip = document.createElement('div');
+    tip.style.marginTop = '00px';
+    tip.style.fontSize = '0.0rem';
+    tip.style.color = '#666';
+    extendedInfoDiv.appendChild(tip);
+  }
+
+  // hookup events
+  const playerSelectEl = document.getElementById('playerSelect');
+  const reloadBtn = document.getElementById('reloadExtendedBtn_csvonly');
+  const pathInput = document.getElementById('extendedCsvPath_csvonly');
+
+  if(playerSelectEl){
+    playerSelectEl.addEventListener('change', ()=> {
+      showExtendedForPlayer(playerSelectEl.value);
+    });
+  }
+
+  if(reloadBtn){
+    reloadBtn.addEventListener('click', async ()=>{
+      const p = (pathInput && pathInput.value) ? pathInput.value.trim() : DEFAULT_CSV;
+      extendedInfoDiv.textContent = 'Loading player CSV...';
+      await loadPlayerExtendedCSV(p);
+      // re-render selected
+      const sel = playerSelectEl ? playerSelectEl.value : null;
+      if(sel) showExtendedForPlayer(sel);
+    });
+  }
+
+  // auto-load on startup
+  (async function autoLoad(){
+    await loadPlayerExtendedCSV(DEFAULT_CSV);
+    const initial = playerSelectEl ? playerSelectEl.value : null;
+    if(initial) showExtendedForPlayer(initial);
+  })();
+
+})();
+
+
+// === Minimal auto-update on filter change ===
+document.addEventListener('DOMContentLoaded', function(){
+  const ids = [
+    'playerSelect','evalPos','startDate','endDate','timeSelect','supportSlider',
+    'endsLeftSelect','hammerStartSelect','genderSelect','categorySelect','tournamentSelect'
+  ];
+  const run = ()=>{ try{ if (typeof analyze==='function') analyze(); }catch(e){} };
+  ids.forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    const evt = (id==='supportSlider') ? 'input' : 'change';
+    el.addEventListener(evt, run, { passive: true });
+  });
+});
+
+</script>
+
+<script id="pro-light-skin-js">
+(function(){
+  // If there's a speed/log/results table that can overflow, wrap it in a rail.
+  var candidates = document.querySelectorAll('table');
+  candidates.forEach(function(t){
+    if(t.parentElement && !t.parentElement.classList.contains('table-wrap-auto')){
+      // Wrap only if the table is likely to overflow on mobile (min columns heuristic)
+      var cols = t.tHead && t.tHead.rows[0] ? t.tHead.rows[0].cells.length : t.rows[0] ? t.rows[0].cells.length : 0;
+      if(cols >= 3){
+        var wrap = document.createElement('div');
+        wrap.className = 'table-wrap-auto';
+        t.parentElement.insertBefore(wrap, t);
+        wrap.appendChild(t);
+      }
+    }
+  });
+})();
+</script>
+</body>
+</html>
