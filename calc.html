@@ -134,13 +134,26 @@ tbody tr:nth-child(odd) td{background:#fafbfe}
 .table-wrap-auto{border:1px solid var(--pro-border);border-radius:10px;overflow:auto;background:#fff;box-shadow:var(--pro-shadow)}
 /* Mobile density */
 @media(max-width:600px){ th,td{padding:8px 10px;font-size:13px} }
-
+.nav-row{display:flex;gap:8px;margin-left:auto}
+.nav-row a{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:10px 12px;border-radius:10px;border:1px solid var(--pro-border);
+  text-decoration:none;color:#111;background:#fff;font-weight:600;
+}
+.nav-row a.active{
+  background:linear-gradient(180deg,var(--pro-accent),var(--pro-accent-2));
+  color:#fff;border:none;box-shadow:0 8px 20px rgba(15,111,255,.18)
+}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.5 7H8.5L12 2zM4 21h16l-8-8-8 8z" fill="white"/></svg><h1>Strategy Calculator</h1></div>
+	<div class="nav-row">
+		<a href="index.html">Index</a>
+		<a href="calc.html">Calc</a>
+		<a href="photos.html">Photos</a>
+	</div>
 	<button id="backHomeBtn" class="alt" title="Back to IcePulse">H2H Calc</button>
     <div class="muted" style="margin-left:auto">
         <button id="toggleViewBtn" class="btn">Expanded View</button>
