@@ -130,6 +130,16 @@ tbody tr:nth-child(odd) td{background:#fafbfe}
 .table-wrap-auto{border:1px solid var(--pro-border);border-radius:10px;overflow:auto;background:#fff;box-shadow:var(--pro-shadow)}
 /* Mobile density */
 @media(max-width:600px){ th,td{padding:8px 10px;font-size:13px} }
+.nav-row{display:flex;gap:8px;margin-left:auto}
+.nav-row a{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:10px 12px;border-radius:10px;border:1px solid var(--pro-border);
+  text-decoration:none;color:#111;background:#fff;font-weight:600;
+}
+.nav-row a.active{
+  background:linear-gradient(180deg,var(--pro-accent),var(--pro-accent-2));
+  color:#fff;border:none;box-shadow:0 8px 20px rgba(15,111,255,.18)
+}
 
 </style>
 </head>
@@ -137,15 +147,19 @@ tbody tr:nth-child(odd) td{background:#fafbfe}
 <div class="wrap">
   <header>
     <div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.5 7H8.5L12 2zM4 21h16l-8-8-8 8z" fill="white"/></svg><h1>Hog to Hog Calculator</h1></div>
-	<button id="openCalcBtn" class="alt" title="Open IcePulse calculator">Strategy Calc</button>
+	<div class="nav-row">
+		<a href="index.html">Index</a>
+		<a href="calc.html">Calc</a>
+		<a href="photos.html">Photos</a>
+	</div>
     <div class="muted" style="margin-left:auto">Enter split manually or use the stopwatch, then enter the final location.</div>
   </header>
   <div class="card">
   <!-- Timing Mode Tabs -->
 <div id="modeTabs" style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0">
-  <button class="modeBtn" data-mode="H2H">H2H</button>
-  <button class="modeBtn" data-mode="T2H">T2H</button>
-  <button class="modeBtn" data-mode="B2H">B2H</button>
+  <button class="modeBtn" data-mode="H2H">Hog to Hog</button>
+  <button class="modeBtn" data-mode="T2H">Tee to Hog</button>
+  <button class="modeBtn" data-mode="B2H">Back to Hog</button>
   <span id="modeLabel" class="muted" style="margin-left:8px"></span>
 </div>
 
