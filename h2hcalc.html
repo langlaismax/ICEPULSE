@@ -19,7 +19,7 @@
     .alt{background:#fff;border:1px solid #ddd}
     input,select{padding:12px;border-radius:10px;border:1px solid #ddd;font-size:var(--input-font);width:100%;box-sizing:border-box}
     .small{font-size:13px;color:var(--muted)}
-    #result{font-size:50px;margin-top:10px;font-weight:700}
+    #result{font-size:24px;margin-top:10px;font-weight:700}
     #log{max-height:300px;overflow:auto;margin-top:12px;border-top:1px dashed #eee;padding-top:8px}
     table{width:100%;border-collapse:collapse}
     th,td{padding:8px 6px;text-align:left;border-bottom:1px solid #f4f4f4;font-size:14px}
@@ -70,7 +70,76 @@
   }
   .modeBtn.active{ background:#0f6fff; color:#fff; border-color:#0f6fff }
 
-  </style>
+  
+/* --- Dense three-column layout (v3 injected) --- */
+.three-col-grid{
+  display:grid;
+  grid-template-columns: 420px 1fr 460px; /* Speed | Chart | Log */
+  gap:12px;
+  align-items:start;
+  margin-top:12px;
+}
+.three-col-grid > * { min-width: 0; }
+
+/* Keep speed table visible */
+.sticky-panel{ position:sticky; top:12px; }
+
+/* Chart and log sizing */
+.chart-wrap{ padding:8px; }
+#splitsChart{ width:100% !important; height:320px !important; }
+#log{ max-height:600px; overflow:auto; border-top:1px dashed #eee; padding-top:8px; }
+#speedTableCard h2{ font-size:18px; }
+#speedTableWrap .table-wrap-auto{ border:none; box-shadow:none; }
+#speedTableWrap table thead th{ font-size:24px; }
+
+/* Prevent buttons drifting */
+.col-buttons{ display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-start; }
+
+/* Responsive: stack to two, then one */
+@media (max-width:1200px){
+  .three-col-grid{ grid-template-columns: 360px 1fr; grid-auto-rows: auto; }
+  .three-col-grid > #log{ grid-column: 1 / -1; }
+  /* === Speed Table adjustments === */
+#speedTableWrap table th,
+#speedTableWrap table td {
+  font-size: 18px !important; /* 2x larger font */
+  line-height: 0.8;
+  padding: 10px 12px;
+}
+
+/* Add margin/padding at bottom */
+body::after {
+  content: "";
+  display: block;
+  height: 60px; /* bottom spacing */
+}
+
+/* === Three distinct bottom columns layout === */
+.bottom-section {
+  display: grid;
+  grid-template-columns: 420px 1fr 460px; /* Speed | Chart | Log */
+  gap: 16px;
+  align-items: start;
+  margin-top: 18px;
+}
+
+@media (max-width:1200px){
+  .bottom-section { grid-template-columns: 360px 1fr; }
+  .bottom-section #log { grid-column: 1 / -1; }
+}
+@media (max-width:980px){
+  .bottom-section { grid-template-columns: 1fr; }
+}
+
+}
+@media (max-width:980px){
+  .three-col-grid{ grid-template-columns: 1fr; }
+  .sticky-panel{ position:static; }
+  #splitsChart{ height:260px !important; }
+  #log{ max-height:220px; }
+}
+
+</style>
   <!-- Chart.js CDN (keep same major version you were using) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
@@ -146,24 +215,14 @@ tbody tr:nth-child(odd) td{background:#fafbfe}
 <body>
 <div class="wrap">
   <header>
-		<div class="nav-row">
-			<a href="index.html">Index</a>
-			<a href="h2hcalc.html">Split Time Calc</a>
-			<a href="stratcalc.html">Strategy Calc</a>
-			<a href="books.html">Books</a>
-			<a href="ice.html">Ice</a>
-			<a href="photos.html">Photos</a>
-		<a href="research.html">Research</a>
-	</div>
-
-    <div class="muted" style="margin-left:auto">Enter split manually or use the stopwatch, then enter the final location.</div>
+    <div class="muted" style="margin-left:auto">Enter the split, then enter the final location.</div>
   </header>
   <div class="card">
   <!-- Timing Mode Tabs -->
 <div id="modeTabs" style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0">
-  <button class="modeBtn" data-mode="H2H">Hog to Hog</button>
-  <button class="modeBtn" data-mode="T2H">Tee to Hog</button>
-  <button class="modeBtn" data-mode="B2H">Back to Hog</button>
+  <button class="modeBtn" data-mode="H2H">Hog2Hog</button>
+  <button class="modeBtn" data-mode="T2H">Tee2Hog</button>
+  <button class="modeBtn" data-mode="B2H">Back2Hog</button>
   <span id="modeLabel" class="muted" style="margin-left:8px"></span>
 </div>
 
@@ -184,41 +243,39 @@ tbody tr:nth-child(odd) td{background:#fafbfe}
 
     <div id="result" aria-live="polite">Real: —</div>
 
-    <div class="grid">
+    		           
+    </div>
+	<div class="bottom-section">
+  <section class="card sticky-panel" id="speedTableCard" style="display:none">
+  <div id="speedTableWrap" style="overflow:auto"></div>
+</section>
+  
       <div>
 	       <div style="margin-top:10px;display:flex;gap:0px;flex-wrap:wrap">
         <div class="chart-wrap">
           <canvas id="splitsChart" width="400" height="320" aria-label="Last ten splits chart" role="img"></canvas>					
         </div>
      </div>
-        <div id="log">
-          <table id="logTable" aria-label="Split log table">
+  
+		        <!-- Log table hidden but still active in JS -->
+        <div id="log" style="display:none">
+          <table id="logTable" aria-label="Hidden Split Log">
             <thead><tr><th>Zone</th><th>Original Split Time</th><th>Real Split Time</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
 
-     </div>		           
-    </div>
-	      <div class="top-row">
-<button id="downloadChart" class="alt">Chart</button>
-  <button id="downloadCsv" class="alt">Log</button>
-  Size:
+</div>
+</div>
+  <div style="text-align:center;margin-top:10px">
+Math by Scott Walker <a href="https://chessonice.ca" target="_blank">(chessonice.ca)</a>
+<button id="downloadChart" class="alt">Chart.png</button>
+  <button id="downloadCsv" class="alt">Log.csv</button>
+  Log Size:
   <select id="logSizeSelect">
     <!-- Options will be generated by JS -->
   </select>
-  </div>
-  
-  <div style="text-align:center;margin-top:10px">
-Split Time Calculator by Max Langlais and Scott Walker <a href="https://chessonice.ca" target="_blank">(chessonice.ca)</a>
 </div>
-  </div>
-<div style="height:30px;"></div>
-</div>
-<section class="card" id="speedTableCard" style="margin-top:12px; display:none">
-  <h2 style="margin:0">Speed Table</h2>
-  <div id="speedTableWrap" style="margin-top:8px; overflow:auto"></div>
-</section>
 <script>
 /* === original logic preserved, small changes only to improve mobile UX === */
 const columns = [ "1","2","3","4","5","6","7","8","9","10","Hack" ];
@@ -317,65 +374,62 @@ function findClosestRowByH2HR(target){
 function buildSpeedTableHTML(row){
   if (!row || !headersJSON) return '';
 
-  // Ensure we have a sensible mode
   const showMode = (/^(H2H|T2H|B2H)$/.test(String(currentTableMode))) ? currentTableMode : 'H2H';
 
-  // Row label -> JSON keys for each mode (H2H special case for "7" => H2HR)
+  // omit "Just over"
   const rows = [
-    { label: "Just over",     H2H: "H2HJ",  B2H: "B2HJ",  T2H: "T2HJ"  },
-    { label: "0",             H2H: "H2H0",  B2H: "B2H0",  T2H: "T2H0"  },
-    { label: "1",             H2H: "H2H1",  B2H: "B2H1",  T2H: "T2H1"  },
-    { label: "2",             H2H: "H2H2",  B2H: "B2H2",  T2H: "T2H2"  },
-    { label: "3",             H2H: "H2H3",  B2H: "B2H3",  T2H: "T2H3"  },
-    { label: "4",             H2H: "H2H4",  B2H: "B2H4",  T2H: "T2H4"  },
-    { label: "5",             H2H: "H2H5",  B2H: "B2H5",  T2H: "T2H5"  },
-    { label: "6",             H2H: "H2H6",  B2H: "B2H6",  T2H: "T2H6"  },
-    { label: "7",             H2H: "H2HR",  B2H: "B2H7",  T2H: "T2H7"  }, // special case
-    { label: "8",             H2H: "H2H8",  B2H: "B2H8",  T2H: "T2H8"  },
-    { label: "9",             H2H: "H2H9",  B2H: "B2H9",  T2H: "T2H9"  },
-    { label: "10",            H2H: "H2H10", B2H: "B2H10", T2H: "T2H10" },
-    { label: "Hack",          H2H: "H2HH",  B2H: "B2HH",  T2H: "T2HH"  },
-    { label: "Board",         H2H: "H2HB",  B2H: "B2HB",  T2H: "T2HB"  },
-    { label: "Board up",      H2H: "H2HB+", B2H: "B2HB+", T2H: "T2HB+" },
-    { label: "Control down",  H2H: "H2HC-", B2H: "B2HC-", T2H: "T2HC-" },
-    { label: "Control",       H2H: "H2HC",  B2H: "B2HC",  T2H: "T2HC"  },
-    { label: "Control up",    H2H: "H2HC+", B2H: "B2HC+", T2H: "T2HC+" },
-    { label: "Normal",        H2H: "H2HN",  B2H: "B2HN",  T2H: "T2HN"  },
+    { label: "0", H2H: "H2H0", B2H: "B2H0", T2H: "T2H0" },
+    { label: "1", H2H: "H2H1", B2H: "B2H1", T2H: "T2H1" },
+    { label: "2", H2H: "H2H2", B2H: "B2H2", T2H: "T2H2" },
+    { label: "3", H2H: "H2H3", B2H: "B2H3", T2H: "T2H3" },
+    { label: "4", H2H: "H2H4", B2H: "B2H4", T2H: "T2H4" },
+    { label: "5", H2H: "H2H5", B2H: "B2H5", T2H: "T2H5" },
+    { label: "6", H2H: "H2H6", B2H: "B2H6", T2H: "T2H6" },
+    { label: "7", H2H: "H2HR", B2H: "B2H7", T2H: "T2H7" },
+    { label: "8", H2H: "H2H8", B2H: "B2H8", T2H: "T2H8" },
+    { label: "9", H2H: "H2H9", B2H: "B2H9", T2H: "T2H9" },
+    { label: "10", H2H: "H2H10", B2H: "B2H10", T2H: "T2H10" },
+    { label: "Hack", H2H: "H2HH", B2H: "B2HH", T2H: "T2HH" },
+    { label: "Board", H2H: "H2HB", B2H: "B2HB", T2H: "T2HB" },
+    { label: "Board up", H2H: "H2HB+", B2H: "B2HB+", T2H: "T2HB+" },
+    { label: "Control down", H2H: "H2HC-", B2H: "B2HC-", T2H: "T2HC-" },
+    { label: "Control", H2H: "H2HC", B2H: "B2HC", T2H: "T2HC" },
+    { label: "Control up", H2H: "H2HC+", B2H: "B2HC+", T2H: "T2HC+" },
+    { label: "Normal", H2H: "H2HN", B2H: "B2HN", T2H: "T2HN" },
   ];
 
-  // Header -> index map
-  const idx = {};
-  for (let i = 0; i < headersJSON.length; i++) idx[headersJSON[i]] = i;
+  const idx = Object.fromEntries(headersJSON.map((h,i)=>[h,i]));
+  const f = v => (isFinite(v) ? Number(v).toFixed(3) : '—');
 
-  const f = v => (v != null && isFinite(Number(v))) ? Number(v).toFixed(3) : '—';
+  // Split into two equal halves for vertical-first layout
+  const mid = Math.ceil(rows.length / 2);
+  const leftCol = rows.slice(0, mid);
+  const rightCol = rows.slice(mid);
 
-  // Build table with a single visible data column (the chosen mode)
-  let html = `
-    <table style="border-collapse:collapse; width:100%; max-width:700px">
-      <thead>
-        <tr>
-          <th style="text-align:left;padding:6px 8px"></th>
-          <th style="text-align:right;padding:6px 8px">${showMode}</th>
-        </tr>
-      </thead>
-      <tbody>
-  `;
+  let html = `<table style="border-collapse:collapse;width:100%;max-width:700px">
+    <thead><tr>
+      <th></th><th style="text-align:right">${showMode}</th>
+      <th></th><th style="text-align:right">${showMode}</th>
+    </tr></thead><tbody>`;
 
-  for (const r of rows) {
-    const key = r[showMode];                 // e.g., "H2H8" / "B2H7" / "T2H0"
-    const col = (key in idx) ? idx[key] : -1;
-    const val = (col >= 0) ? row[col] : null;
-    html += `
-      <tr>
-        <td style="padding:6px 8px">${r.label}</td>
-        <td style="text-align:right;padding:6px 8px">${f(val)}</td>
-      </tr>
-    `;
+  for (let i = 0; i < leftCol.length; i++) {
+    const left = leftCol[i];
+    const right = rightCol[i];
+    const leftVal = f(row[idx[left[showMode]]]);
+    const rightVal = right ? f(row[idx[right[showMode]]]) : '';
+    html += `<tr>
+      <td style="padding:6px 8px">${left.label}</td>
+      <td style="text-align:right;padding:6px 8px">${leftVal}</td>
+      <td style="padding:6px 8px">${right ? right.label : ''}</td>
+      <td style="text-align:right;padding:6px 8px">${rightVal}</td>
+    </tr>`;
   }
 
   html += `</tbody></table>`;
   return html;
 }
+
+
 
 
 function renderSpeedTableFromAvg(avg){
@@ -873,5 +927,3 @@ window.location.href = 'https://icepulse.ca/calc';
 </script>
 </body>
 </html>
-
-
