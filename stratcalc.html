@@ -159,7 +159,6 @@ tbody tr:nth-child(odd) td{background:#fafbfe}
 
   <!-- controls & results (single column layout) -->
   <section class="card">
-	<div class="progress-wrap" id="progressWrap"><div class="progress-bar" id="progressBar">0%</div></div>
     <div class="controls" style="margin-bottom:8px">
   	  <div class="control w-200"><label>Player</label><select id="playerSelect"><option value="">-- none --</option></select></div>
       <div class="control w-110"><label>Evaluate Shot</label><select id="evalPos"></select></div>
@@ -176,6 +175,8 @@ tbody tr:nth-child(odd) td{background:#fafbfe}
       <div class="control w-240"><label>Event</label><select id="categorySelect" multiple><option value="Any">Any</option><option>Grand Slams</option><option>Olympics</option><option>Worlds</option><option>Brier</option><option>Scotties</option><option>Euros</option><option>Pacific-Asia</option><option>University</option><option>Jr Worlds</option><option>Canadian Jrs</option><option>Canadian U18</option></select></div>
       <div class="control w-200"><label>Tournament</label><select id="tournamentSelect" multiple><option value="all">All</option></select></div>
     </div>
+
+    <div class="progress-wrap" id="progressWrap"><div class="progress-bar" id="progressBar">0%</div></div>
 
     <div id="results" style="margin-top:12px"></div>
     <div id="status" class="muted" style="margin-bottom:10px"></div>
