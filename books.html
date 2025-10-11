@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>IcePulse — Books</title>
+  
+  <style>
+    :root{
+      --pro-bg:#f7f9fc;
+      --pro-card:#ffffff;
+      --pro-text:#111318;
+      --pro-muted:#5f6672;
+      --pro-border:#e7ecf3;
+      --pro-accent:#0f6fff;
+      --pro-accent-2:#58b6ff;
+      --pro-radius:12px;
+      --pro-shadow:0 10px 30px rgba(14,30,65,.08);
+    }
+    html,body{background:var(--pro-bg);color:var(--pro-text);margin:0;padding:18px;font-family:Inter,system-ui,Arial}
+    .wrap{max-width:1180px;margin:0 auto}
+    header{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+    .logo{display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,var(--pro-accent),var(--pro-accent-2));color:#fff;padding:8px 12px;border-radius:10px}
+    .logo h1{margin:0;font-size:1rem}
+    .muted{color:var(--pro-muted)}
+    .card{background:var(--pro-card);border:1px solid var(--pro-border);border-radius:var(--pro-radius);box-shadow:var(--pro-shadow);padding:14px;margin-bottom:12px}
+    select{background:#fff;color:var(--pro-text);border:1px solid var(--pro-border);border-radius:10px;padding:10px 12px;font-size:16px;min-width:220px}
+    .nav-row{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+    .nav-row a{display:inline-flex;align-items:center;justify-content:center;padding:10px 12px;border-radius:10px;border:1px solid var(--pro-border);text-decoration:none;color:#111;background:#fff;font-weight:600}
+    .nav-row a.active{background:linear-gradient(180deg,var(--pro-accent),var(--pro-accent-2));color:#fff;border:none;box-shadow:0 8px 20px rgba(15,111,255,.18)}
+    .iframe-rail{border:1px solid var(--pro-border);border-radius:10px;overflow:hidden;background:#fff;box-shadow:var(--pro-shadow)}
+    .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    @media (max-width:600px){html,body{padding:12px}}
+  </style>
+
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 2l3.5 7H8.5L12 2zM4 21h16l-8-8-8 8z" fill="white"/></svg>
+        <h1>IcePulse — Books</h1>
+      </div>
+      <div class="nav-row"><a href="index.html">Index</a><a href="h2hcalc.html">Split Time Calc</a><a href="stratcalc.html">Strategy Calc</a><a href="books.html" class="active">Books</a><a href="ice.html">Ice</a><a href="photos.html">Photos</a><a href="research.html">Research</a></div>
+    </header>
+
+    <section class="card">
+      <div class="row" style="justify-content:space-between">
+        <div class="row">
+          <label for="folderSelect" class="muted">Choose folder</label>
+          <select id="folderSelect" aria-label="Choose Google Drive folder">
+            
+  <option value="1r4_YUMZPhO9kMZk1Gqt7MXuwfXtZBKfn">1833–1904</option>
+  <option value="1kiBQ-YgMKbut5tyN98iJFEuRg_yBr8oM">1912–1973</option>
+  <option value="1Jw3NyOLSUTs2jJ4k_LnzJmrzK5LNAYVK">1981–1993</option>
+  <option value="1Uo3mSPdbykImhaqDTuJOEBReREbl-7hU">1995–2002</option>
+  <option value="14080h7sDTFc40TV4swQ1e0pN03T2KWih">2003–2008</option>
+  <option value="1z6itgHjpViqQ-bIrGStlbnYfCo3ewLvG">2010–2022</option>
+
+          </select>
+        </div>
+        <div class="muted">Tip: Folders should be set to “Anyone with the link — Viewer”.</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="iframe-rail">
+        <iframe id="galleryFrame" src="" style="width:100%; height:78vh; border:0" title="Gallery"></iframe>
+      </div>
+    </section>
+  </div>
+  
+  <script>
+    function folderIdToEmbedUrl(id){
+      return "https://drive.google.com/embeddedfolderview?id=" + encodeURIComponent(id) + "#grid";
+    }
+    function initGallery(selectId, frameId){
+      const select = document.getElementById(selectId);
+      const frame  = document.getElementById(frameId);
+      function apply(){
+        const id = select.value;
+        frame.src = folderIdToEmbedUrl(id);
+        const params = new URLSearchParams(location.search);
+        params.set('id', id);
+        history.replaceState(null, '', location.pathname + '?' + params.toString());
+      }
+      const params = new URLSearchParams(location.search);
+      const id = params.get('id');
+      if(id){
+        for(const opt of select.options){ if(opt.value === id){ select.value = id; break; } }
+      }
+      apply();
+      select.addEventListener('change', apply);
+    }
+  </script>
+
+  <script>initGallery('folderSelect','galleryFrame');</script>
+</body>
+</html>
