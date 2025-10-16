@@ -159,6 +159,19 @@ tbody tr:nth-child(odd) td{background:#fafbfe}
         
   </header>
 
+  <section class="card" id="playerDefaultsPanel" style="display:block;margin-top:12px">
+<div class="muted-xs">Load to input custom stats.</div>
+    
+    <div style="display:flex;gap:8px;margin-top:10px">
+      
+	  <button id="saveDefaultsBtn" class="btn btn-primary">Load</button>
+      <button id="resetDefaultsBtn" class="btn">Reset</button>
+	  <button id="downloadBtn" class="btn">Export Results</button>
+	  <input id="defaultsName" placeholder="Custom" style="flex:1;padding:8px;border-radius:8px;border:1px solid #eef2f7"/>
+    </div>
+
+    <div id="defaultsGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px"></div>
+  </section>
   <!-- controls & results (single column layout) -->
   <section class="card">
 	<div class="progress-wrap" id="progressWrap"><div class="progress-bar" id="progressBar">0%</div></div>
@@ -185,19 +198,6 @@ tbody tr:nth-child(odd) td{background:#fafbfe}
   </section>
 
   <!-- Player defaults card (used for editing and also now populated when player selected) -->
-  <section class="card" id="playerDefaultsPanel" style="display:block;margin-top:12px">
-<div class="muted-xs">Load to input custom stats.</div>
-    
-    <div style="display:flex;gap:8px;margin-top:10px">
-      
-	  <button id="saveDefaultsBtn" class="btn btn-primary">Load</button>
-      <button id="resetDefaultsBtn" class="btn">Reset</button>
-	  <button id="downloadBtn" class="btn">Export Results</button>
-	  <input id="defaultsName" placeholder="Custom" style="flex:1;padding:8px;border-radius:8px;border:1px solid #eef2f7"/>
-    </div>
-
-    <div id="defaultsGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px"></div>
-  </section>
 
   <!-- shot selection (bottom) -->
   <section class="card" style="margin-top:12px">
