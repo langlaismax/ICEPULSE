@@ -1475,7 +1475,7 @@ document.getElementById('backHomeBtn').addEventListener('click', function () {
     if(row){
       const avg = row['AVG_TOTAL'] || row['Avg_Total'] || row['AVG'] || '';
       const clutch = row['CLUTCH'] || row['Clutch'] || '';
-      right.innerHTML = `${avg ? ('Avg: ' + avg) : ''}${avg && clutch ? ' • ' : ''}${clutch ? ('Clutch: ' + clutch) : ''}`;
+      right.innerHTML = `${avg ? ('Avg: ' + avg) : ''}${avg && clutch ? ' • ' : ''}${clutch ? ('Last End: ' + clutch) : ''}`;
     } else {
       right.textContent = '';
     }
