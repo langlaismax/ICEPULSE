@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="color-scheme" content="light only">
+  <title>IcePulse — Drills</title>
+  <style>
+    :root{
+      --bg:#f7f9fc;
+      --card:#ffffff;
+      --text:#111318;
+      --muted:#5f6672;
+      --border:#e7ecf3;
+      --accent:#0f6fff;
+      --accent-2:#58b6ff;
+      --radius:14px;
+      --shadow:0 10px 30px rgba(14,30,65,.08);
+    }
+    *{box-sizing:border-box}
+    html,body{background:var(--bg);color:var(--text);margin:0;padding:18px;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+    .wrap{max-width:1100px;margin:0 auto}
+    header{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+    .logo{display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;padding:8px 12px;border-radius:12px}
+    .logo h1{margin:0;font-size:1rem;letter-spacing:.2px}
+    .nav-row{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+    .nav-row a{display:inline-flex;align-items:center;justify-content:center;padding:10px 12px;border-radius:10px;border:1px solid var(--border);text-decoration:none;color:#111;background:#fff;font-weight:600}
+    .nav-row a.active{background:linear-gradient(180deg,var(--accent),var(--accent-2));color:#fff;border:none;box-shadow:0 8px 20px rgba(15,111,255,.18)}
+    .intro{margin-bottom:12px;color:var(--muted);font-size:.95rem}
+    .grid{display:grid;grid-template-columns:1fr;gap:14px}
+    @media (min-width:760px){.grid{grid-template-columns:1fr 1fr}}
+    .game-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+    .game-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px 16px;gap:10px}
+    .game-title{font-weight:800;font-size:1.05rem;margin:0}
+    .badge{font-size:.8rem;color:#174ea6;background:#e9f1ff;border:1px solid #cfe2ff;padding:4px 8px;border-radius:999px}
+    .game-body{padding:0 16px 16px 16px}
+    .thumb{position:relative;display:block;border-radius:10px;overflow:hidden;border:1px solid var(--border)}
+    .thumb img{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover}
+    .thumb .overlay{position:absolute;inset:auto 10px 10px 10px;display:flex;justify-content:flex-end}
+    .open-btn{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(180deg,var(--accent),var(--accent-2));color:#fff;text-decoration:none;font-weight:700;padding:8px 12px;border-radius:999px;box-shadow:0 10px 20px rgba(15,111,255,.25)}
+    .meta{color:var(--muted);font-size:.92rem;margin-top:10px}
+    .positions{background:#fbfdff;border:1px dashed var(--border);padding:10px 12px;border-radius:10px;margin-top:10px;font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+    .form-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    input[type="text"], input[type="number"]{border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:15px;min-width:150px}
+    button{border:0;border-radius:10px;padding:10px 12px;font-weight:700;cursor:pointer}
+    .btn{background:linear-gradient(180deg,var(--accent),var(--accent-2));color:#fff;box-shadow:0 8px 20px rgba(15,111,255,.18)}
+    .btn-ghost{background:#fff;border:1px solid var(--border);color:#111}
+    details.leader{margin-top:10px;border:1px solid var(--border);border-radius:10px;padding:8px 10px;background:#fff}
+    details.leader > summary{cursor:pointer;font-weight:700}
+    .leaderboard{margin:8px 0 4px 0}
+    .leaderboard ol{margin:0;padding-left:22px}
+    table.score{width:100%;border-collapse:collapse;font-size:.95rem}
+    table.score th,table.score td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:left}
+    footer{margin-top:20px;color:var(--muted);font-size:.9rem}
+    .status{font-size:.85rem;margin-left:auto;color:var(--muted)}
+    .status.ok{color:#1a7f37}
+    .status.warn{color:#b54708}
+    @media (max-width:600px){html,body{padding:12px}}
+  </style>
+
+  <!-- Firebase SDK (compat for simplicity in a single file) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script>
+    // 1) Fill this in with your Firebase project details (Project Settings → General → SDK setup and configuration → "Config")
+    //    IMPORTANT: In Firestore Rules, restrict writes to your domain and limit fields to {name:string<=64, score:0..40, ts:serverTimestamp}
+    //    Example basic rule snippet:
+    //    rules_version = '2';
+    //    service cloud.firestore { match /databases/{database}/documents {
+    //      match /drillScores/{doc} {
+    //        allow read;
+    //        allow create: if
+    //          request.time < timestamp.date(2100,1,1) &&    // sanity
+    //          request.resource.data.keys().hasOnly(['slug','name','score','ts']) &&
+    //          request.resource.data.slug in ['crazy-eights','great-wall','in-offs','nose-hits','picket-fences','popcorn'] &&
+    //          request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 64 &&
+    //          request.resource.data.score is number && request.resource.data.score >= 0 && request.resource.data.score <= 40 &&
+    //          request.resource.data.ts == request.time;
+    //        allow update, delete: if false;
+    //      }
+    //    }}
+    window.FIREBASE_CONFIG = {
+	  apiKey: "AIzaSyBeNfHXl_9TgD1VzKK3VgI81gGz37Mr-5U",
+	  authDomain: "icepulse-922d7.firebaseapp.com",
+	  projectId: "icepulse-922d7",
+	  storageBucket: "icepulse-922d7.firebasestorage.app",
+	  messagingSenderId: "317028949393",
+	appId: "1:317028949393:web:a59ff4fa482f1385074e30"
+
+    };
+  </script>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo" title="IcePulse">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.5 7H8.5L12 2zM4 21h16l-8-8-8 8z" fill="white"/></svg>
+        <h1>IcePulse — Drills</h1>
+      </div>
+      <nav class="nav-row">
+        <a href="books.html">Books</a><a href="coach.html">Coaching</a><a href="drill.html" class="active">Drills</a>
+        <a href="games.html">Games</a><a href="ice.html">Ice</a><a href="photos.html">Photos</a>
+        <a href="research.html">Research</a><a href="scenario.html">Scenario</a>
+        <a href="h2hcalc.html">Split Times</a><a href="stats.html">Stats</a><a href="stratcalc.html">Strategy</a><a href="vs.html">Versus</a>
+      </nav>
+      <span id="backend-status" class="status">Checking backend…</span>
+    </header>
+
+    <!-- Scoring rubric -->
+    <article class="game-card">
+      <div class="game-head">
+        <h2 class="game-title">Drill Highscores</h2>
+        <span class="badge">Scoring rubric</span>
+      </div>
+      <div class="game-body">
+        <table class="score" aria-label="Score rubric">
+          <thead><tr><th>Location</th><th>Score</th></tr></thead>
+          <tbody>
+            <tr><td>Button</td><td>= 5</td></tr>
+            <tr><td>4-foot</td><td>= 4</td></tr>
+            <tr><td>8-foot</td><td>= 3</td></tr>
+            <tr><td>12-foot</td><td>= 2</td></tr>
+            <tr><td>In play</td><td>= 1</td></tr>
+          </tbody>
+        </table>
+        <p class="meta">Enter the <strong>total drill score (0–40)</strong>. Each drill has its own leaderboard. Scores are stored in Firestore when configured, with a local browser fallback.</p>
+      </div>
+    </article>
+
+    <section class="grid">
+
+      <!-- Crazy Eights -->
+      <article class="game-card" id="crazy-eights">
+        <div class="game-head">
+          <h2 class="game-title">Crazy Eights</h2>
+          <span class="badge">Drill</span>
+        </div>
+        <div class="game-body">
+          <a class="thumb" href="https://curling.gg/new/crazy-eights" target="_blank" rel="noopener noreferrer">
+            <img src="drills/crazy-eights.png" alt="Crazy Eights drill cover">
+            <span class="overlay"><span class="open-btn">Open drill →</span></span>
+          </a>
+          <div class="positions">
+            <strong>Chess on Ice — Positions</strong><br>
+            <code>B(0,6)(6,0)(0,-6)(-6,0)</code><br>
+            <code>A(2,2)(2,-2)(-2,2)(-2,-2)</code>
+          </div>
+          <p class="meta">Instructions: <a href="https://drive.google.com/file/d/1vE14MQ22GzDCTY2a-3aNXOWFDg--xpa3" target="_blank" rel="noopener">Google Drive</a></p>
+
+          <form class="form-row" onsubmit="event.preventDefault(); submitScore('crazy-eights', this.name.value, this.score.value); this.reset();">
+            <input name="name" type="text" placeholder="Name" aria-label="Name" required>
+            <input name="score" type="number" placeholder="Score (0–40)" min="0" max="40" step="1" aria-label="Score" required>
+            <button class="btn" type="submit">Submit</button>
+            <button class="btn-ghost" type="button" onclick="toggleLeaderboard('crazy-eights')">View highscores</button>
+            <button class="btn-ghost" type="button" onclick="exportCSV('crazy-eights')">Export CSV</button>
+          </form>
+
+          <details class="leader" data-leaderboard-wrap="crazy-eights">
+            <summary>Crazy Eights — Highscores</summary>
+            <div class="leaderboard" data-leaderboard="crazy-eights"></div>
+          </details>
+        </div>
+      </article>
+
+      <!-- Great Wall -->
+      <article class="game-card" id="great-wall">
+        <div class="game-head">
+          <h2 class="game-title">Great Wall</h2>
+          <span class="badge">Drill</span>
+        </div>
+        <div class="game-body">
+          <a class="thumb" href="https://curling.gg/new/great-wall" target="_blank" rel="noopener noreferrer">
+            <img src="drills/great-wall.png" alt="Great Wall drill cover">
+            <span class="overlay"><span class="open-btn">Open drill →</span></span>
+          </a>
+          <div class="positions">
+            <strong>Chess on Ice — Positions</strong><br>
+            <code>B(0.5,7)(1.5,7)(2.5,7)(3.5,7)</code><br>
+            <code>A(-0.5,7)(-1.5,7)(-2.5,7)(-3.5,7)</code>
+          </div>
+          <p class="meta">Instructions: <a href="https://drive.google.com/file/d/1vOYgPCddPOZmxwaVuzR9k95814jNUL3_" target="_blank" rel="noopener">Google Drive</a></p>
+
+          <form class="form-row" onsubmit="event.preventDefault(); submitScore('great-wall', this.name.value, this.score.value); this.reset();">
+            <input name="name" type="text" placeholder="Name" aria-label="Name" required>
+            <input name="score" type="number" placeholder="Score (0–40)" min="0" max="40" step="1" aria-label="Score" required>
+            <button class="btn" type="submit">Submit</button>
+            <button class="btn-ghost" type="button" onclick="toggleLeaderboard('great-wall')">View highscores</button>
+            <button class="btn-ghost" type="button" onclick="exportCSV('great-wall')">Export CSV</button>
+          </form>
+
+          <details class="leader" data-leaderboard-wrap="great-wall">
+            <summary>Great Wall — Highscores</summary>
+            <div class="leaderboard" data-leaderboard="great-wall"></div>
+          </details>
+        </div>
+      </article>
+
+      <!-- In Offs -->
+      <article class="game-card" id="in-offs">
+        <div class="game-head">
+          <h2 class="game-title">In Offs</h2>
+          <span class="badge">Drill</span>
+        </div>
+        <div class="game-body">
+          <a class="thumb" href="https://curling.gg/new/in-offs" target="_blank" rel="noopener noreferrer">
+            <img src="drills/in-offs.png" alt="In Offs drill cover">
+            <span class="overlay"><span class="open-btn">Open drill →</span></span>
+          </a>
+          <div class="positions">
+            <strong>Chess on Ice — Positions</strong><br>
+            <code>B(5,6)(5.5,9)(6,12)(6.5,15)</code><br>
+            <code>A(-5,6)(-5.5,9)(-6,12)(-6.5,15)</code>
+          </div>
+          <p class="meta">Instructions: <a href="https://drive.google.com/file/d/1vcymoAKUrIRygHrp71QJdJMI0MCk98Ew" target="_blank" rel="noopener">Google Drive</a></p>
+
+          <form class="form-row" onsubmit="event.preventDefault(); submitScore('in-offs', this.name.value, this.score.value); this.reset();">
+            <input name="name" type="text" placeholder="Name" aria-label="Name" required>
+            <input name="score" type="number" placeholder="Score (0–40)" min="0" max="40" step="1" aria-label="Score" required>
+            <button class="btn" type="submit">Submit</button>
+            <button class="btn-ghost" type="button" onclick="toggleLeaderboard('in-offs')">View highscores</button>
+            <button class="btn-ghost" type="button" onclick="exportCSV('in-offs')">Export CSV</button>
+          </form>
+
+          <details class="leader" data-leaderboard-wrap="in-offs">
+            <summary>In Offs — Highscores</summary>
+            <div class="leaderboard" data-leaderboard="in-offs"></div>
+          </details>
+        </div>
+      </article>
+
+      <!-- Nose Hits -->
+      <article class="game-card" id="nose-hits">
+        <div class="game-head">
+          <h2 class="game-title">Nose Hits</h2>
+          <span class="badge">Drill</span>
+        </div>
+        <div class="game-body">
+          <a class="thumb" href="https://curling.gg/new/nose-hits" target="_blank" rel="noopener noreferrer">
+            <img src="drills/nose-hits.png" alt="Nose Hits drill cover">
+            <span class="overlay"><span class="open-btn">Open drill →</span></span>
+          </a>
+          <div class="positions">
+            <strong>Chess on Ice — Positions</strong><br>
+            <code>B(0.5,0)(2,0)(4,0)(6,0)</code><br>
+            <code>A(-0.5,0)(-2,0)(-4,0)(-6,0)</code>
+          </div>
+          <p class="meta">Instructions: <a href="https://drive.google.com/file/d/1vE14MQ22GzDCTY2a-3aNXOWFDg--xpa3" target="_blank" rel="noopener">Google Drive</a></p>
+
+          <form class="form-row" onsubmit="event.preventDefault(); submitScore('nose-hits', this.name.value, this.score.value); this.reset();">
+            <input name="name" type="text" placeholder="Name" aria-label="Name" required>
+            <input name="score" type="number" placeholder="Score (0–40)" min="0" max="40" step="1" aria-label="Score" required>
+            <button class="btn" type="submit">Submit</button>
+            <button class="btn-ghost" type="button" onclick="toggleLeaderboard('nose-hits')">View highscores</button>
+            <button class="btn-ghost" type="button" onclick="exportCSV('nose-hits')">Export CSV</button>
+          </form>
+
+          <details class="leader" data-leaderboard-wrap="nose-hits">
+            <summary>Nose Hits — Highscores</summary>
+            <div class="leaderboard" data-leaderboard="nose-hits"></div>
+          </details>
+        </div>
+      </article>
+
+      <!-- Picket Fences -->
+      <article class="game-card" id="picket-fences">
+        <div class="game-head">
+          <h2 class="game-title">Picket Fences</h2>
+          <span class="badge">Drill</span>
+        </div>
+        <div class="game-body">
+          <a class="thumb" href="https://curling.gg/new/picket-fences" target="_blank" rel="noopener noreferrer">
+            <img src="drills/picket-fences.png" alt="Picket Fences drill cover">
+            <span class="overlay"><span class="open-btn">Open drill →</span></span>
+          </a>
+          <div class="positions">
+            <strong>Chess on Ice — Positions</strong><br>
+            <code>B(0,0.5)(2,0.5)(-2,0.5)(0,6.5)</code><br>
+            <code>A(2,6.5)(-2,6.5)(-1,3)(1,3)</code>
+          </div>
+          <p class="meta">Instructions: <a href="https://drive.google.com/file/d/1vkwqozhFkJ0Tp7s50p20ahBurFNHhSBB" target="_blank" rel="noopener">Google Drive</a></p>
+
+          <form class="form-row" onsubmit="event.preventDefault(); submitScore('picket-fences', this.name.value, this.score.value); this.reset();">
+            <input name="name" type="text" placeholder="Name" aria-label="Name" required>
+            <input name="score" type="number" placeholder="Score (0–40)" min="0" max="40" step="1" aria-label="Score" required>
+            <button class="btn" type="submit">Submit</button>
+            <button class="btn-ghost" type="button" onclick="toggleLeaderboard('picket-fences')">View highscores</button>
+            <button class="btn-ghost" type="button" onclick="exportCSV('picket-fences')">Export CSV</button>
+          </form>
+
+          <details class="leader" data-leaderboard-wrap="picket-fences">
+            <summary>Picket Fences — Highscores</summary>
+            <div class="leaderboard" data-leaderboard="picket-fences"></div>
+          </details>
+        </div>
+      </article>
+
+      <!-- Popcorn -->
+      <article class="game-card" id="popcorn">
+        <div class="game-head">
+          <h2 class="game-title">Popcorn</h2>
+          <span class="badge">Drill</span>
+        </div>
+        <div class="game-body">
+          <a class="thumb" href="https://curling.gg/new/popcorn" target="_blank" rel="noopener noreferrer">
+            <img src="drills/popcorn.png" alt="Popcorn drill cover">
+            <span class="overlay"><span class="open-btn">Open drill →</span></span>
+          </a>
+          <div class="positions">
+            <strong>Chess on Ice — Positions</strong><br>
+            <code>B(0,6.5)(0,8.5)(0,10.5)(0,12.5)</code><br>
+            <code>A(0,7.5)(0,9.5)(0,11.5)(0,13.5)</code>
+          </div>
+          <p class="meta">Instructions: <a href="https://drive.google.com/file/d/1vqS6uoBte1loQMU8tcsUehLW4aX7r-dj" target="_blank" rel="noopener">Google Drive</a></p>
+
+          <form class="form-row" onsubmit="event.preventDefault(); submitScore('popcorn', this.name.value, this.score.value); this.reset();">
+            <input name="name" type="text" placeholder="Name" aria-label="Name" required>
+            <input name="score" type="number" placeholder="Score (0–40)" min="0" max="40" step="1" aria-label="Score" required>
+            <button class="btn" type="submit">Submit</button>
+            <button class="btn-ghost" type="button" onclick="toggleLeaderboard('popcorn')">View highscores</button>
+            <button class="btn-ghost" type="button" onclick="exportCSV('popcorn')">Export CSV</button>
+          </form>
+
+          <details class="leader" data-leaderboard-wrap="popcorn">
+            <summary>Popcorn — Highscores</summary>
+            <div class="leaderboard" data-leaderboard="popcorn"></div>
+          </details>
+        </div>
+      </article>
+
+    </section>
+
+    <footer>
+      Built with ❤️ for curlers. Tip: click “Open drill →” to see full drill pages.
+    </footer>
+  </div>
+
+  <script>
+    // ---------- Backend selection (Firestore or local fallback) ----------
+    const statusEl = document.getElementById('backend-status');
+    function setStatus(ok, text){
+      statusEl.textContent = text;
+      statusEl.className = 'status ' + (ok ? 'ok' : 'warn');
+    }
+
+    function escapeHtml(s){
+      return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
+    function storageKey(slug){ return 'drill-scores:' + slug; }
+
+    const LocalBackend = {
+      name: 'Local',
+      async list(slug){
+        try{ const raw = localStorage.getItem(storageKey(slug)); const arr = raw ? JSON.parse(raw) : []; return Array.isArray(arr)?arr:[]; }
+        catch(e){ return []; }
+      },
+      async add(slug, name, score){
+        const arr = await this.list(slug);
+        arr.push({name, score, ts:Date.now()});
+        arr.sort((a,b)=> b.score - a.score || a.ts - b.ts);
+        localStorage.setItem(storageKey(slug), JSON.stringify(arr.slice(0,200)));
+      }
+    };
+
+    let Backend = LocalBackend;
+
+    (function initBackend(){
+      try{
+        const cfg = window.FIREBASE_CONFIG || {};
+        if(!cfg || !cfg.projectId){ setStatus(false, 'Local leaderboard (Firestore not configured)'); return; }
+        const app = firebase.initializeApp(cfg);
+        const db = firebase.firestore();
+        // A very small write to test read/write? We'll skip write; just set status via a read capability check.
+        Backend = {
+          name: 'Firestore',
+          async list(slug){
+            const snap = await db.collection('drillScores')
+              .where('slug','==',slug)
+              .orderBy('score','desc').orderBy('ts','asc')
+              .limit(200).get();
+            return snap.docs.map(d=>{
+              const x = d.data();
+              return {name:x.name, score:x.score, ts:x.ts ? x.ts.toMillis() : Date.now()};
+            });
+          },
+          async add(slug,name,score){
+            await db.collection('drillScores').add({
+              slug, name, score,
+              ts: firebase.firestore.FieldValue.serverTimestamp()
+            });
+          }
+        };
+        setStatus(true, 'Connected: Firestore');
+      }catch(e){
+        console.warn('Firestore init failed, falling back to local', e);
+        Backend = LocalBackend;
+        setStatus(false, 'Local leaderboard (Firestore unavailable)');
+      }
+    })();
+
+    // ---------- UI actions ----------
+    async function submitScore(slug, name, score){
+      const s = Number(score);
+      const n = String(name||'').trim();
+      if(!n){ alert('Please enter a name.'); return; }
+      if(!Number.isFinite(s) || s < 0 || s > 40){ alert('Enter a score from 0 to 40.'); return; }
+      try{
+        await Backend.add(slug, n, s);
+        await renderLeaderboard(slug, true);
+      }catch(e){
+        alert('Failed to submit score using '+Backend.name+'. Check connectivity or Firestore rules.');
+        console.error(e);
+      }
+    }
+
+    async function renderLeaderboard(slug, forceOpen=false){
+      const root = document.querySelector('[data-leaderboard="'+slug+'"]');
+      const wrap = document.querySelector('[data-leaderboard-wrap="'+slug+'"]');
+      if(!root) return;
+      try{
+        const arr = await Backend.list(slug);
+        if(!arr.length){ root.innerHTML = '<p class="meta">No scores yet — be the first!</p>'; }
+        else{
+          root.innerHTML = '<ol>'+arr.map(e=>'<li><strong>'+escapeHtml(e.name)+'</strong> — '+e.score+' <span class="meta">('+new Date(e.ts).toLocaleDateString()+')</span></li>').join('')+'</ol>';
+        }
+        if(forceOpen && wrap && !wrap.hasAttribute('open')) wrap.setAttribute('open','');
+      }catch(e){
+        root.innerHTML = '<p class="meta">Failed to load leaderboard.</p>';
+        console.error(e);
+      }
+    }
+
+    function toggleLeaderboard(slug){
+      const wrap = document.querySelector('[data-leaderboard-wrap="'+slug+'"]');
+      if(!wrap) return;
+      const open = wrap.hasAttribute('open');
+      if(!open){ renderLeaderboard(slug); }
+      wrap.toggleAttribute('open');
+    }
+
+    async function exportCSV(slug){
+      try{
+        const arr = await Backend.list(slug);
+        const rows = [['Name','Score','Date']].concat(arr.map(e=>[e.name,e.score,new Date(e.ts).toISOString()]));
+        const csv = rows.map(r=>r.map(v=>(/[,"
+]/.test(String(v))? '"'+String(v).replace(/"/g,'""')+'"' : v)).join(',')).join('\n');
+        const blob = new Blob([csv], {type:'text/csv'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = slug + '_leaderboard.csv';
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+      }catch(e){
+        alert('Failed to export CSV.');
+        console.error(e);
+      }
+    }
+
+    // Preload leaderboards if details are open (none by default)
+    document.querySelectorAll('[data-leaderboard-wrap]').forEach(el=>{
+      if(el.hasAttribute('open')){
+        renderLeaderboard(el.getAttribute('data-leaderboard-wrap'));
+      }
+    });
+  </script>
+</body>
+</html>
