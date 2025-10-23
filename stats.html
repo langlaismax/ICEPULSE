@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>IcePulse — Stats</title>
+  
+  <style>
+    :root{
+      --pro-bg:#f7f9fc;
+      --pro-card:#ffffff;
+      --pro-text:#111318;
+      --pro-muted:#5f6672;
+      --pro-border:#e7ecf3;
+      --pro-accent:#0f6fff;
+      --pro-accent-2:#58b6ff;
+      --pro-radius:12px;
+      --pro-shadow:0 10px 30px rgba(14,30,65,.08);
+    }
+    html,body{background:var(--pro-bg);color:var(--pro-text);margin:0;padding:18px;font-family:Inter,system-ui,Arial}
+    .wrap{max-width:1180px;margin:0 auto}
+    header{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+    .logo{display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,var(--pro-accent),var(--pro-accent-2));color:#fff;padding:8px 12px;border-radius:10px}
+    .logo h1{margin:0;font-size:1rem}
+    .muted{color:var(--pro-muted)}
+    .card{background:var(--pro-card);border:1px solid var(--pro-border);border-radius:var(--pro-radius);box-shadow:var(--pro-shadow);padding:14px;margin-bottom:12px}
+    select{background:#fff;color:var(--pro-text);border:1px solid var(--pro-border);border-radius:10px;padding:10px 12px;font-size:16px;min-width:220px}
+    .nav-row{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+    .nav-row a{display:inline-flex;align-items:center;justify-content:center;padding:10px 12px;border-radius:10px;border:1px solid var(--pro-border);text-decoration:none;color:#111;background:#fff;font-weight:600}
+    .nav-row a.active{background:linear-gradient(180deg,var(--pro-accent),var(--pro-accent-2));color:#fff;border:none;box-shadow:0 8px 20px rgba(15,111,255,.18)}
+    .iframe-rail{border:1px solid var(--pro-border);border-radius:10px;overflow:hidden;background:#fff;box-shadow:var(--pro-shadow)}
+    .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    @media (max-width:600px){html,body{padding:12px}}
+  </style>
+
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 2l3.5 7H8.5L12 2zM4 21h16l-8-8-8 8z" fill="white"/></svg>
+        <h1>IcePulse — Stats</h1>
+      </div>
+      <div class="nav-row"><a href="books.html">Books</a><a href="coach.html">Coaching</a><a href="drill.html">Drills</a><a href="games.html">Games</a><a href="ice.html">Ice</a><a href="photos.html">Photos</a><a href="research.html">Research</a><a href="scenario.html">Scenario</a><a href="h2hcalc.html">Split Times</a><a href="stats.html" class="active">Stats</a><a href="stratcalc.html">Strategy</a><a href="vs.html">Versus</a></div>
+    </header>
+
+    <section class="card">
+      <div class="row" style="justify-content:space-between">
+        <div class="row">
+          <label for="folderSelect" class="muted">Choose folder</label>
+          <select id="folderSelect" aria-label="Choose Google Drive folder">
+            
+  <option value="1BdeWy_oGE_vfebv-6VLvx7khHGp6njOj">All</option>
+  <option value="1BecMuKY14hgoJOte_cX-2peC-AxlHYIn">Brier</option>
+  <option value="1BfHwVx1jV9XNeABca2Awtq5EgIi1bWNR">Continental Cup</option>
+  <option value="1BhDFJB6P8sLNzz-T1lBMsi025-vYcUGj">Curling World Cup</option>
+  <option value="1BkaeGPPZKXuJgQ09N7R-eMikQEfl2gTp">Junior Men</option>
+  <option value="1Bp1i9cyBkX3YV4kmsMEYfX96MdrBQSPY">Junior Women</option>
+  <option value="1BrtGzvyoa67Wm2ydDCwnz2m2N9DfwekV">Men's Baden Master</option>
+  <option value="1Bv8k-wyRXsacF0e7WWptCEFNgYEm_MH1">Men's Canada Cup</option>
+  <option value="1BxLnP1egUEfQDa6Bj9ezL_KbgXSLwA6a">Men's Canadian U18 Championship</option>
+  <option value="1ByIrYlhOH06FpXn8DwYbOgr4-Wj580mX">Men's CIS Championship</option>
+  <option value="1C1sS6pPT7_8ptlFA8D-9HSmgbhWcPcLu">Men's European Championship</option>
+  <option value="1C4eNMOfSDca4_6mwHt36mdDZaHLv9foN">Men's GSOC</option>
+  <option value="1C5LxGVI7lBExoEKVz7VKUrpv05mxI_BS">Men's Manitoba Championship</option>
+  <option value="1C8QcvYgGaMkP2FIYezrDj4O5ym5rg3RP">Men's Pacific Asia Cup</option>
+  <option value="1CEalxuLEDrgoc6EZi9j9OyIfwhBKqsIj">Men's Pan Continental</option>
+  <option value="1CI5ORpn8TxOvDdq5FJXZkWOgYylrD9yW">Men's Pointsbet</option>
+  <option value="1CJDeriX1cZicH6xiUfJj0kt-1vj3-YpE">Men's Roar of the Rings</option>
+  <option value="1CONXC5bKVp8BxVkKZsCOo_-ztmvrpGfV">Men's World Championship</option>
+  <option value="1CUtjl-aPLS5_pIbPwRHohIJ68zhvOchD">Men's World University Games</option>
+  <option value="1C_knCsvO8rS-tyOyTneZF65QRksmwUwP">Mixed</option>
+  <option value="1Cmj09X3RaYADb45LmdciWF4Bwthv1sNi">Mixed Doubles</option>
+  <option value="1CoK_HMr-DQfxaXH-t3UBVzaAPSY8Rdih">Olympics</option>
+  <option value="1CtlUeD2gkERgEaHsmzR4tYFuIQqiZpVF">Scotties</option>
+  <option value="1CuaySuzuso8rwbAyBxMW_ts4wtRTAIe2">Senior World Championship</option>
+  <option value="1CwJX9TuIiGaXYCIOZxETOJobwZrx_BC_">U-Sports</option>
+  <option value="1D-5sxeD88Mg8rG13giA66J7H4j73DyoO">Wheelchair</option>
+  <option value="1D-8DOFIl9RVv_JNN6CvPjl-wUYVCpmB6">Women's Canada Cup</option>
+  <option value="1D9yV52WwVULQjHMid4dON-5tUxgsV5T4">Women's Canadian U18 Championship</option>
+  <option value="1D-Xu9J_gV7XR71mzCcYcb_2XSzf5lPoX">Women's CIS Championship</option>
+  <option value="1D0PR5yfTM_hRq1QmbaRq6AIkzDbRGUOK">Women's European Championship</option>
+  <option value="1D15_m2n4XFhnEk1YG0LHPrLqYfj4UljL">Women's GSOC</option>
+  <option value="1D2cgNlRySmyF0qrnsO_tuXZqIbueOHcw">Women's Pacific Asia</option>
+  <option value="1D6A8uAo_MMJGm7r3hqdjjw0jkzppUutb">Women's Pan Continental</option>
+  <option value="1D79coJD0BuV4VGjCbnqmHYCTfafuG_Vc">Women's Pointsbet</option>
+  <option value="1D8-lbfvTL0Nzltyyfu49VPCnv1FSVZDm">Women's Roar of the Rings</option>
+  <option value="1DBZcIT2W7pWknuRYk9HwI8W12ELpw72w">Women's World Championship</option>
+
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="iframe-rail">
+        <iframe id="galleryFrame" src="" style="width:100%; height:78vh; border:0" title="Gallery"></iframe>
+      </div>
+    </section>
+  </div>
+  
+  <script>
+    function folderIdToEmbedUrl(id){
+      return "https://drive.google.com/embeddedfolderview?id=" + encodeURIComponent(id) + "#grid";
+    }
+    function initGallery(selectId, frameId){
+      const select = document.getElementById(selectId);
+      const frame  = document.getElementById(frameId);
+      function apply(){
+        const id = select.value;
+        frame.src = folderIdToEmbedUrl(id);
+        const params = new URLSearchParams(location.search);
+        params.set('id', id);
+        history.replaceState(null, '', location.pathname + '?' + params.toString());
+      }
+      const params = new URLSearchParams(location.search);
+      const id = params.get('id');
+      if(id){
+        for(const opt of select.options){ if(opt.value === id){ select.value = id; break; } }
+      }
+      apply();
+      select.addEventListener('change', apply);
+    }
+  </script>
+
+  <script>initGallery('folderSelect','galleryFrame');</script>
+</body>
+</html>

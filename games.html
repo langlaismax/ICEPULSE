@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>IcePulse — Games</title>
+  <meta name="color-scheme" content="light only">
+  <style>
+    :root{
+      --bg:#f7f9fc;
+      --card:#ffffff;
+      --text:#111318;
+      --muted:#5f6672;
+      --border:#e7ecf3;
+      --accent:#0f6fff;
+      --accent-2:#58b6ff;
+      --radius:14px;
+      --shadow:0 10px 30px rgba(14,30,65,.08);
+    }
+    *{box-sizing:border-box}
+    html,body{background:var(--bg);color:var(--text);margin:0;padding:18px;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+    .wrap{max-width:1100px;margin:0 auto}
+    header{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+    .logo{display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;padding:8px 12px;border-radius:12px}
+    .logo h1{margin:0;font-size:1rem;letter-spacing:.2px}
+    .nav-row{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+    .nav-row a{display:inline-flex;align-items:center;justify-content:center;padding:10px 12px;border-radius:10px;border:1px solid var(--border);text-decoration:none;color:#111;background:#fff;font-weight:600}
+    .nav-row a.active{background:linear-gradient(180deg,var(--accent),var(--accent-2));color:#fff;border:none;box-shadow:0 8px 20px rgba(15,111,255,.18)}
+    .intro{margin-bottom:12px;color:var(--muted);font-size:.95rem}
+    .grid{display:grid;grid-template-columns:1fr;gap:14px}
+    @media (min-width:760px){.grid{grid-template-columns:1fr 1fr}}
+    .game-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+    .game-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px 16px;gap:10px}
+    .game-title{font-weight:800;font-size:1.05rem;margin:0}
+    .badge{font-size:.8rem;color:#174ea6;background:#e9f1ff;border:1px solid #cfe2ff;padding:4px 8px;border-radius:999px}
+    .game-body{padding:0 16px 16px 16px}
+    .embed{width:100%;aspect-ratio:4/3;background:#000}
+    .embed iframe{width:100%;height:100%;border:0;display:block}
+    .thumb{position:relative;display:block;border-radius:10px;overflow:hidden;border:1px solid var(--border)}
+    .thumb img{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover}
+    .thumb .overlay{position:absolute;inset:auto 10px 10px 10px;display:flex;justify-content:flex-end}
+    .open-btn{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(180deg,var(--accent),var(--accent-2));color:#fff;text-decoration:none;font-weight:700;padding:8px 12px;border-radius:999px;box-shadow:0 10px 20px rgba(15,111,255,.25)}
+    .meta{color:var(--muted);font-size:.9rem;margin-top:10px}
+    footer{margin-top:20px;color:var(--muted);font-size:.9rem}
+    @media (max-width:600px){html,body{padding:12px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo" title="IcePulse">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.5 7H8.5L12 2zM4 21h16l-8-8-8 8z" fill="white"/></svg>
+        <h1>IcePulse — Games</h1>
+      </div>
+      <nav class="nav-row">
+        <a href="books.html">Books</a><a href="coach.html">Coaching</a><a href="drill.html">Drills</a>
+        <a href="games.html" class="active">Games</a><a href="ice.html">Ice</a><a href="photos.html">Photos</a>
+        <a href="research.html">Research</a><a href="scenario.html">Scenario</a>
+        <a href="h2hcalc.html">Split Times</a><a href="stats.html">Stats</a><a href="stratcalc.html">Strategy</a><a href="vs.html">Versus</a>
+      </nav>
+    </header>
+
+    <section class="grid">
+
+      <!-- Curling for Windows (1991) -->
+      <article class="game-card">
+        <div class="game-head">
+          <h2 class="game-title">Curling for Windows</h2>
+          <span class="badge">1991 · MS‑DOS/Windows</span>
+        </div>
+        <div class="game-body">
+          <div class="embed">
+            <iframe src="https://archive.org/embed/CURLING_201707" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+          </div>
+          <p class="meta">Source: Internet Archive</p>
+        </div>
+      </article>
+
+      <!-- Nagano (1998) -->
+      <article class="game-card">
+        <div class="game-head">
+          <h2 class="game-title">Nagano Winter Olympics</h2>
+          <span class="badge">1998 · PS1</span>
+        </div>
+        <div class="game-body">
+          <div class="embed">
+            <iframe src="https://archive.org/embed/psx_nagano" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+          </div>
+          <p class="meta">Source: Internet Archive</p>
+        </div>
+      </article>
+
+      <!-- Salt Lake 2002 -->
+      <article class="game-card">
+        <div class="game-head">
+          <h2 class="game-title">Salt Lake 2002</h2>
+          <span class="badge">2002 · GBA</span>
+        </div>
+        <div class="game-body">
+          <div class="embed">
+            <iframe src="https://www.retrogames.cc/embed/26673-salt-lake-2002-e-independent.html" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+          </div>
+          <p class="meta">Source: RetroGames.cc</p>
+        </div>
+      </article>
+
+      <!-- Take-Out Weight Curling 2 (link card) -->
+      <article class="game-card">
+        <div class="game-head">
+          <h2 class="game-title">Take‑Out Weight Curling 2</h2>
+          <span class="badge">2003 · Windows</span>
+        </div>
+        <div class="game-body">
+          <a class="thumb" href="https://www.myabandonware.com/game/take-out-weight-curling-2-ikz" target="_blank" rel="noopener noreferrer">
+            <img src="https://www.myabandonware.com/media/screenshots/t/take-out-weight-curling-2-sq1/webp/take-out-weight-curling-2_6.webp" alt="Take‑Out Weight Curling 2 screenshot">
+            <span class="overlay"><span class="open-btn" aria-label="Open myabandonware page">Open site →</span></span>
+          </a>
+          <p class="meta">Source: MyAbandonware</p>
+        </div>
+      </article>
+
+      <!-- Curling DS -->
+      <article class="game-card">
+        <div class="game-head">
+          <h2 class="game-title">Curling DS</h2>
+          <span class="badge">2006 · Nintendo DS</span>
+        </div>
+        <div class="game-body">
+          <div class="embed">
+            <iframe src="https://www.retrogames.cc/embed/38851-curling-ds-usa-en-fr.html" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+          </div>
+          <p class="meta">Source: RetroGames.cc</p>
+        </div>
+      </article>
+
+      <!-- Virtual Curling Flash Game -->
+      <article class="game-card">
+        <div class="game-head">
+          <h2 class="game-title">Virtual Curling (Flash)</h2>
+          <span class="badge">2007 · Browser</span>
+        </div>
+        <div class="game-body">
+          <div class="embed">
+            <iframe src="https://archive.org/embed/virtual-curling_flash" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+          </div>
+          <p class="meta">Source: Internet Archive</p>
+        </div>
+      </article>
+
+      <!-- FlyOrDie Virtual Curling (link card) -->
+      <article class="game-card">
+        <div class="game-head">
+          <h2 class="game-title">FlyOrDie — Virtual Curling</h2>
+          <span class="badge">2010 · Browser</span>
+        </div>
+        <div class="game-body">
+          <a class="thumb" href="https://www.playcurling.com/" target="_blank" rel="noopener noreferrer">
+            <img src="https://www.flyordie.com/image/game/banner/curling_1400x560.jpg" alt="FlyOrDie Virtual Curling">
+            <span class="overlay"><span class="open-btn" aria-label="Open playcurling.com">Open site →</span></span>
+          </a>
+        </div>
+      </article>
+
+      <!-- Chess on Ice (link card) -->
+      <article class="game-card">
+        <div class="game-head">
+          <h2 class="game-title">Chess on Ice</h2>
+          <span class="badge">2018 · PC</span>
+        </div>
+        <div class="game-body">
+          <a class="thumb" href="https://chessonice.ca/" target="_blank" rel="noopener noreferrer">
+            <img src="https://chessonice.ca/wp-content/uploads/2023/04/ChessOnIce-4.0-Skip-View-with-Free-Guard-Zone-active-1980x1205.png" alt="Chess on Ice screenshot">
+            <span class="overlay"><span class="open-btn" aria-label="Open chessonice.ca">Open site →</span></span>
+          </a>
+        </div>
+      </article>
+
+
+    </section>
+  </div>
+</body>
+</html>
