@@ -458,8 +458,7 @@ function refreshAll(){
   const t1 = getTeamPlayers(1); const t2 = getTeamPlayers(2);
   document.getElementById('t1Count').textContent = `${t1.length} / 4`;
   document.getElementById('t2Count').textContent = `${t2.length} / 4`;
-  document.getElementById('t1Note').textContent = t1.length===4 ? '' : (t1.length ? 'Tip: pick 4 for a fuller average' : 'Choose players');
-  document.getElementById('t2Note').textContent = t2.length===4 ? '' : (t2.length ? 'Tip: pick 4 for a fuller average' : 'Choose players');
+
 
   renderPlayerList(document.getElementById('t1Players'), t1);
   renderPlayerList(document.getElementById('t2Players'), t2);
