@@ -1,38 +1,121 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>IcePulse — Versus</title>
-  
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Player Comparison — Team vs Team (Patched)</title>
   <style>
-    :root{
-      --pro-bg:#f7f9fc;
-      --pro-card:#ffffff;
-      --pro-text:#111318;
-      --pro-muted:#5f6672;
-      --pro-border:#e7ecf3;
-      --pro-accent:#0f6fff;
-      --pro-accent-2:#58b6ff;
-      --pro-radius:12px;
-      --pro-shadow:0 10px 30px rgba(14,30,65,.08);
-    }
-    html,body{background:var(--pro-bg);color:var(--pro-text);margin:0;padding:18px;font-family:Inter,system-ui,Arial}
-    .wrap{max-width:1180px;margin:0 auto}
-    header{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
-    .logo{display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,var(--pro-accent),var(--pro-accent-2));color:#fff;padding:8px 12px;border-radius:10px}
-    .logo h1{margin:0;font-size:1rem}
-    .muted{color:var(--pro-muted)}
-    .card{background:var(--pro-card);border:1px solid var(--pro-border);border-radius:var(--pro-radius);box-shadow:var(--pro-shadow);padding:14px;margin-bottom:12px}
-    select{background:#fff;color:var(--pro-text);border:1px solid var(--pro-border);border-radius:10px;padding:10px 12px;font-size:16px;min-width:220px}
-    .nav-row{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
-    .nav-row a{display:inline-flex;align-items:center;justify-content:center;padding:10px 12px;border-radius:10px;border:1px solid var(--pro-border);text-decoration:none;color:#111;background:#fff;font-weight:600}
-    .nav-row a.active{background:linear-gradient(180deg,var(--pro-accent),var(--pro-accent-2));color:#fff;border:none;box-shadow:0 8px 20px rgba(15,111,255,.18)}
-    .iframe-rail{border:1px solid var(--pro-border);border-radius:10px;overflow:hidden;background:#fff;box-shadow:var(--pro-shadow)}
-    .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-    @media (max-width:600px){html,body{padding:12px}}
-  </style>
+  /* ===== IcePulse Pro theme (from vs.html) ===== */
+  :root{
+    --pro-bg:#f7f9fc;
+    --pro-card:#ffffff;
+    --pro-text:#111318;
+    --pro-muted:#5f6672;
+    --pro-border:#e7ecf3;
+    --pro-accent:#0f6fff;
+    --pro-accent-2:#58b6ff;
+    --pro-radius:12px;
+    --pro-shadow:0 10px 30px rgba(14,30,65,.08);
+  }
 
+  /* Base */
+  *{box-sizing:border-box}
+  html,body{
+    margin:0;
+    padding:18px;
+    background:var(--pro-bg);
+    color:var(--pro-text);
+    font:14px/1.45 Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";
+  }
+  a{color:var(--pro-accent);text-decoration:none}
+
+  /* Layout */
+  .wrap{max-width:1180px;margin:0 auto}
+
+  /* Header + Nav (from vs.html) */
+  header{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+  .logo{
+    display:flex;align-items:center;gap:10px;
+    background:linear-gradient(90deg,var(--pro-accent),var(--pro-accent-2));
+    color:#fff;padding:8px 12px;border-radius:10px
+  }
+  .logo h1{margin:0;font-size:1rem}
+  .nav-row{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+  .nav-row a{
+    display:inline-flex;align-items:center;justify-content:center;
+    padding:10px 12px;border-radius:10px;border:1px solid var(--pro-border);
+    background:#fff;color:#111;font-weight:600;text-decoration:none
+  }
+  .nav-row a.active{
+    background:linear-gradient(180deg,var(--pro-accent),var(--pro-accent-2));
+    color:#fff;border:none;box-shadow:0 8px 20px rgba(15,111,255,.18)
+  }
+
+  /* Cards / content shells */
+  .card{
+    background:var(--pro-card);
+    border:1px solid var(--pro-border);
+    border-radius:var(--pro-radius);
+    box-shadow:var(--pro-shadow);
+    padding:14px;
+    margin-bottom:12px;
+  }
+
+  /* Typography & helpers */
+  h2{margin:0 0 10px;font-size:16px}
+  .flex{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:6px 0}
+  .muted,.note,.small{color:var(--pro-muted)}
+  .small{font-size:12px}
+  .pill{
+    display:inline-block;padding:2px 8px;border-radius:999px;
+    border:1px solid var(--pro-border);background:#f9fafe;font-size:12px
+  }
+  .warn{background:#fff3cd;border:1px solid #ffe08a}
+
+  /* Forms */
+  select,button{
+    font:inherit;padding:10px 12px;
+    border:1px solid var(--pro-border);border-radius:10px;background:#fff;
+    color:var(--pro-text);min-width:220px
+  }
+  .role{width:100%}
+
+  /* Tables */
+  .table-wrap{overflow:auto;border:1px solid var(--pro-border);border-radius:10px}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:10px 12px;border-bottom:1px solid var(--pro-border);vertical-align:middle}
+  thead th{position:sticky;top:0;background:#fafbff;z-index:1;text-align:left;font-weight:600}
+  .center{text-align:center}
+  .right{text-align:right}
+  .hide{display:none}
+
+  /* Grids */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .kpi{background:#fafbff;border:1px solid var(--pro-border);border-radius:10px;padding:10px;text-align:center}
+  .kpi .v{font-weight:700;font-size:18px}
+
+  /* Iframe rail if used */
+  .iframe-rail{border:1px solid var(--pro-border);border-radius:10px;overflow:hidden;background:#fff;box-shadow:var(--pro-shadow)}
+
+  /* Responsive */
+  @media (max-width:900px){
+    .grid{grid-template-columns:1fr}
+  }
+  @media (max-width:600px){
+    html,body{padding:12px}
+    .nav-row{width:100%;margin-left:0}
+  }
+  
+  /* Δ highlight chips */
+.diff-chip{font-weight:700;padding:2px 6px;border-radius:8px;display:inline-block}
+.diff-pos{background:#e7f7ec;color:#0c6b2e;border:1px solid #b9e6c9}
+.diff-neg{background:#fdeceb;color:#b42318;border:1px solid #f2b8b5}
+
+
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
   <div class="wrap">
@@ -42,9 +125,369 @@
           <path d="M12 2l3.5 7H8.5L12 2zM4 21h16l-8-8-8 8z" fill="white"/></svg>
         <h1>IcePulse — Versus</h1>
       </div>
-      <div class="nav-row"><a href="books.html">Books</a><a href="coach.html">Coaching</a><a href="drill.html">Drills</a><a href="games.html">Games</a><a href="ice.html">Ice</a><a href="photos.html">Photos</a><a href="research.html">Research</a><a href="scenario.html">Scenario</a><a href="h2hcalc.html">Split Times</a><a href="stats.html">Stats</a><a href="stratcalc.html">Strategy</a><a href="vs.html" class="active">Versus</a></div>
+      <div class="nav-row"><a href="index.html">Home</a></div>
     </header>
-	
-	Coming Soon
+
+    <!-- Team pickers -->
+    <div class="grid">
+      <section class="card" id="team1">
+        <div class="flex"><h2>Team 1</h2><span class="pill" id="t1Count">0 / 4</span></div>
+        <div class="small muted" id="t1Note">Choose players</div>
+        <div id="team1Selectors"></div>
+        <div style="margin-top:10px" class="kpis" id="t1Kpis"></div>
+        <div style="margin-top:10px" id="t1Players"></div>
+      </section>
+
+      <section class="card" id="team2">
+        <div class="flex"><h2>Team 2</h2><span class="pill" id="t2Count">0 / 4</span></div>
+        <div class="small muted" id="t2Note">Choose players</div>
+        <div id="team2Selectors"></div>
+        <div style="margin-top:10px" class="kpis" id="t2Kpis"></div>
+        <div style="margin-top:10px" id="t2Players"></div>
+      </section>
+    </div>
+
+    <!-- Head-to-Head -->
+    <section class="card" style="margin-top:16px">
+      <div class="flex"><h2 style="margin:0">Head‑to‑Head</h2><span class="note">Positive numbers favour Team 1</span></div>
+      <div class="table-wrap">
+        <table id="compareTable">
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th class="center">Team 1</th>
+              <th class="center">Δ (T1−T2)</th>
+              <th class="center">Team 2</th>
+            </tr>
+          </thead>
+          <tbody id="compareTbody"></tbody>
+        </table>
+      </div>
+      <div class="hide" id="chartWrap" style="margin-top:10px; height:280px">
+        <canvas id="compareChart"></canvas>
+      </div>
+    </section>
+
+    <section class="card warn" id="dataMsg" style="display:none; margin-top:12px"></section>
+
+    <p class="small muted" id="srcMsg" style="margin-top:12px"></p>
+  </div>
+
+<script>
+// -------------------------- Utility helpers --------------------------
+const PLAYERS = {}; // name -> { metrics:{}, tasks:{}, yearSeries:{} }
+let chartObj = null;
+
+const METRIC_KEYS = [
+  // [aliases, outputKey, isPercent]
+  [['AVG_CW','Avg_CW','AVG CW'], 'AvgCwPct', true],
+  [['AVG_CCW','Avg_CCW','AVG CCW'], 'AvgCcwPct', true],
+  [['AVG_TOTAL','AVG_TOTA','Avg_Total','AVG TOTAL'], 'AvgTotalPct', true],
+  [['CLUTCH','Clutch'], 'ClutchPct', true],
+
+  [['PP_team_throws16_hammer','PP_team_t','PP Team 16 Hammer','PP_team'], 'PPTeam16', false],
+  [['PP_opp_throws16_hammer','PP_opp_t','PP Opp 16 Hammer','PP_opp'], 'PPOpp16', false],
+
+  ['HammerEff%','HammerEffPct', true],
+  ['ForceEff%','ForceEffPct',  true],
+  ['StealEff%','StealEffPct',  true],
+  ['StealDef%','StealDefPct',  true],
+
+  [['HammerFactor(pp)','HammerFactor','HammerFactor_pp'], 'HammerFactorPP', false],
+  ['FromBehind%','FromBehindPct', true],
+  ['Choke%','ChokePct',           true],
+
+  ['Best','Best', false],
+  ['Worst','Worst', false],
+];
+
+function parsePercentLoose(v){
+  if (v==null) return null; const s=String(v).trim(); if(!s) return null;
+  const n = parseFloat(s.replace(/,/g,'').replace(/%/g,''));
+  return Number.isFinite(n) ? n : null;
+}
+function parseNumber(v){
+  if (v==null) return null; const s=String(v).trim(); if(!s) return null;
+  const n = parseFloat(s.replace(/,/g,''));
+  return Number.isFinite(n) ? n : null;
+}
+function avg(arr){
+  const xs = arr.filter(x => x!=null && !Number.isNaN(x));
+  if(!xs.length) return null; return xs.reduce((a,b)=>a+b,0)/xs.length;
+}
+function modeStr(arr){
+  const xs = arr.map(s=>String(s||'').trim()).filter(Boolean);
+  if(!xs.length) return '';
+  const map = new Map(); xs.forEach(v=>map.set(v,(map.get(v)||0)+1));
+  let best = '', cnt=-1; for(const [k,v] of map){ if(v>cnt){cnt=v; best=k;} }
+  return best;
+}
+function findKeyInsensitive(obj, want){
+  const needle = String(want).toLowerCase();
+  for(const k of Object.keys(obj)) if(String(k).toLowerCase()===needle) return k;
+  return null;
+}
+
+// -------------------------- CSV parsing --------------------------
+function parseCSV(text){
+  // naive but tolerant parser; supports quoted fields
+  const lines = text.replace(/\r\n?/g, "\n").split(/\n/).filter(l=>l.trim().length>0);
+  if(!lines.length) return {header:[], rows:[]};
+  const parseLine = (line)=>{
+    const out=[]; let cur=''; let q=false;
+    for(let i=0;i<line.length;i++){
+      const ch=line[i];
+      if(q){
+        if(ch==='"' && line[i+1]==='"'){ cur+='"'; i++; }
+        else if(ch==='"'){ q=false; }
+        else { cur+=ch; }
+      } else {
+        if(ch==='"'){ q=true; }
+        else if(ch===','){ out.push(cur); cur=''; }
+        else { cur+=ch; }
+      }
+    }
+    out.push(cur);
+    return out;
+  };
+  const header = parseLine(lines[0]).map(h=>h.trim());
+  const rows = lines.slice(1).map(l=>{
+    const cells = parseLine(l);
+    const o={}; header.forEach((h,i)=> o[h]=cells[i] ?? '');
+    return o;
+  });
+  return {header, rows};
+}
+
+// -------------------------- Data load --------------------------
+async function fetchFirst(paths){
+  let lastErr;
+  for(const p of paths){
+    try{ const r=await fetch(p,{cache:'no-cache'}); if(!r.ok) throw new Error(`${r.status} ${r.statusText}`); return await r.text(); }
+    catch(e){ lastErr=e; }
+  }
+  throw lastErr || new Error('Failed to fetch any candidate CSV path');
+}
+async function loadPlayers(){
+  const candidates=[
+    'data/players_stats_spreadsheet_extended.csv',
+    './data/players_stats_spreadsheet_extended.csv',
+    '../data/players_stats_spreadsheet_extended.csv',
+    '/data/players_stats_spreadsheet_extended.csv',
+  ];
+  let txt;
+  try{ txt = await fetchFirst(candidates); }
+  catch(err){
+    const m=document.getElementById('dataMsg');
+    m.style.display='block';
+    m.innerHTML = `<strong>Data load error:</strong> Could not fetch <code>players_stats_spreadsheet_extended.csv</code> from <code>data/</code>. Place the CSV next to this page inside a <code>data</code> folder.`;
+    console.error('CSV load failed', err);
+    return;
+  }
+
+
+  const {header, rows} = parseCSV(txt);
+  // Build player objects
+  rows.forEach(row=>{
+    const name = row['Player'] || row['player'] || row['Name'] || Object.values(row)[0];
+    if(!name) return;
+    const entry = { metrics:{}, tasks:{}, yearSeries:{} };
+
+    METRIC_KEYS.forEach(([csvKey, outKey, isPct])=>{
+      const candidates = Array.isArray(csvKey) ? csvKey : [csvKey];
+      let foundKey=null; for(const c of candidates){ const k=findKeyInsensitive(row, c); if(k){ foundKey=k; break; } }
+      if(!foundKey) return;
+      if(isPct) entry.metrics[outKey] = parsePercentLoose(row[foundKey]);
+      else if(outKey==='HammerFactorPP' || outKey==='PPTeam16' || outKey==='PPOpp16') entry.metrics[outKey] = parseNumber(row[foundKey]);
+      else entry.metrics[outKey] = String(row[foundKey] ?? '').trim();
+    });
+
+    PLAYERS[name]=entry;
+  });
+}
+
+// -------------------------- UI wiring --------------------------
+const roles = ['Lead','Second','Third','Fourth'];
+function makeTeamSelectors(side){
+  const host = document.getElementById(`team${side}Selectors`);
+  host.innerHTML='';
+  roles.forEach((r,idx)=>{
+    const row=document.createElement('div'); row.className='row';
+    const sel=document.createElement('select'); sel.className='role'; sel.dataset.side=side; sel.dataset.slot=idx;
+    sel.innerHTML = `<option value="">Team ${side} — ${r}</option>` +
+      Object.keys(PLAYERS).sort((a,b)=>a.localeCompare(b)).map(n=>`<option>${n}</option>`).join('');
+    sel.addEventListener('change', refreshAll);
+    row.appendChild(sel); host.appendChild(row);
+  });
+}
+function getTeamPlayers(side){
+  const selects = Array.from(document.querySelectorAll(`#team${side}Selectors select`));
+  return selects.map(s=>s.value).filter(Boolean);
+}
+
+function kpiHtml(label, val, isPct=true){
+  const v = val==null ? '—' : (isPct? `${val.toFixed(1)}%` : `${val.toFixed(2)}`);
+  return `<div class="kpi"><div class="small">${label}</div><div class="v">${v}</div></div>`;
+}
+function renderKpis(host, t){
+  host.innerHTML = [
+    kpiHtml('AVG_CW', t.AvgCwPct, true),
+    kpiHtml('AVG_CCW', t.AvgCcwPct, true),
+    kpiHtml('AVG_TOTAL', t.AvgTotalPct, true),
+    kpiHtml('CLUTCH', t.ClutchPct, true),
+    kpiHtml('HammerEff%', t.HammerEffPct, true),
+    kpiHtml('ForceEff%', t.ForceEffPct, true),
+    kpiHtml('StealEff%', t.StealEffPct, true),
+    kpiHtml('StealDef%', t.StealDefPct, true),
+  ].join('');
+}
+
+function computeTeamMetrics(names){
+  const rows = names.map(n=> PLAYERS[n]?.metrics || {});
+  const p = k => avg(rows.map(r=> r[k]));
+  const n = k => avg(rows.map(r=> r[k]));
+  const out={};
+  out.AvgCwPct     = p('AvgCwPct');
+  out.AvgCcwPct    = p('AvgCcwPct');
+  out.AvgTotalPct  = p('AvgTotalPct');
+  out.ClutchPct    = p('ClutchPct');
+  out.PPTeam16     = n('PPTeam16');
+  out.PPOpp16      = n('PPOpp16');
+  out.HammerEffPct = p('HammerEffPct');
+  out.ForceEffPct  = p('ForceEffPct');
+  out.StealEffPct  = p('StealEffPct');
+  out.StealDefPct  = p('StealDefPct');
+  out.HammerFactorPP = n('HammerFactorPP');
+  out.FromBehindPct  = p('FromBehindPct');
+  out.ChokePct       = p('ChokePct');
+  out.Best  = modeStr(names.map(nm => PLAYERS[nm]?.metrics?.Best||''));
+  out.Worst = modeStr(names.map(nm => PLAYERS[nm]?.metrics?.Worst||''));
+  return out;
+}
+
+const compareTbody = document.querySelector('#compareTable tbody') || document.getElementById('compareTbody');
+const chartWrap = document.getElementById('chartWrap');
+
+function fmt(val, isPct){
+  if(val==null || Number.isNaN(val)) return '—';
+  return isPct ? `${val.toFixed(1)}%` : `${val.toFixed(2)}`;
+}
+function renderCompare(t1, t2){
+  if(!compareTbody){ console.error('Head-to-Head tbody not found'); return; }
+  compareTbody.innerHTML='';
+  const rows=[
+    ['Clockwise',    t1.AvgCwPct,     t2.AvgCwPct,     true],
+    ['Counter Clockwise',   t1.AvgCcwPct,    t2.AvgCcwPct,    true],
+    ['Overall', t1.AvgTotalPct,  t2.AvgTotalPct,  true],
+    ['Last End',    t1.ClutchPct,    t2.ClutchPct,    true],
+    ['PPE Hammer', t1.PPTeam16, t2.PPTeam16, false],
+    ['PPE No Hammer',  t1.PPOpp16,  t2.PPOpp16,  false],
+    ['Hammer Efficiency', t1.HammerEffPct, t2.HammerEffPct, true],
+    ['Force Efficiency',  t1.ForceEffPct,  t2.ForceEffPct,  true],
+    ['Steal Efficiency',  t1.StealEffPct,  t2.StealEffPct,  true],
+    ['Steal Defense',  t1.StealDefPct,  t2.StealDefPct,  true],
+    ['Hammer Factor', t1.HammerFactorPP, t2.HammerFactorPP, false],
+    ['Win from Behind',      t1.FromBehindPct,  t2.FromBehindPct,  true],
+    ['Lose from Ahead',           t1.ChokePct,       t2.ChokePct,       true],
+  ];
+  const labels=[], d1=[], d2=[];
+ rows.forEach(([label,a,b,isPct])=>{
+  const diff = (a!=null && b!=null) ? (a - b) : null;
+
+  // Decide Δ cell content
+  let deltaHtml = fmt(diff, isPct);
+  if (diff != null && isPct) {
+    const absDiff = Math.abs(diff);
+    if (absDiff >= 3) {
+      const cls = diff > 0 ? 'diff-pos' : 'diff-neg';
+      deltaHtml = `<span class="diff-chip ${cls}">${fmt(diff, true)}</span>`;
+    }
+  }
+
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>${label}</td>
+    <td class="center">${fmt(a,isPct)}</td>
+    <td class="center">${deltaHtml}</td>
+    <td class="center">${fmt(b,isPct)}</td>
+  `;
+  compareTbody.appendChild(tr);
+
+  if (a!=null && b!=null){ labels.push(label); d1.push(a); d2.push(b); }
+});
+
+
+  if(labels.length){
+    chartWrap.classList.remove('hide');
+    const ctx=document.getElementById('compareChart').getContext('2d');
+    if(chartObj) chartObj.destroy();
+    chartObj = new Chart(ctx, {
+      type:'bar',
+      data:{ labels, datasets:[{label:'Team 1', data:d1}, {label:'Team 2', data:d2}] },
+      options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true } } }
+    });
+  } else {
+    chartWrap.classList.add('hide');
+    if(!compareTbody.children.length){
+      const tr=document.createElement('tr');
+      tr.innerHTML = `<td colspan="4" class="center muted">No comparable metrics yet — pick at least one player on each team.</td>`;
+      compareTbody.appendChild(tr);
+    }
+  }
+}
+
+function renderPlayerList(host, names){
+  host.innerHTML = names.map(n=>{
+    const m=PLAYERS[n]?.metrics||{};
+    const best = m.Best? `Best: ${m.Best}`:''; const worst = m.Worst? `Worst: ${m.Worst}`:'';
+    return `<div class="card" style="padding:10px; border-radius:10px; border:1px solid #eef0f7;">`+
+      `<div style="font-weight:600">${n}</div>`+
+      (best||worst? `<div class="small muted">${best}${best&&worst? ' · ':''}${worst}</div>`:'')+
+      `<div class="grid" style="grid-template-columns:repeat(4,1fr); gap:6px; margin-top:6px">`+
+      `<div class="small">HammerEff%<br><strong>${fmt(m.HammerEffPct,true)}</strong></div>`+
+      `<div class="small">ForceEff%<br><strong>${fmt(m.ForceEffPct,true)}</strong></div>`+
+      `<div class="small">StealEff%<br><strong>${fmt(m.StealEffPct,true)}</strong></div>`+
+      `<div class="small">StealDef%<br><strong>${fmt(m.StealDefPct,true)}</strong></div>`+
+      `</div>`+
+      `<div class="small muted">HammerFactor(pp): ${fmt(m.HammerFactorPP,false)} • FromBehind%: ${fmt(m.FromBehindPct,true)} • Choke%: ${fmt(m.ChokePct,true)}</div>`+
+      `</div>`;
+  }).join('');
+}
+
+function refreshAll(){
+  const t1 = getTeamPlayers(1); const t2 = getTeamPlayers(2);
+  document.getElementById('t1Count').textContent = `${t1.length} / 4`;
+  document.getElementById('t2Count').textContent = `${t2.length} / 4`;
+  document.getElementById('t1Note').textContent = t1.length===4 ? '' : (t1.length ? 'Tip: pick 4 for a fuller average' : 'Choose players');
+  document.getElementById('t2Note').textContent = t2.length===4 ? '' : (t2.length ? 'Tip: pick 4 for a fuller average' : 'Choose players');
+
+  renderPlayerList(document.getElementById('t1Players'), t1);
+  renderPlayerList(document.getElementById('t2Players'), t2);
+
+  if(t1.length===0 || t2.length===0){
+    document.getElementById('t1Kpis').innerHTML='';
+    document.getElementById('t2Kpis').innerHTML='';
+    if(compareTbody){ compareTbody.innerHTML=''; }
+    chartWrap.classList.add('hide');
+    return;
+  }
+
+  const m1=computeTeamMetrics(t1); const m2=computeTeamMetrics(t2);
+  renderKpis(document.getElementById('t1Kpis'), m1);
+  renderKpis(document.getElementById('t2Kpis'), m2);
+  renderCompare(m1, m2);
+}
+
+// -------------------------- Boot --------------------------
+(async function init(){
+  await loadPlayers();
+  if(!Object.keys(PLAYERS).length){
+    const m=document.getElementById('dataMsg');
+    m.style.display='block'; m.innerHTML = '<strong>No players loaded.</strong> Check your CSV headers and path.'; return;
+  }
+  makeTeamSelectors(1); makeTeamSelectors(2);
+  refreshAll();
+})();
+</script>
 </body>
 </html>
