@@ -39,16 +39,20 @@
     .thumb .overlay{position:absolute;inset:auto 10px 10px 10px;display:flex;justify-content:flex-end}
     .open-btn{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(180deg,var(--accent),var(--accent-2));color:#fff;text-decoration:none;font-weight:700;padding:8px 12px;border-radius:999px;box-shadow:0 10px 20px rgba(15,111,255,.25)}
     .meta{color:var(--muted);font-size:.92rem;margin-top:10px}
-    .positions{background:#fbfdff;border:1px dashed var(--border);padding:10px 12px;border-radius:10px;margin-top:10px;font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
-    .form-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-    input[type="text"], input[type="number"]{border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:15px;min-width:150px}
+    .positions{position:relative;background:#fbfdff;border:1px dashed var(--border);padding:12px 12px;border-radius:10px;margin-top:10px;font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+    .positions strong{font-family:inherit}
+    .form-row{display:grid;grid-template-columns:1fr 130px 1fr auto;gap:8px;align-items:center;margin-top:10px}
+    @media (max-width:640px){.form-row{grid-template-columns:1fr 1fr}}
+    input[type="text"], input[type="number"], input[type="url"]{border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:15px;min-width:150px}
     button{border:0;border-radius:10px;padding:10px 12px;font-weight:700;cursor:pointer}
     .btn{background:linear-gradient(180deg,var(--accent),var(--accent-2));color:#fff;box-shadow:0 8px 20px rgba(15,111,255,.18)}
     .btn-ghost{background:#fff;border:1px solid var(--border);color:#111}
+    .copy-btn{position:absolute;top:8px;right:8px;font-size:12px;padding:6px 8px;border-radius:8px}
     details.leader{margin-top:10px;border:1px solid var(--border);border-radius:10px;padding:8px 10px;background:#fff}
     details.leader > summary{cursor:pointer;font-weight:700}
     .leaderboard{margin:8px 0 4px 0}
     .leaderboard ol{margin:0;padding-left:22px}
+    .leaderboard a{ text-decoration: underline; }
     table.score{width:100%;border-collapse:collapse;font-size:.95rem}
     table.score th,table.score td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:left}
     footer{margin-top:20px;color:var(--muted);font-size:.9rem}
@@ -56,7 +60,6 @@
     .status.ok{color:#1a7f37}
     .status.warn{color:#b54708}
     @media (max-width:600px){html,body{padding:12px}}
-    /* Tiny helper to surface index link when present */
     .hint{font-size:.85rem;color:#5f6672;margin-left:8px}
     .hint a{color:#0f6fff;text-decoration:none}
   </style>
@@ -65,7 +68,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script>
-    // Fill with your Firebase project details (Project Settings → General → SDK setup and configuration → "Config")
     window.FIREBASE_CONFIG = {
       apiKey: "AIzaSyBeNfHXl_9TgD1VzKK3VgI81gGz37Mr-5U",
       authDomain: "icepulse-922d7.firebaseapp.com",
@@ -128,15 +130,17 @@
             <span class="overlay"><span class="open-btn">Open drill →</span></span>
           </a>
           <div class="positions">
+            <button class="btn-ghost copy-btn" type="button" title="Copy positions" aria-label="Copy positions" data-copy-positions>Copy</button>
             <strong>Chess on Ice — Positions</strong><br>
             <code>B(0,6)(6,0)(0,-6)(-6,0)</code><br>
             <code>A(2,2)(2,-2)(-2,2)(-2,-2)</code>
           </div>
           <p class="meta"><a href="https://drive.google.com/file/d/1vE14MQ22GzDCTY2a-3aNXOWFDg--xpa3" target="_blank" rel="noopener">Instructions</a></p>
 
-          <form class="form-row" onsubmit="event.preventDefault(); submitScore('crazy-eights', this.name.value, this.score.value); this.reset();">
+          <form class="form-row" onsubmit="event.preventDefault(); submitScore('crazy-eights', this.name.value, this.score.value, this.proof.value); this.reset();">
             <input name="name" type="text" placeholder="Name" aria-label="Name" required>
             <input name="score" type="number" placeholder="Score (0–40)" min="0" max="40" step="1" aria-label="Score" required>
+            <input name="proof" type="url" placeholder="Proof link (optional)" aria-label="Proof link (optional)" inputmode="url">
             <button class="btn" type="submit">Submit</button>
           </form>
 
@@ -159,15 +163,17 @@
             <span class="overlay"><span class="open-btn">Open drill →</span></span>
           </a>
           <div class="positions">
+            <button class="btn-ghost copy-btn" type="button" title="Copy positions" aria-label="Copy positions" data-copy-positions>Copy</button>
             <strong>Chess on Ice — Positions</strong><br>
             <code>B(0.5,7)(1.5,7)(2.5,7)(3.5,7)</code><br>
             <code>A(-0.5,7)(-1.5,7)(-2.5,7)(-3.5,7)</code>
           </div>
           <p class="meta"><a href="https://drive.google.com/file/d/1vOYgPCddPOZmxwaVuzR9k95814jNUL3_" target="_blank" rel="noopener">Instructions</a></p>
 
-          <form class="form-row" onsubmit="event.preventDefault(); submitScore('great-wall', this.name.value, this.score.value); this.reset();">
+          <form class="form-row" onsubmit="event.preventDefault(); submitScore('great-wall', this.name.value, this.score.value, this.proof.value); this.reset();">
             <input name="name" type="text" placeholder="Name" aria-label="Name" required>
             <input name="score" type="number" placeholder="Score (0–40)" min="0" max="40" step="1" aria-label="Score" required>
+            <input name="proof" type="url" placeholder="Proof link (optional)" aria-label="Proof link (optional)" inputmode="url">
             <button class="btn" type="submit">Submit</button>
           </form>
 
@@ -190,15 +196,17 @@
             <span class="overlay"><span class="open-btn">Open drill →</span></span>
           </a>
           <div class="positions">
+            <button class="btn-ghost copy-btn" type="button" title="Copy positions" aria-label="Copy positions" data-copy-positions>Copy</button>
             <strong>Chess on Ice — Positions</strong><br>
             <code>B(5,6)(5.5,9)(6,12)(6.5,15)</code><br>
             <code>A(-5,6)(-5.5,9)(-6,12)(-6.5,15)</code>
           </div>
           <p class="meta"><a href="https://drive.google.com/file/d/1vcymoAKUrIRygHrp71QJdJMI0MCk98Ew" target="_blank" rel="noopener">Instructions</a></p>
 
-          <form class="form-row" onsubmit="event.preventDefault(); submitScore('in-offs', this.name.value, this.score.value); this.reset();">
+          <form class="form-row" onsubmit="event.preventDefault(); submitScore('in-offs', this.name.value, this.score.value, this.proof.value); this.reset();">
             <input name="name" type="text" placeholder="Name" aria-label="Name" required>
             <input name="score" type="number" placeholder="Score (0–40)" min="0" max="40" step="1" aria-label="Score" required>
+            <input name="proof" type="url" placeholder="Proof link (optional)" aria-label="Proof link (optional)" inputmode="url">
             <button class="btn" type="submit">Submit</button>
           </form>
 
@@ -221,15 +229,17 @@
             <span class="overlay"><span class="open-btn">Open drill →</span></span>
           </a>
           <div class="positions">
+            <button class="btn-ghost copy-btn" type="button" title="Copy positions" aria-label="Copy positions" data-copy-positions>Copy</button>
             <strong>Chess on Ice — Positions</strong><br>
             <code>B(0.5,0)(2,0)(4,0)(6,0)</code><br>
             <code>A(-0.5,0)(-2,0)(-4,0)(-6,0)</code>
           </div>
           <p class="meta"><a href="https://drive.google.com/file/d/1vE14MQ22GzDCTY2a-3aNXOWFDg--xpa3" target="_blank" rel="noopener">Instructions</a></p>
 
-          <form class="form-row" onsubmit="event.preventDefault(); submitScore('nose-hits', this.name.value, this.score.value); this.reset();">
+          <form class="form-row" onsubmit="event.preventDefault(); submitScore('nose-hits', this.name.value, this.score.value, this.proof.value); this.reset();">
             <input name="name" type="text" placeholder="Name" aria-label="Name" required>
             <input name="score" type="number" placeholder="Score (0–40)" min="0" max="40" step="1" aria-label="Score" required>
+            <input name="proof" type="url" placeholder="Proof link (optional)" aria-label="Proof link (optional)" inputmode="url">
             <button class="btn" type="submit">Submit</button>
           </form>
 
@@ -252,15 +262,17 @@
             <span class="overlay"><span class="open-btn">Open drill →</span></span>
           </a>
           <div class="positions">
+            <button class="btn-ghost copy-btn" type="button" title="Copy positions" aria-label="Copy positions" data-copy-positions>Copy</button>
             <strong>Chess on Ice — Positions</strong><br>
             <code>B(0,0.5)(2,0.5)(-2,0.5)(0,6.5)</code><br>
             <code>A(2,6.5)(-2,6.5)(-1,3)(1,3)</code>
           </div>
           <p class="meta"><a href="https://drive.google.com/file/d/1vkwqozhFkJ0Tp7s50p20ahBurFNHhSBB" target="_blank" rel="noopener">Instructions</a></p>
 
-          <form class="form-row" onsubmit="event.preventDefault(); submitScore('picket-fences', this.name.value, this.score.value); this.reset();">
+          <form class="form-row" onsubmit="event.preventDefault(); submitScore('picket-fences', this.name.value, this.score.value, this.proof.value); this.reset();">
             <input name="name" type="text" placeholder="Name" aria-label="Name" required>
             <input name="score" type="number" placeholder="Score (0–40)" min="0" max="40" step="1" aria-label="Score" required>
+            <input name="proof" type="url" placeholder="Proof link (optional)" aria-label="Proof link (optional)" inputmode="url">
             <button class="btn" type="submit">Submit</button>
           </form>
 
@@ -283,15 +295,17 @@
             <span class="overlay"><span class="open-btn">Open drill →</span></span>
           </a>
           <div class="positions">
+            <button class="btn-ghost copy-btn" type="button" title="Copy positions" aria-label="Copy positions" data-copy-positions>Copy</button>
             <strong>Chess on Ice — Positions</strong><br>
             <code>B(0,6.5)(0,8.5)(0,10.5)(0,12.5)</code><br>
             <code>A(0,7.5)(0,9.5)(0,11.5)(0,13.5)</code>
           </div>
           <p class="meta"><a href="https://drive.google.com/file/d/1vqS6uoBte1loQMU8tcsUehLW4aX7r-dj" target="_blank" rel="noopener">Instructions</a></p>
 
-          <form class="form-row" onsubmit="event.preventDefault(); submitScore('popcorn', this.name.value, this.score.value); this.reset();">
+          <form class="form-row" onsubmit="event.preventDefault(); submitScore('popcorn', this.name.value, this.score.value, this.proof.value); this.reset();">
             <input name="name" type="text" placeholder="Name" aria-label="Name" required>
             <input name="score" type="number" placeholder="Score (0–40)" min="0" max="40" step="1" aria-label="Score" required>
+            <input name="proof" type="url" placeholder="Proof link (optional)" aria-label="Proof link (optional)" inputmode="url">
             <button class="btn" type="submit">Submit</button>
           </form>
 
@@ -304,12 +318,11 @@
 
     </section>
 
-    <footer>
-    </footer>
+    <footer></footer>
   </div>
 
   <script>
-    // ---------- Status helpers + error surfacing (mirrors drill_debug2) ----------
+    // ---------- Status helpers + error surfacing ----------
     const statusEl = document.getElementById('backend-status');
     const hintEl = document.getElementById('backend-hint');
     function setStatus(state, text){
@@ -333,7 +346,7 @@
     }
     function storageKey(slug){ return 'drill-scores:' + slug; }
 
-    // ---------- Local fallback (always available) ----------
+    // ---------- Local fallback ----------
     const LocalBackend = {
       name: 'Local',
       async list(slug){
@@ -343,18 +356,17 @@
           return Array.isArray(arr) ? arr : [];
         }catch(e){ return []; }
       },
-      async add(slug, name, score){
+      async add(slug, name, score, proof){
         const arr = await this.list(slug);
-        arr.push({name, score, ts:Date.now()});
+        arr.push({name, score, proof: proof||null, ts:Date.now()});
         arr.sort((a,b)=> b.score - a.score || a.ts - b.ts);
         localStorage.setItem(storageKey(slug), JSON.stringify(arr.slice(0,200)));
       }
     };
 
-    // ---------- Firestore backend (with composite-index-aware fallback) ----------
-    let Backend = LocalBackend; // default
+    // ---------- Firestore backend with index-aware fallback ----------
+    let Backend = LocalBackend;
     (function initBackend(){
-      // SDK present?
       if (typeof firebase === 'undefined'){
         setStatus('warn','Local leaderboard (Firebase SDK missing)');
         return;
@@ -367,9 +379,8 @@
       try{
         const app = firebase.initializeApp(cfg);
         const db = firebase.firestore();
-        window.__db = db; // for console debugging
+        window.__db = db;
 
-        // Backing functions mirror drill_debug2.html behaviour:
         Backend = {
           name: 'Firestore',
           async list(slug){
@@ -382,13 +393,15 @@
               setHint('');
               return snap.docs.map(d => {
                 const x = d.data();
-                return {name:x.name, score:x.score, ts:x.ts ? x.ts.toMillis() : Date.now()};
+                return {
+                  name:x.name, score:x.score,
+                  proof: (x.proof || null),
+                  ts:x.ts ? x.ts.toMillis() : Date.now()
+                };
               });
             }catch(err){
               const msg = (err && err.message) ? err.message : String(err);
               console.warn('Primary leaderboard query failed; attempting fallback. Reason:', msg);
-
-              // Extract index creation URL if present and surface to UI
               const m = msg.match(/https:\/\/console\.firebase\.google\.com\S+/);
               if (m){
                 const url = m[0];
@@ -397,21 +410,24 @@
               }else{
                 setStatus('warn','Firestore query failed; using local fallback if available');
               }
-
-              // Fallback: order by score only (no ts tiebreaker)
               const snap2 = await db.collection('drillScores')
                 .where('slug','==',slug)
                 .orderBy('score','desc')
                 .limit(200).get();
               return snap2.docs.map(d => {
                 const x = d.data();
-                return {name:x.name, score:x.score, ts:x.ts ? x.ts.toMillis() : Date.now()};
+                return {
+                  name:x.name, score:x.score,
+                  proof:(x.proof || null),
+                  ts:x.ts ? x.ts.toMillis() : Date.now()
+                };
               });
             }
           },
-          async add(slug,name,score){
+          async add(slug,name,score,proof){
             await db.collection('drillScores').add({
               slug, name, score,
+              proof: (proof||null),
               ts: firebase.firestore.FieldValue.serverTimestamp()
             });
             setStatus('ok','Connected: Firestore');
@@ -428,18 +444,29 @@
     })();
 
     // ---------- UI actions ----------
-    async function submitScore(slug, name, score){
+    async function submitScore(slug, name, score, proof){
       const s = Number(score);
       const n = String(name||'').trim();
+      let p = String(proof||'').trim();
       if(!n){ alert('Please enter a name.'); return; }
       if(!Number.isFinite(s) || s < 0 || s > 40){ alert('Enter a score from 0 to 40.'); return; }
+      if(p && !/^https?:\/\//i.test(p)){
+        // Try to be helpful: if missing protocol, prefix with https://
+        p = 'https://' + p;
+      }
       try{
-        await Backend.add(slug, n, s);
+        await Backend.add(slug, n, s, p || null);
         await renderLeaderboard(slug, true);
       }catch(e){
         alert('Failed to submit score using '+Backend.name+'. Check connectivity or Firestore rules.');
         console.error(e);
       }
+    }
+
+    function proofHtml(url){
+      if (!url) return '<span class="meta">no proof</span>';
+      const safe = String(url).replace(/"/g,'&quot;');
+      return '<a href="'+safe+'" target="_blank" rel="noopener">proof</a>';
     }
 
     async function renderLeaderboard(slug, forceOpen=false){
@@ -451,7 +478,7 @@
         if(!arr.length){
           root.innerHTML = '<p class="meta">No scores yet — be the first!</p>';
         }else{
-          root.innerHTML = '<ol>'+arr.map(e=>'<li><strong>'+escapeHtml(e.name)+'</strong> — '+e.score+' <span class="meta">('+new Date(e.ts).toLocaleDateString()+')</span></li>').join('')+'</ol>';
+          root.innerHTML = '<ol>'+arr.map(e=>'<li><strong>'+escapeHtml(e.name)+'</strong> — '+e.score+' <span class="meta">('+new Date(e.ts).toLocaleDateString()+')</span> — '+proofHtml(e.proof)+'</li>').join('')+'</ol>';
         }
         if(forceOpen && wrap && !wrap.hasAttribute('open')) wrap.setAttribute('open','');
       }catch(e){
@@ -470,12 +497,55 @@
       }, {once:false});
     });
 
+    // ---------- Copy Positions buttons ----------
+    function buildPositionsText(container){
+      const lines = ['Positions'];
+      container.querySelectorAll('code').forEach(code => {
+        const t = (code.textContent || '').trim();
+        if (t) lines.push(t);
+      });
+      return lines.join('\n');
+    }
+    function attachCopyButtons(){
+      document.querySelectorAll('.positions [data-copy-positions]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const box = btn.closest('.positions');
+          const text = buildPositionsText(box);
+          try{
+            if (navigator.clipboard && navigator.clipboard.writeText){
+              await navigator.clipboard.writeText(text);
+            }else{
+              const ta = document.createElement('textarea');
+              ta.value = text;
+              ta.style.position = 'fixed';
+              ta.style.opacity = '0';
+              document.body.appendChild(ta);
+              ta.focus();
+              ta.select();
+              document.execCommand('copy');
+              ta.remove();
+            }
+            const prev = btn.textContent;
+            btn.textContent = 'Copied!';
+            btn.disabled = true;
+            setTimeout(()=>{ btn.textContent = prev; btn.disabled = false; }, 1200);
+          }catch(err){
+            alert('Could not copy to clipboard.');
+            console.error(err);
+          }
+        });
+      });
+    }
+
     // Preload leaderboards if any <details> are already open (none by default)
     document.querySelectorAll('[data-leaderboard-wrap]').forEach(el=>{
       if(el.hasAttribute('open')){
         renderLeaderboard(el.getAttribute('data-leaderboard-wrap'));
       }
     });
+
+    // Init copy buttons
+    document.addEventListener('DOMContentLoaded', attachCopyButtons);
   </script>
 </body>
 </html>
