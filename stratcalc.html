@@ -144,6 +144,20 @@ tbody tr:nth-child(odd) td{background:#fafbfe}
   background:linear-gradient(180deg,var(--pro-accent),var(--pro-accent-2));
   color:#fff;border:none;box-shadow:0 8px 20px rgba(15,111,255,.18)
 }
+/* Ensure best cells keep their highlight even on striped rows */
+td.cell-best-est{
+  background: linear-gradient(90deg,#ffe5b4,#ffcf6b) !important;
+  color:#111 !important;
+  font-weight:700;
+  border-radius:6px;
+}
+td.cell-best-player{
+  background: linear-gradient(90deg,#bff3d0,#50d88a) !important;
+  color:#022 !important;
+  font-weight:700;
+  border-radius:6px;
+}
+
 </style>
 </head>
 <body>
@@ -169,6 +183,44 @@ tbody tr:nth-child(odd) td{background:#fafbfe}
 	  <button id="downloadBtn" class="btn">Export Results</button>
 	  <input id="defaultsName" placeholder="Custom" style="flex:1;padding:8px;border-radius:8px;border:1px solid #eef2f7"/>
     </div>
+	<div id="playerHeadshot" style="display:flex; align-items:center; gap:10px; margin:10px 0;">
+  <img id="playerHeadshotImg"
+       alt=""
+       style="display:none; width:96px; height:96px; object-fit:cover; border-radius:14px; box-shadow:0 2px 8px rgba(0,0,0,.15);" />
+  <div id="playerHeadshotCaption" style="font-weight:600;"></div>
+</div>
+
+	<div id="playerMetricsCard" style="display:none;margin-top:10px">
+  <div style="font-weight:700;margin-bottom:6px">Player Metrics</div>
+  <div class="table-wrap-auto">
+    <table>
+      <thead>
+        <tr>
+          <th>HammerEff%</th>
+          <th>ForceEff%</th>
+          <th>StealEff%</th>
+          <th>StealDef%</th>
+          <th>HammerFactor(pp)</th>
+          <th>FromBehind%</th>
+          <th>Choke%</th>
+          <th>Best</th>
+          <th>Worst</th>
+        </tr>
+      </thead>
+      <tbody id="playerMetricsBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="playerTrendCard"
+     style="display:none; margin-top:10px; max-width:620px; margin-left:auto; margin-right:auto;">
+  <div style="font-weight:700;margin-bottom:6px">Performance over time</div>
+  <div style="font-size:12px;opacity:.8;margin-bottom:6px" id="playerTrendCaption"></div>
+  <div id="trendCanvasWrap" style="position:relative; width:100%; height:220px;">
+  <canvas id="playerTrendChart" style="position:absolute; left:0; top:0; width:100%; height:100%;"></canvas>
+</div>
+</div>
+
 
     <div id="defaultsGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px"></div>
   </section>
@@ -214,7 +266,8 @@ tbody tr:nth-child(odd) td{background:#fafbfe}
     </div>
   </section>
 </div>
-
+<!-- If not already present, include Chart.js once (near end of <body>) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 /* ========== Config & small helpers ========== */
 const AVAILABLE_SUMMARIES = [
@@ -316,6 +369,52 @@ function genderMatches(recGender, selGender){
 
   // fallback: match whole word token equality
   return rg.split(/\W+/).includes(sg);
+}
+
+// If names may contain characters that aren't valid in filenames, sanitize here:
+function filenameFromName(name){
+  return String(name).trim().replace(/[\/\\:*?"<>|]/g, '-').replace(/\s+/g, ' ');
+}
+
+// Try .jpg → .jpeg → .png → .webp, show/hide automatically
+function setHeadshot(playerName){
+  const img   = document.getElementById('playerHeadshotImg');
+  const cap   = document.getElementById('playerHeadshotCaption');
+  if(!img || !cap){ return; }
+
+  if(!playerName){
+    img.style.display = 'none';
+    img.src = '';
+    cap.textContent = '';
+    return;
+  }
+
+  cap.textContent = playerName;
+
+  const base = filenameFromName(playerName);
+  // encode for URL but keep spaces as spaces for nicer URLs on GH Pages
+  const enc = encodeURIComponent(base).replace(/%20/g,' ');
+  const candidates = [
+    `heads/${enc}.jpg`,
+    `heads/${enc}.jpeg`,
+    `heads/${enc}.png`,
+    `heads/${enc}.webp`,
+  ];
+
+  let i = 0;
+  img.onload  = () => { img.style.display = 'block'; };
+  img.onerror = () => {
+    i++;
+    if(i < candidates.length){
+      img.src = candidates[i] + `?v=${Date.now()}`; // bust cache
+    }else{
+      img.style.display = 'none'; // no image → hide
+    }
+  };
+
+  // start the first attempt
+  img.alt = playerName;
+  img.src = candidates[0] + `?v=${Date.now()}`;
 }
 
 /* DOM refs */
@@ -449,6 +548,8 @@ condensedControls.innerHTML = `
 // insert condensedControls right above the expanded defaultsGrid
 playerDefaultsPanel.insertBefore(condensedControls, defaultsGrid);
 
+
+
 // helper maps for bins (unchanged)
 const BIN_DRAW = ['Draw','Guard','Front','Freeze'];
 const BIN_TAKE = ['Take-out','Hit-roll','Double','Raise','Clearing','Through','Wick','Promotion'];
@@ -577,7 +678,7 @@ playerSelect.addEventListener('change', ()=>{
   const pname = playerSelect.value;
 
   // Keep panel visible in condensed mode even with no player selected
-  if(!pname){
+  if(!pname){	
     if(condensed) playerDefaultsPanel.style.display = 'block';
     const stored = loadDefaultsFromStorage(); 
     if(stored) applyDefaultsToUI(stored);
@@ -620,31 +721,153 @@ function splitCSVLine(line){ const out=[]; let cur=''; let inQ=false; for(let i=
 function parseCSV(text){ const lines=text.split(/\r?\n/).filter(l=>l.trim()!==''); if(lines.length===0) return {header:[],rows:[]}; const header = splitCSVLine(lines[0]).map(h=>h.trim()); const rows=[]; for(let i=1;i<lines.length;i++){ const cols=splitCSVLine(lines[i]); if(cols.length===0) continue; const obj={}; for(let j=0;j<header.length;j++) obj[header[j]] = cols[j]===undefined? '' : cols[j]; rows.push(obj);} return {header, rows}; }
 function parsePercent(s){ if(s===null||s===undefined) return null; let t=String(s).trim(); if(!t || t.toUpperCase()==='N/A') return null; t=t.replace('%','').replace(/,/g,'').trim(); const n=Number(t); return isNaN(n)? null : n; }
 
-/* ======== loadPlayersCSV (UPDATED to show count) ======== */
+// tolerant number parser (handles "pp", "%", commas, spaces)
+function parseNumber(s){
+  if(s===null||s===undefined) return null;
+  let t = String(s).replace(/[,%]/g,'').trim();
+  if(t === '' || t.toUpperCase()==='N/A') return null;
+  const n = Number(t);
+  return isNaN(n) ? null : n;
+}
+
+// tolerant percent (handles "97.2", "97.2%", 0.972)
+function parsePercentLoose(v){
+  const n = parseNumber(v);
+  if(n == null) return null;
+  return Math.abs(n) <= 1 ? n*100 : n;
+}
+
+// case/format-insensitive key finder for CSV headers
+function findKeyInsensitive(obj, needle){
+  if(!obj) return null;
+  const norm = v => String(v).toLowerCase().replace(/[\s_%()]/g,'');
+  const want = norm(needle);
+  for(const k of Object.keys(obj)){
+    if(norm(k) === want) return k;
+  }
+  return null;
+}
+
+/* ======== loadPlayersCSV (UPDATED: reads advanced metrics) ======== */
 async function loadPlayersCSV(path='/data/players_stats_spreadsheet_extended.csv'){
   try{
-    const r = await fetch(path); if(!r.ok) throw new Error('not found'); const txt = await r.text();
-    const parsed = parseCSV(txt); const headers = parsed.header; const rows = parsed.rows;
+    const r = await fetch(path);
+    if(!r.ok) throw new Error('not found');
+    const txt = await r.text();
+    const parsed = parseCSV(txt);
+    const headers = parsed.header;
+    const rows = parsed.rows;
+
+    // map Task_CW/Task_CCW columns as before
     const taskCols = {};
-    headers.forEach(h=>{ const m = h.match(/^(.*)_(CW|CCW)$/i); if(m){ const t=m[1].trim(); const turn=m[2].toUpperCase(); taskCols[t] = taskCols[t] || {taskName:t, CW:null, CCW:null}; taskCols[t][turn] = h; } });
+    headers.forEach(h=>{
+      const m = h.match(/^(.*)_(CW|CCW)$/i);
+      if(m){
+        const t   = m[1].trim();
+        const trn = m[2].toUpperCase();
+        taskCols[t] = taskCols[t] || {taskName:t, CW:null, CCW:null};
+        taskCols[t][trn] = h;
+      }
+    });
+
     playerStatsObj = {};
     rows.forEach(row=>{
-      const name = row['Player'] || row['player'] || Object.values(row)[0]; if(!name) return;
-      const entry = { Shots: row['Shots']||'', AVG_CW: parsePercent(row['AVG_CW']||''), AVG_CCW: parsePercent(row['AVG_CCW']||''), tasks:{} };
-      Object.values(taskCols).forEach(tc=>{ const cw = tc.CW ? parsePercent(row[tc.CW]) : null; const ccw = tc.CCW ? parsePercent(row[tc.CCW]) : null; entry.tasks[tc.taskName] = {CW:cw, CCW:ccw}; });
+      const name = row['Player'] || row['player'] || Object.values(row)[0];
+      if(!name) return;
+
+      const entry = {
+        Shots:  row['Shots'] || '',
+        AVG_CW:  parsePercent(row['AVG_CW']||''),
+        AVG_CCW: parsePercent(row['AVG_CCW']||''),
+        tasks:   {}
+      };
+
+      // per-task values
+      Object.values(taskCols).forEach(tc=>{
+        const cw = tc.CW  ? parsePercent(row[tc.CW])  : null;
+        const cc = tc.CCW ? parsePercent(row[tc.CCW]) : null;
+        entry.tasks[tc.taskName] = { CW:cw, CCW:cc };
+      });
+
+      // ===== NEW: advanced / summary metrics (if present in CSV) =====
+      // look up keys case-insensitively so "HammerEff%" or "hammereff%" both work
+      const kHammerEff   = findKeyInsensitive(row,'HammerEff%');
+      const kForceEff    = findKeyInsensitive(row,'ForceEff%');
+      const kStealEff    = findKeyInsensitive(row,'StealEff%');
+      const kStealDef    = findKeyInsensitive(row,'StealDef%');
+      const kHammerFact  = findKeyInsensitive(row,'HammerFactor(pp)');
+      const kFromBehind  = findKeyInsensitive(row,'FromBehind%');
+      const kChoke       = findKeyInsensitive(row,'Choke%');
+      const kBest        = findKeyInsensitive(row,'Best');
+      const kWorst       = findKeyInsensitive(row,'Worst');
+
+      entry.metrics = {
+        HammerEffPct:  kHammerEff  ? parsePercent(row[kHammerEff])  : null,
+        ForceEffPct:   kForceEff   ? parsePercent(row[kForceEff])   : null,
+        StealEffPct:   kStealEff   ? parsePercent(row[kStealEff])   : null,
+        StealDefPct:   kStealDef   ? parsePercent(row[kStealDef])   : null,
+        // Note: store HammerFactor(pp) as a numeric multiplier or raw number—whatever you put in the CSV.
+        // If your CSV uses a percent (e.g., "132%"), either write 1.32 in the CSV or divide by 100 where used.
+        HammerFactorPP: kHammerFact ? parseNumber(row[kHammerFact])  : null,
+        FromBehindPct: kFromBehind ? parsePercent(row[kFromBehind]) : null,
+        ChokePct:      kChoke      ? parsePercent(row[kChoke])      : null,
+        Best:          kBest       ? String(row[kBest]).trim()      : '',
+        Worst:         kWorst      ? String(row[kWorst]).trim()     : '',
+      };
+// ===== Year-by-year Draws/Takeouts =====
+const yearRE = /^(Draws|Takeouts)_(\d{4})$/i;
+const yearMap = {}; // y -> {draws:%, takeouts:%}
+for(const k of Object.keys(row)){
+  const m = k.match(yearRE);
+  if(!m) continue;
+  const kind = m[1].toLowerCase();
+  const y = +m[2];
+  yearMap[y] = yearMap[y] || {draws:null, takeouts:null};
+  const val = parsePercentLoose(row[k]);
+  if(kind === 'draws')   yearMap[y].draws = val;
+  if(kind === 'takeouts') yearMap[y].takeouts = val;
+}
+const years = Object.keys(yearMap).map(Number).sort((a,b)=>a-b);
+const ys = [], draws = [], takes = [];
+years.forEach(y=>{
+  const rec = yearMap[y];
+  if(rec.draws!=null || rec.takeouts!=null){
+    ys.push(y);
+    draws.push(rec.draws==null ? null : rec.draws);
+    takes.push(rec.takeouts==null ? null : rec.takeouts);
+  }
+});
+entry.yearSeries = {
+  years: ys,
+  draws: draws,
+  takeouts: takes,
+  firstYear: ys.length ? ys[0] : null,
+  lastYear: ys.length ? ys[ys.length-1] : null
+};
+
       playerStatsObj[name] = entry;
     });
 
-    // repopulate player select
+    // repopulate Player dropdown
     playerSelect.innerHTML = '<option value="">-- none --</option>';
-    Object.keys(playerStatsObj).sort().forEach(p=> playerSelect.appendChild(new Option(p,p)));
+    Object.keys(playerStatsObj).sort().forEach(p=>{
+      playerSelect.appendChild(new Option(p,p));
+    });
 
-    // ====== FIX: show number of players loaded ======
+    // Status note / progress bar text (unchanged)
     const playerCount = Object.keys(playerStatsObj).length;
     statusDiv.textContent = (statusDiv.textContent || '') + ` • ${playerCount} players loaded`;
-    if(progressBar){ progressBar.textContent = progressBar.textContent + ` • ${playerCount} players`; }
-  } catch(e){ console.warn('players csv failed', e); }
+    if(progressBar){ progressBar.textContent = (progressBar.textContent || '') + ` • ${playerCount} players`; }
+
+    // show metrics for current selection (if any)
+    try { renderPlayerMetrics(playerSelect.value);
+		  setHeadshot(playerSelect.value);
+		renderPlayerTrend(playerSelect.value); 		  } catch(e){}
+  } catch(e){
+    console.warn('players csv failed', e);
+  }
 }
+
 
 /* merge summaries with progress */
 async function fetchAndMergeAll(){
@@ -853,6 +1076,118 @@ playerSelect.addEventListener('change', ()=>{
     inp.value = val == null ? '' : String(val);
   });
 });
+
+function fmtPct(n){ return (n==null ? '—' : (Number(n).toFixed(1)+'%')); }
+function fmtNum(n){ return (n==null ? '—' : String(n)); }
+
+function renderPlayerMetrics(playerName){
+  const card = document.getElementById('playerMetricsCard');
+  const body = document.getElementById('playerMetricsBody');
+  if(!card || !body){ return; }
+
+  if(!playerName || !playerStatsObj || !playerStatsObj[playerName]){
+    card.style.display = 'none';
+    body.innerHTML = '';
+    return;
+  }
+
+  const m = (playerStatsObj[playerName].metrics || {});
+  body.innerHTML = `
+    <tr>
+      <td class="center">${fmtPct(m.HammerEffPct)}</td>
+      <td class="center">${fmtPct(m.ForceEffPct)}</td>
+      <td class="center">${fmtPct(m.StealEffPct)}</td>
+      <td class="center">${fmtPct(m.StealDefPct)}</td>
+      <td class="center">${fmtNum(m.HammerFactorPP)}</td>
+      <td class="center">${fmtPct(m.FromBehindPct)}</td>
+      <td class="center">${fmtPct(m.ChokePct)}</td>
+      <td>${m.Best || '—'}</td>
+      <td>${m.Worst || '—'}</td>
+    </tr>`;
+  card.style.display = 'block';
+}
+
+let playerTrendChartObj = null;
+
+function renderPlayerTrend(playerName){
+  const card = document.getElementById('playerTrendCard');
+  const cap  = document.getElementById('playerTrendCaption');
+  const ctx  = document.getElementById('playerTrendChart');
+  if(!card || !cap || !ctx) return;
+
+  if(!playerName || !playerStatsObj[playerName] || !playerStatsObj[playerName].yearSeries){
+    card.style.display = 'none';
+    if(playerTrendChartObj){ playerTrendChartObj.destroy(); playerTrendChartObj = null; }
+    return;
+  }
+
+  const ys = playerStatsObj[playerName].yearSeries;
+  if(!ys.years.length){
+    card.style.display = 'none';
+    if(playerTrendChartObj){ playerTrendChartObj.destroy(); playerTrendChartObj = null; }
+    return;
+  }
+
+  cap.textContent = `${ys.firstYear}–${ys.lastYear} • ${ys.years.length} season${ys.years.length>1?'s':''}`;
+
+  const labels = ys.years.map(String);
+  const draws  = ys.draws;
+  const takes  = ys.takeouts;
+
+  // Build datasets (hide a line if it’s all nulls)
+  const hasDraws = draws.some(v => v!=null);
+  const hasTakes = takes.some(v => v!=null);
+  const datasets = [];
+  if(hasDraws){
+    datasets.push({
+      label: 'Draws%',
+      data: draws,
+      tension: 0.25,
+      spanGaps: true,
+      pointRadius: 2
+    });
+  }
+  if(hasTakes){
+    datasets.push({
+      label: 'Takeouts%',
+      data: takes,
+      tension: 0.25,
+      spanGaps: true,
+      pointRadius: 2
+    });
+  }
+
+  if(playerTrendChartObj){ playerTrendChartObj.destroy(); }
+  playerTrendChartObj = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      animation: false,
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: { suggestedMin: 0, suggestedMax: 100, ticks: { callback: v => v + '%' } },
+        x: { ticks: { autoSkip: true, maxTicksLimit: 12 } }
+      },
+      plugins: {
+        legend: { display: true, position: 'top' },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y==null?'—':ctx.parsed.y.toFixed(1)+'%'}`
+          }
+        }
+      },
+      elements: { line: { borderWidth: 2 } }
+    }
+  });
+
+  card.style.display = 'block';
+}
+
+
+// ensure it updates when the player changes (safe even if another listener exists)
+playerSelect.addEventListener('change', ()=>{ try{ renderPlayerMetrics(playerSelect.value); setHeadshot(playerSelect.value); renderPlayerTrend(playerSelect.value); }catch(e){} });
+
 
 /* analysis core (with category alias normalization) */
 async function analyze(){
@@ -1507,6 +1842,62 @@ document.getElementById('backHomeBtn').addEventListener('click', function () {
       });
       extendedInfoDiv.appendChild(ul);
     }
+	
+	// ---- Bio (Age, Born, Home, Job, School, Uni)
+(() => {
+  // helper: case/format-insensitive key finder if you already added it earlier
+  const findKey = (obj, key) => {
+    if (typeof findKeyInsensitive === 'function') return findKeyInsensitive(obj, key);
+    // fallback to exact match
+    return Object.prototype.hasOwnProperty.call(obj, key) ? key : null;
+  };
+
+  const getVal = (k) => {
+    const real = findKey(row, k);
+    if (!real) return null;
+    let v = row[real];
+    if (v === undefined || v === null) return null;
+    v = String(v).trim();
+    if (!v || v === '0' || v.toUpperCase() === 'N/A') return null;
+    return v;
+  };
+
+  const entries = [
+    ['Age',   getVal('Age')],
+    ['Born',  getVal('Born')],
+    ['Home',  getVal('Home')],
+    ['Job',   getVal('Job')],
+    ['School',getVal('School')],
+    ['Uni',   getVal('Uni')],
+  ].filter(([, v]) => v !== null);
+
+  if (entries.length) {
+    const h = document.createElement('div');
+    h.style.fontWeight = '700';
+    h.style.marginTop = '10px';
+    h.textContent = 'Biography';
+    extendedInfoDiv.appendChild(h);
+
+    const wrap = document.createElement('div');
+    wrap.style.marginTop = '6px';
+    wrap.style.lineHeight = '1.3';
+
+    entries.forEach(([label, value]) => {
+      const line = document.createElement('div');
+      const strong = document.createElement('span');
+      strong.style.fontWeight = '600';
+      strong.textContent = label + ': ';
+      const text = document.createElement('span');
+      text.textContent = value; // textContent = safe; no HTML injection
+      line.appendChild(strong);
+      line.appendChild(text);
+      wrap.appendChild(line);
+    });
+
+    extendedInfoDiv.appendChild(wrap);
+  }
+})();
+
 
     // Teams
     const teamsRaw = row ? (row['Teams_JSON'] || row['Teams'] || row['teams_json'] || row['teams'] || '') : '';
