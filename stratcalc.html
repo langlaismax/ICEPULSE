@@ -900,17 +900,63 @@ function applyDefaultsToUI(obj){ if(!obj) return; if(obj.name) document.getEleme
 document.getElementById('saveDefaultsBtn').addEventListener('click', ()=>{ saveDefaultsToStorage(readCurrentDefaults()); statusDiv.textContent = 'Defaults saved.'; });
 document.getElementById('resetDefaultsBtn').addEventListener('click', ()=>{ if(!confirm('Reset defaults to blank (interpreted as 100%)?')) return; document.querySelectorAll('.defInput').forEach(i=>i.value=''); document.getElementById('defaultsName').value=''; saveDefaultsToStorage({}); statusDiv.textContent='Defaults reset.'; });
 
-/* get active player percent (player selection takes precedence; otherwise defaults or 100) */
-function getActivePlayerPct(task, turn){
-  if(playerSelect.value && playerStatsObj && playerStatsObj[playerSelect.value]){
-    const pd = playerStatsObj[playerSelect.value].tasks || {}; const te = pd[task];
-    if(te){ const val = (turn==='CW') ? te.CW : te.CCW; if(val != null) return val; }
+/* helper: resolve condensed bin value for a given task (priority: user override → player bin avg → clamp) */
+function getCondensedBinValue(task){
+  try {
+    // 1) user overrides in condensed inputs (if present)
+    const drawEl = document.getElementById('cond_draw');
+    const takeEl = document.getElementById('cond_take');
+    const drawOverride = drawEl && drawEl.value !== '' ? Number(drawEl.value) : null;
+    const takeOverride = takeEl && takeEl.value !== '' ? Number(takeEl.value) : null;
+
+    // decide which bin this task belongs to
+    const inDraw = (typeof BIN_DRAW !== 'undefined') && BIN_DRAW.includes(task);
+    const inTake = (typeof BIN_TAKE !== 'undefined') && BIN_TAKE.includes(task);
+
+    // 2) auto averages across BOTH turns for the selected player (if available)
+    let avg = null;
+    if (typeof computeBinAveragesForPlayerBothTurns === 'function'){
+      const pname = (typeof playerSelect !== 'undefined' && playerSelect && playerSelect.value) ? playerSelect.value : null;
+      const binAvg = computeBinAveragesForPlayerBothTurns(pname || null);
+      if (inDraw) avg = (drawOverride != null ? drawOverride : binAvg.draw);
+      if (inTake) avg = (takeOverride != null ? takeOverride : binAvg.take);
+    }
+
+    if (avg == null || isNaN(avg)) return null;
+    return Math.max(0, Math.min(100, Number(avg))); // clamp 0..100
+  } catch(e){
+    return null; // fail-soft so callers can keep going
   }
+}
+
+/* get active player percent (augmented: use condensed bin averages to fill blanks) */
+function getActivePlayerPct(task, turn){
+  // 1) Selected player's explicit per-shot stats (CW/CCW)
+  if (playerSelect.value && playerStatsObj && playerStatsObj[playerSelect.value]){
+    const pd = playerStatsObj[playerSelect.value].tasks || {};
+    const te = pd[task];
+    if (te){
+      const val = (turn === 'CW') ? te.CW : te.CCW;
+      if (val != null) return val;
+    }
+    // missing turn-specific -> try condensed bin average for that player/bin
+    const binValFromPlayer = getCondensedBinValue(task);
+    if (binValFromPlayer != null) return binValFromPlayer;
+  }
+
+  // 2) Stored explicit defaults for this exact task+turn
   const stored = loadDefaultsFromStorage();
   const k = `${task}||${turn}`;
-  if(stored && stored.values && stored.values[k] != null) return stored.values[k];
+  if (stored && stored.values && stored.values[k] != null) return stored.values[k];
+
+  // 3) Condensed bin fallback (from UI overrides or auto-averages)
+  const binVal = getCondensedBinValue(task);
+  if (binVal != null) return binVal;
+
+  // 4) Ultimate fallback
   return 100.0;
 }
+
 
 /* helpers */
 function percentToHSLStatic(pct){ const v=Math.max(0,Math.min(100,Number(pct))); const hue=(v/100)*120; return `hsl(${hue},78%,45%)`; }
@@ -1382,6 +1428,12 @@ let selectedCategoryAliases = null;
         playerPct = getActivePlayerPct(r.task, r.turn);
       }
     }
+	// Fallback if still null: use condensed bin value so blanks don't act as 'missing'
+if (playerPct == null) {
+  const fb = (typeof getCondensedBinValue === 'function') ? getCondensedBinValue(r.task) : null;
+  if (fb != null) playerPct = fb;
+}
+
     r.playerPct = playerPct;
 
     // compute win percent for this row (keep it as percent 0..100)
