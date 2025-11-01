@@ -378,10 +378,11 @@ function buildSpeedTableHTML(row){
 
   // omit "Just over"
   const rows = [
-    { label: "0", H2H: "H2H0", B2H: "B2H0", T2H: "T2H0" },
-    { label: "1", H2H: "H2H1", B2H: "B2H1", T2H: "T2H1" },
-    { label: "2", H2H: "H2H2", B2H: "B2H2", T2H: "T2H2" },
-    { label: "3", H2H: "H2H3", B2H: "B2H3", T2H: "T2H3" },
+    { label: "0", H2H: "H2HJ", B2H: "B2HJ", T2H: "T2HJ" },
+    { label: "1", H2H: "H2H0", B2H: "B2H0", T2H: "T2H0" },
+    { label: "2", H2H: "H2H1", B2H: "B2H1", T2H: "T2H1" },
+    { label: "3", H2H: "H2H2", B2H: "B2H2", T2H: "T2H2" },
+    { label: "3.5", H2H: "H2H3", B2H: "B2H3", T2H: "T2H3" },
     { label: "4", H2H: "H2H4", B2H: "B2H4", T2H: "T2H4" },
     { label: "5", H2H: "H2H5", B2H: "B2H5", T2H: "T2H5" },
     { label: "6", H2H: "H2H6", B2H: "B2H6", T2H: "T2H6" },
@@ -389,13 +390,14 @@ function buildSpeedTableHTML(row){
     { label: "8", H2H: "H2H8", B2H: "B2H8", T2H: "T2H8" },
     { label: "9", H2H: "H2H9", B2H: "B2H9", T2H: "T2H9" },
     { label: "10", H2H: "H2H10", B2H: "B2H10", T2H: "T2H10" },
-    { label: "Hack", H2H: "H2HH", B2H: "B2HH", T2H: "T2HH" },
-    { label: "Board", H2H: "H2HB", B2H: "B2HB", T2H: "T2HB" },
-    { label: "Board up", H2H: "H2HB+", B2H: "B2HB+", T2H: "T2HB+" },
-    { label: "Control down", H2H: "H2HC-", B2H: "B2HC-", T2H: "T2HC-" },
-    { label: "Control", H2H: "H2HC", B2H: "B2HC", T2H: "T2HC" },
-    { label: "Control up", H2H: "H2HC+", B2H: "B2HC+", T2H: "T2HC+" },
-    { label: "Normal", H2H: "H2HN", B2H: "B2HN", T2H: "T2HN" },
+    { label: "Backline", H2H: "H2HH", B2H: "B2HH", T2H: "T2HH" },
+    { label: "11", H2H: "H2HB", B2H: "B2HB", T2H: "T2HB" },
+    { label: "Hack", H2H: "H2HB+", B2H: "B2HB+", T2H: "T2HB+" },
+    { label: "Board", H2H: "H2HC-", B2H: "B2HC-", T2H: "T2HC-" },
+    { label: "Wall", H2H: "H2HC", B2H: "B2HC", T2H: "T2HC" },
+    { label: "Control -", H2H: "H2HC+", B2H: "B2HC+", T2H: "T2HC+" },
+    { label: "Control", H2H: "H2HN", B2H: "B2HN", T2H: "T2HN" },
+	{ label: "Control +", H2H: "H2HZ", B2H: "B2HZ", T2H: "T2HZ" },
   ];
 
   const idx = Object.fromEntries(headersJSON.map((h,i)=>[h,i]));
