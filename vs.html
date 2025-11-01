@@ -112,6 +112,22 @@
 .diff-chip{font-weight:700;padding:2px 6px;border-radius:8px;display:inline-block}
 .diff-pos{background:#e7f7ec;color:#0c6b2e;border:1px solid #b9e6c9}
 .diff-neg{background:#fdeceb;color:#b42318;border:1px solid #f2b8b5}
+.player-card{
+  display:grid; grid-template-columns:48px 1fr; gap:10px;
+  padding:10px; border:1px solid var(--pro-border);
+  border-radius:10px; margin-bottom:8px; background:#fff;
+}
+.player-card .avatar{
+  width:48px; height:48px; border-radius:8px; object-fit:cover;
+  border:1px solid var(--pro-border);
+}
+.player-card .name{ font-weight:700; }
+.player-card .sub{ color:var(--pro-muted); }
+.player-card .mini-kpis{
+  display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:6px 0 4px;
+}
+.player-card .mini-kpis .k{ font-size:11px; color:var(--pro-muted); }
+.player-card .mini-kpis .v{ font-weight:600; }
 
 
   </style>
@@ -321,7 +337,7 @@ function makeTeamSelectors(side){
   });
 }
 function getTeamPlayers(side){
-  const selects = Array.from(document.querySelectorAll(`#team${side}Selectors select`));
+  const selects = Array.from(document.querySelectorAll(`#team${side}Selectors select.role`));
   return selects.map(s=>s.value).filter(Boolean);
 }
 
@@ -488,5 +504,205 @@ function refreshAll(){
   refreshAll();
 })();
 </script>
+
+<!-- === Add-on: Team dropdowns (safe, non-destructive) === -->
+<script>
+(function(){
+  const TEAMS = {}; // teamName -> {Lead, Second, Third, Fourth}
+
+  async function loadTeams(){
+    const candidates=['data/teams.csv','./data/teams.csv','../data/teams.csv','/data/teams.csv'];
+    let csvTxt;
+    try{
+      csvTxt = await fetchFirst(candidates);
+    }catch(e){
+      console.warn('teams.csv not found; team dropdowns disabled.', e);
+      return;
+    }
+    const {rows} = parseCSV(csvTxt);
+    function pick(row, labels){
+      for(const label of labels){
+        const key = findKeyInsensitive(row, label);
+        if(key){ const v = String(row[key] ?? '').trim(); if(v) return v; }
+      }
+      return '';
+    }
+    rows.forEach(row=>{
+      const teamName = pick(row, ['Team','Team Name','TeamName','Name']);
+      if(!teamName) return;
+      const fourth = pick(row, ['Fourth','Skip','Fourth/Skip','4th','Fourth Name','Skip Name']);
+      const third  = pick(row, ['Third','Vice','Vice-Skip','Vice Skip','3rd','Third Name']);
+      const second = pick(row, ['Second','2nd','Second Name']);
+      const lead   = pick(row, ['Lead','1st','Lead Name']);
+      if(fourth || third || second || lead){
+        TEAMS[teamName] = { Lead: lead, Second: second, Third: third, Fourth: fourth };
+      }
+    });
+  }
+
+  function getRoleSelects(side){
+    const host = document.getElementById(`team${side}Selectors`);
+    return host ? Array.from(host.querySelectorAll('select.role')) : [];
+  }
+
+  function applyTeamSelection(side, teamName){
+    const lineup = TEAMS[teamName];
+    const noteEl = document.getElementById(`t${side}Note`);
+    if(!lineup){
+      if(noteEl) noteEl.textContent = 'Choose players';
+      if(typeof refreshAll === 'function') refreshAll();
+      return;
+    }
+    const roleMap = ['Lead','Second','Third','Fourth'];
+    const selects = getRoleSelects(side);
+    selects.forEach((sel,i)=> sel && (sel.value = lineup[roleMap[i]] || ''));
+    if(noteEl){
+      noteEl.textContent = `Team: ${teamName} • Fourth: ${lineup.Fourth||'—'} · Third: ${lineup.Third||'—'} · Second: ${lineup.Second||'—'} · Lead: ${lineup.Lead||'—'}`;
+    }
+    if(typeof refreshAll === 'function') refreshAll();
+  }
+
+  function detectTeamByPlayers(selectedByRole){
+    for(const [teamName, L] of Object.entries(TEAMS)){
+      if((L.Lead||'')=== (selectedByRole[0]||'') &&
+         (L.Second||'')=== (selectedByRole[1]||'') &&
+         (L.Third||'')=== (selectedByRole[2]||'') &&
+         (L.Fourth||'')=== (selectedByRole[3]||'')){
+        return teamName;
+      }
+    }
+    return '';
+  }
+
+  function getSelectedPlayers(side){
+    return getRoleSelects(side).map(sel=> sel ? (sel.value||'') : '');
+  }
+
+  function syncTeamPickerNote(side){
+    const players = getSelectedPlayers(side);
+    const picker = document.getElementById(`team${side}TeamPicker`);
+    const noteEl = document.getElementById(`t${side}Note`);
+    const match = detectTeamByPlayers(players);
+    if(picker) picker.value = match || '';
+    if(noteEl){
+      if(match){
+        const L = TEAMS[match];
+        noteEl.textContent = `Fourth: ${L.Fourth||'—'} · Third: ${L.Third||'—'} · Second: ${L.Second||'—'} · Lead: ${L.Lead||'—'}`;
+      }else{
+        noteEl.textContent = players.some(Boolean) ? 'Manual selection' : 'Choose players';
+      }
+    }
+  }
+
+  function createTeamPicker(side){
+    if(!Object.keys(TEAMS).length) return; // nothing to show
+    const container = document.getElementById(`team${side}Selectors`);
+    if(!container) return;
+    // Avoid duplicates
+    if(document.getElementById(`team${side}TeamPicker`)) return;
+
+    const row = document.createElement('div');
+    row.className = 'row';
+    const sel = document.createElement('select');
+    sel.className = 'team';
+    sel.id = `team${side}TeamPicker`;
+
+    const opts = Object.keys(TEAMS).sort((a,b)=>a.localeCompare(b)).map(n=>`<option>${n}</option>`).join('');
+    sel.innerHTML = `<option value="">Team ${side} — Pick team</option>` + opts;
+    sel.addEventListener('change', e=> applyTeamSelection(side, e.target.value));
+
+    row.appendChild(sel);
+    // insert at top of container
+    container.prepend(row);
+  }
+
+  // Wrap refreshAll to also sync team pickers after any update
+  const refreshAll_base = window.refreshAll;
+  window.refreshAll = function(){
+    if(typeof refreshAll_base === 'function') refreshAll_base();
+    try{
+      syncTeamPickerNote(1);
+      syncTeamPickerNote(2);
+    }catch(e){ console.warn('syncTeamPickerNote failed', e); }
+  };
+
+  // Bootstrapping: wait for role selectors to exist, then add pickers
+  async function bootstrap(){
+    await loadTeams().catch(()=>{});
+    // simple wait loop
+    let tries=0;
+    while(tries++<50){
+      if(getRoleSelects(1).length && getRoleSelects(2).length) break;
+      await new Promise(r=> setTimeout(r, 100));
+    }
+    createTeamPicker(1);
+    createTeamPicker(2);
+    // one sync pass
+    if(typeof refreshAll === 'function') refreshAll();
+  }
+
+  // Run after the page scripts
+  if(document.readyState === 'complete'){
+    bootstrap();
+  }else{
+    window.addEventListener('load', bootstrap, {once:true});
+  }
+})();
+// --- Headshot helpers ---
+function headshotSrc(name){
+  // Try relative "heads/" first; if you mount at root, onerror swaps to "/heads/"
+  const enc = encodeURIComponent(name);
+  return `heads/${enc}.jpg`;
+}
+function fmtPct(v){ return (v==null || Number.isNaN(v)) ? '—' : `${v.toFixed(1)}%`; }
+function fmtNum(v){ return (v==null || Number.isNaN(v)) ? '—' : v.toFixed(2); }
+
+// Build one player’s panel with avatar + your lines
+function playerCardHtml(name){
+  const m = (PLAYERS[name] && PLAYERS[name].metrics) ? PLAYERS[name].metrics : {};
+  const best  = (m.Best  ?? '—');
+  const worst = (m.Worst ?? '—');
+  const src   = headshotSrc(name);
+  const enc   = encodeURIComponent(name);
+
+  return `
+  <div class="player-card">
+    <img class="avatar" alt="${name}" src="${src}"
+         onerror="if(this.dataset.alt!=='1'){this.dataset.alt='1';this.src='/heads/${enc}.jpg';}"/>
+    <div>
+      <div class="name">${name}</div>
+      <div class="sub">Best: ${best} · Worst: ${worst}</div>
+      <div class="mini-kpis">
+        <div><div class="k">HammerEff%</div><div class="v">${fmtPct(m.HammerEffPct)}</div></div>
+        <div><div class="k">ForceEff%</div><div class="v">${fmtPct(m.ForceEffPct)}</div></div>
+        <div><div class="k">StealEff%</div><div class="v">${fmtPct(m.StealEffPct)}</div></div>
+        <div><div class="k">StealDef%</div><div class="v">${fmtPct(m.StealDefPct)}</div></div>
+      </div>
+      <div class="sub">HammerFactor(pp): ${fmtNum(m.HammerFactorPP)} • FromBehind%: ${fmtPct(m.FromBehindPct)} • Choke%: ${fmtPct(m.ChokePct)}</div>
+    </div>
+  </div>`;
+}
+
+// Render the list for one side into #t1Players / #t2Players
+function renderPlayerPanels(side){
+  const host  = document.getElementById(`t${side}Players`);
+  if(!host) return;
+  const names = getTeamPlayers(side);   // already defined in your page
+  host.innerHTML = names.map(playerCardHtml).join('');
+}
+
+// Keep avatars in sync whenever a selection changes
+document.addEventListener('change', (e)=>{
+  if(e.target.matches('select')){ renderPlayerPanels(1); renderPlayerPanels(2); }
+});
+
+// Also do an initial render after your data loads and selectors are created
+window.addEventListener('DOMContentLoaded', ()=>{
+  // In case your code populates after DOMContentLoaded, run once more shortly after
+  setTimeout(()=>{ renderPlayerPanels(1); renderPlayerPanels(2); }, 0);
+});
+
+</script>
+
 </body>
 </html>
