@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Curling House – Pro</title>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<style>/* === Pro Light Skin + Snazzy Polish === */
+:root{
+  --pro-bg:#f7f9fc; --pro-surface:#ffffff; --pro-surface-2:#fbfdff;
+  --pro-card:#ffffff; --pro-text:#111318; --pro-muted:#5f6672;
+  --pro-border:#e7ecf3; --pro-accent:#0f6fff; --pro-accent-2:#58b6ff;
+  --pro-radius:12px; --pro-shadow:0 10px 30px rgba(14,30,65,.08);
+  --bg:#f6f8fa; --card:#fff; --muted:#6b7280; --text:#111827; --border:#e7ecf3;
+}
+
+html,body{background:var(--pro-bg);color:var(--pro-text)}
+body{margin:18px;font-family:Inter,system-ui,Arial;background:linear-gradient(180deg,var(--pro-bg),#f2f4f6)}
+
+/* Shell */
+.wrap{max-width:1180px;margin:0 auto}
+header{display:flex;align-items:center;gap:12px;margin:10px 0 14px}
+.logo{display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,var(--pro-accent),var(--pro-accent-2));color:#fff;padding:10px 12px;border-radius:12px}
+.logo h1{margin:0;font-size:1rem;line-height:1}
+.muted{color:var(--pro-muted)}
+.muted-xs{color:var(--pro-muted);font-size:0.86rem}
+
+/* Cards & rails */
+.card,.panel,section.card,.box{background:var(--pro-card);border:1px solid var(--pro-border);border-radius:var(--pro-radius);box-shadow:var(--pro-shadow)}
+.card{padding:14px;margin-bottom:12px}
+.p-0{padding:0}
+.table-wrap-auto,.h-scroll{border:1px solid var(--pro-border);border-radius:10px;overflow:auto;background:#fff;box-shadow:var(--pro-shadow)}
+
+/* Inputs */
+input,select,textarea{
+  background:#fff;color:var(--pro-text);border:1px solid var(--pro-border);
+  border-radius:10px;padding:10px 12px;font-size:0.95rem;
+  transition:border-color .15s ease, box-shadow .15s ease;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--pro-accent);box-shadow:0 0 0 3px rgba(15,111,255,.18);outline:0}
+select[multiple]{min-height:82px}
+
+/* Buttons */
+button,.btn,.button{
+  border-radius:10px;border:1px solid var(--pro-border);
+  background: linear-gradient(180deg, var(--pro-accent), var(--pro-accent-2));
+  color:#fff;font-weight:600;box-shadow:0 8px 20px rgba(15,111,255,.18);
+  padding:10px 12px;cursor:pointer;transition:transform .05s ease;
+}
+button:active,.btn:active{transform:translateY(1px)}
+.alt,.btn.secondary,.ghost,.outline{background:#fff;color:var(--pro-text);box-shadow:none}
+
+/* Pills */
+.pill{padding:6px 12px;border:1px solid var(--pro-border);border-radius:999px;background:#fbfdff;cursor:pointer;font-weight:600;color:var(--pro-text)}
+.pill.active{background:linear-gradient(180deg,var(--pro-accent),var(--pro-accent-2));color:#fff;border:none;box-shadow:0 8px 20px rgba(15,111,255,.18)}
+
+/* Layout helpers */
+.row{display:grid;grid-template-columns: repeat(4, 1fr); gap: 12px}
+.row>*{display:flex;flex-direction:column}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.inline{display:flex;align-items:center;gap:10px}
+.right{text-align:right}
+.hr{height:1px;background:var(--pro-border);margin:14px auto;max-width:100%}
+
+/* Tables */
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:0.92rem}
+td,th{padding:10px 12px;border-bottom:1px solid var(--pro-border);white-space:nowrap;text-align:left}
+thead th{position:sticky;top:0;background:var(--pro-surface);color:var(--pro-muted);font-weight:600;font-size:12px;text-transform:uppercase}
+tbody tr:nth-child(odd) td{background:#fafbfe}
+
+/* Highlights */
+td.cell-best-est{background: linear-gradient(90deg,#ffe5b4,#ffcf6b)!important;color:#111!important;font-weight:700;border-radius:6px}
+td.cell-best-player{background: linear-gradient(90deg,#bff3d0,#50d88a)!important;color:#022!important;font-weight:700;border-radius:6px}
+
+/* Canvas stage */
+.stage-card{position:relative}
+#houseCanvas{display:block}
+#overlayCanvas{position:absolute;inset:0;pointer-events:auto}
+
+/* Toolbar */
+.toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;margin:0;padding:10px 12px;background:var(--pro-card);border-top:1px solid var(--pro-border)}
+.toolbar-sticky{position:sticky;top:8px;z-index:5;border:1px solid var(--pro-border);border-radius:12px;box-shadow:var(--pro-shadow)}
+
+/* Mobile */
+@media (max-width:1000px){ .row{grid-template-columns:repeat(3,1fr)} }
+@media (max-width:700px){ .row{grid-template-columns:repeat(2,1fr)} }
+@media (max-width:900px){ #constraintsContainer{overflow-x:auto} #constraints{min-width:720px} }
+@media (max-width:600px){
+  .wrap{margin:12px} body{margin:12px}
+  .grid2{grid-template-columns:1fr}
+}
+
+/* Two-column layout: controls left, stage right */
+.two-col{display:grid;grid-template-columns:minmax(360px,1fr) minmax(440px,auto);gap:14px;align-items:start}
+@media (max-width: 980px){ .two-col{grid-template-columns:1fr} }
+
+/* Stage container keeps intrinsic canvas size, no CSS scaling */
+.stage{position:relative;width:max-content;margin:0 auto}
+
+/* Compact zone percentage inputs */
+input.zoneInput[type="number"]{ width:6ch; min-width:6ch; text-align:right; }
+@media (max-width: 520px){
+  input.zoneInput[type="number"]{ width:7ch; min-width:7ch; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<div class="logo"><h1>House Builder</h1></div>
+<span class="muted">Random &amp; Manual Scenario Editor</span>
+</header><div class="two-col"><div><form class="section card" id="configForm">
+<h3>Random scenario controls</h3>
+<div class="row">
+<div>
+<label for="stoneColours">Stone colours</label>
+<select id="stoneColours" name="stoneColours">
+<option>Red / Yellow</option>
+<option>Yellow / Red</option>
+</select>
+</div>
+<div>
+<label for="numOfEnds"># of ends</label>
+<input id="numOfEnds" max="10" min="1" name="numOfEnds" type="number" value="8"/>
+</div>
+<div>
+<label for="currentEnd">Current end<!--</label-->
+<select id="currentEnd" name="currentEnd">
+<option value="">Random</option>
+<option>1st</option><option>2nd</option><option>3rd</option>
+<option>4th</option><option>5th</option><option>6th</option>
+<option>7th</option><option>8th</option><option>9th</option>
+<option>10th</option>
+</select>
+</label></div>
+<div>
+<label for="minThrown">Min stones thrown</label>
+<select id="minThrown" name="minThrown">
+<option>0</option><option>2</option><option selected="">3</option>
+<option>4</option><option>6</option><option>8</option>
+</select>
+</div>
+</div>
+<div class="row" style="margin-top:12px">
+<div>
+<label>Zone 1 %</label>
+<input class="zoneInput" name="zone1" type="number" value="8"/>
+</div>
+<div>
+<label>Zone 2 %</label>
+<input class="zoneInput" name="zone2" type="number" value="22"/>
+</div>
+<div>
+<label>Zone 3 %</label>
+<input class="zoneInput" name="zone3" type="number" value="40"/>
+</div>
+<div>
+<label>Zone 4 %</label>
+<input class="zoneInput" name="zone4" type="number" value="30"/>
+</div>
+</div>
+<div style="max-width:var(--w);margin:12px auto 0">
+<label for="scenarioNotes">Notes</label>
+<textarea id="scenarioNotes" name="scenarioNotes" placeholder="Describe the call..." rows="3"></textarea>
+</div>
+<div class="buttons" style="max-width:var(--w);margin:12px auto 0;">
+<button id="toggle-advanced" style="display:none" type="button">Advanced</button>
+<button type="submit">Regenerate House (Random)</button>
+<button id="save-button" type="button">Save</button>
+<button id="clear-saved" type="button">Clear Saved</button>
+</div>
+</form><section class="card">
+<div class="hr"></div>
+<h3>Manual placement</h3>
+<p class="muted">Use either the editor (feet from tee) or click/drag on the canvas. Right‑click a rock to delete.</p>
+<div class="grid2">
+<div>
+<label for="stones-ft">Manual stones (feet from tee center)</label>
+<textarea id="stones-ft" placeholder="Red, 0, 0, 1
+Yellow, -1.0, 3.5, 1
+Red, 2.2, -2.0, 2" rows="7"></textarea>
+<div class="buttons" style="margin-top:8px">
+<button id="apply-stones" type="button">Render manual stones</button>
+<button id="append-stones" title="Keep current and add more" type="button">Append to current</button>
+<button id="clear-manual" type="button">Clear manual</button>
+<button id="export-json" type="button">Export JSON</button>
+<input accept="application/json,.json" id="import-file" style="display:none" type="file"/>
+<button id="import-json" type="button">Import JSON</button>
+</div>
+</div>
+<div>
+<label>Canvas builder</label>
+<div class="buttons">
+<span>Next colour:</span>
+<button class="pill" id="next-red" type="button">Red</button>
+<button class="pill" id="next-yellow" type="button">Yellow</button>
+<button class="pill" id="undo" type="button">Undo</button>
+<button class="pill" id="enable-click" type="button">Enable click-to-place</button>
+</div>
+<p class="muted">Click the overlay to drop. <span class="kbd">C</span> switches colour. <span class="kbd">Z</span> undoes. <span class="kbd">Esc</span> disables click mode. Drag a stone to move. Right‑click to delete.</p>
+<div class="inline"><strong>Manual stones:</strong> <span class="muted" id="manual-count">0</span></div>
+</div>
+</div>
+</section><section class="card">
+<div style="max-width:var(--w);margin:16px auto">
+<h4>Saved Scenarios</h4>
+<div id="saved-scenario-list"></div>
+</div>
+</section></div><div><section class="card p-0 stage-card">
+<div class="stage">
+<canvas height="900" id="houseCanvas" width="420"></canvas>
+<canvas height="900" id="overlayCanvas" width="420"></canvas>
+</div>
+<div class="toolbar toolbar-sticky">
+<div class="inline">
+<label class="inline"><input checked="" id="toggle-grid" type="checkbox"/> Show grid (1 ft)</label>
+<span class="muted" id="cursor-ft"></span>
+</div>
+</div>
+</section></div></div>
+<div style="display:none">
+<form id="rawJSONConfigForm">
+<textarea id="scenario_config" rows="8">{
+  "coordinates": [
+    { "origin": { "y": 266, "x": 360 }, "num": 1, "colour_index": 1 }
+  ],
+  "details": { "numberOfEnds": "8", "end": "7th", "hammer": false, "colour": "Red",
+               "thrower": "Second's first", "score_diff": "Up 3" },
+  "scale": 30,
+  "stone_colours": ["Red", "Yellow"],
+  "zone_weights": [
+    {"name":"zone3","weight":0.40},
+    {"name":"zone4","weight":0.30},
+    {"name":"zone2","weight":0.22},
+    {"name":"zone1","weight":0.08}
+  ],
+  "notes": ""
+}</textarea>
+<button type="submit">Manual Update</button>
+</form>
+</div></div>
+<script src="app.js"></script>
+<script>
+  (() => {
+    const byId = (id) => document.getElementById(id);
+    const house = byId('houseCanvas');
+    const overlay = byId('overlayCanvas');
+    const octx = overlay.getContext('2d');
+
+    // Keep overlay size synced
+    function syncOverlaySize() {
+      overlay.width = house.width;
+      overlay.height = house.height;
+    }
+    syncOverlaySize();
+    window.addEventListener('load', syncOverlaySize);
+
+    // === Config helpers ===
+    function getConfig() {
+      try { return JSON.parse(byId('scenario_config').value); }
+      catch { return { coordinates: [], scale: 30, stone_colours: ['Red','Yellow'] }; }
+    }
+    function setConfig(cfg) {
+      byId('scenario_config').value = JSON.stringify(cfg, null, 2);
+    }
+    function currentColours() {
+      const sel = byId('stoneColours');
+      const parts = sel ? sel.value.split('/').map(s => s.trim()) : ['Red','Yellow'];
+      return parts.length === 2 ? parts : ['Red','Yellow'];
+    }
+    function getScale() { const cfg = getConfig(); return Number(cfg.scale || 30); }
+    function tee() { return { cx: house.width / 2, cy: house.width / 2 }; }
+    function stoneRadius() { return getScale() * 0.48; }
+    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+    function dist(x1,y1,x2,y2){ const dx=x1-x2, dy=y1-y2; return Math.hypot(dx,dy); }
+
+    // === GRID OVERLAY ===
+    function drawGrid() {
+      syncOverlaySize();
+      octx.clearRect(0,0,overlay.width, overlay.height);
+      if (!byId('toggle-grid').checked) return;
+
+      const scale = getScale();
+      const {cx, cy} = tee();
+
+      octx.save();
+      octx.globalAlpha = 0.55;
+      octx.lineWidth = 1;
+      octx.strokeStyle = '#6aa3ff';
+      octx.fillStyle = '#1a1a1a';
+
+      // verticals (x)
+      for (let n = Math.floor(-cx/scale); n <= Math.ceil((overlay.width-cx)/scale); n++) {
+        const x = Math.round(cx + n*scale);
+        octx.beginPath(); octx.moveTo(x, 0); octx.lineTo(x, overlay.height); octx.stroke();
+        // label at top
+        octx.font = '11px system-ui, sans-serif'; octx.textAlign='center';
+        octx.fillText(n.toString(), x, 12);
+      }
+      // horizontals (y)
+      for (let n = Math.floor(-cy/scale); n <= Math.ceil((overlay.height-cy)/scale); n++) {
+        const y = Math.round(cy + n*scale);
+        octx.beginPath(); octx.moveTo(0, y); octx.lineTo(overlay.width, y); octx.stroke();
+        // label at left
+        octx.textAlign='left';
+        octx.fillText(n.toString(), 4, y-2);
+      }
+
+      // crosshair at tee
+      octx.strokeStyle = '#000';
+      octx.beginPath(); octx.moveTo(cx-6, cy); octx.lineTo(cx+6, cy); octx.stroke();
+      octx.beginPath(); octx.moveTo(cx, cy-6); octx.lineTo(cx, cy+6); octx.stroke();
+
+      octx.restore();
+    }
+    byId('toggle-grid').addEventListener('change', drawGrid);
+    drawGrid();
+
+    // track cursor ft display
+    overlay.addEventListener('mousemove', (e) => {
+      const rect = overlay.getBoundingClientRect();
+      const x = e.clientX - rect.left, y = e.clientY - rect.top;
+      const {cx, cy} = tee();
+      const s = getScale();
+      const xf = ((x-cx)/s).toFixed(2);
+      const yf = ((y-cy)/s).toFixed(2);
+      byId('cursor-ft').textContent = `x: ${xf} ft, y: ${yf} ft`;
+    });
+
+    // === MANUAL EDITOR ===
+    let manual = [];
+    let placeEnabled = false;
+    let nextColour = 'Red';
+
+    function updateCount() {
+      byId('manual-count').textContent = String(manual.length);
+      // mirror to textarea
+      const cols = currentColours();
+      const scale = getScale();
+      const {cx, cy} = tee();
+      const lines = manual.map((s, i) => {
+        const xft = ((s.origin.x - cx) / scale).toFixed(2);
+        const yft = ((s.origin.y - cy) / scale).toFixed(2);
+        const cname = cols[s.colour_index] || (s.colour_index === 1 ? 'Yellow' : 'Red');
+        return `${cname}, ${xft}, ${yft}, ${s.num ?? Math.ceil((i+1)/2)}`;
+      });
+      byId('stones-ft').value = lines.join('\n');
+    }
+
+    function renderManual(reuseRandom=false) {
+      const cfg = getConfig();
+      const base = reuseRandom ? (cfg.coordinates || []) : [];
+      cfg.coordinates = base.concat(manual);
+      setConfig(cfg);
+      if (typeof refreshHouse === 'function') { refreshHouse(cfg); }
+      // overlay is independent, so no need to redraw unless toggled
+    }
+
+    function parseTextarea() {
+      const lines = (byId('stones-ft').value || '').split(/\n+/).map(s => s.trim()).filter(Boolean);
+      const cols = currentColours();
+      const scale = getScale();
+      const {cx, cy} = tee();
+      const out = [];
+      for (let i=0;i<lines.length;i++) {
+        const parts = lines[i].split(/[ ,]+/).filter(Boolean);
+        if (parts.length < 3) continue;
+        const cname = parts[0];
+        const xft = parseFloat(parts[1]);
+        const yft = parseFloat(parts[2]);
+        const num = parts[3] ? parseInt(parts[3], 10) : Math.ceil((i+1)/2);
+        const pos = { x: Math.round(cx + xft * scale), y: Math.round(cy + yft * scale) };
+        const idx = /^y/i.test(cname) ? cols.indexOf('Yellow') : cols.indexOf('Red');
+        out.push({ origin: pos, num, colour_index: (idx>=0?idx:(/^y/i.test(cname)?1:0)) });
+      }
+      manual = out;
+      updateCount();
+    }
+
+    byId('apply-stones').addEventListener('click', () => { parseTextarea(); renderManual(false); });
+    byId('append-stones').addEventListener('click', () => { parseTextarea(); renderManual(true); });
+    byId('clear-manual').addEventListener('click', () => { manual = []; updateCount(); renderManual(false); });
+
+    byId('next-red').addEventListener('click', () => {
+      nextColour = 'Red';
+      byId('next-red').classList.add('active'); byId('next-yellow').classList.remove('active');
+    });
+    byId('next-yellow').addEventListener('click', () => {
+      nextColour = 'Yellow';
+      byId('next-yellow').classList.add('active'); byId('next-red').classList.remove('active');
+    });
+    byId('next-red').classList.add('active');
+
+    byId('undo').addEventListener('click', () => {
+      manual.pop(); updateCount(); renderManual(false);
+    });
+
+    byId('enable-click').addEventListener('click', () => {
+      placeEnabled = !placeEnabled;
+      byId('enable-click').classList.toggle('active', placeEnabled);
+      overlay.style.cursor = placeEnabled ? 'crosshair' : 'default';
+    });
+
+    // Keyboard shortcuts
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'c' || e.key === 'C') {
+        nextColour = (nextColour === 'Red' ? 'Yellow' : 'Red');
+        byId('next-red').classList.toggle('active', nextColour === 'Red');
+        byId('next-yellow').classList.toggle('active', nextColour === 'Yellow');
+      } else if (e.key === 'z' || e.key === 'Z') {
+        manual.pop(); updateCount(); renderManual(false);
+      } else if (e.key === 'Escape') {
+        placeEnabled = false; byId('enable-click').classList.remove('active'); overlay.style.cursor = 'default';
+      }
+    });
+
+    // === Click-to-place on overlay ===
+    overlay.addEventListener('click', (evt) => {
+      if (!placeEnabled) return;
+      const rect = overlay.getBoundingClientRect();
+      let x = Math.round(evt.clientX - rect.left);
+      let y = Math.round(evt.clientY - rect.top);
+      const r = stoneRadius();
+      x = clamp(x, r, overlay.width - r);
+      y = clamp(y, r, overlay.height - r);
+      const cols = currentColours();
+      const idx = (nextColour === 'Yellow') ? cols.indexOf('Yellow') : cols.indexOf('Red');
+      const stone = { origin: {x,y}, num: Math.ceil((manual.length+1)/2), colour_index: (idx>=0?idx:(nextColour==='Yellow'?1:0)) };
+      manual.push(stone);
+      updateCount();
+      renderManual(false);
+    });
+
+    // === Drag-to-move & Right-click delete ===
+    let draggingIndex = -1;
+    let dragOffset = {x:0,y:0};
+
+    overlay.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return; // left only
+      const rect = overlay.getBoundingClientRect();
+      const x = e.clientX - rect.left, y = e.clientY - rect.top;
+      const cfg = getConfig();
+      const radius = stoneRadius();
+      // pick nearest stone within radius
+      let hit = -1, best = Infinity;
+      (cfg.coordinates || []).forEach((s, i) => {
+        const d = dist(x,y,s.origin.x,s.origin.y);
+        if (d < radius && d < best) { best = d; hit = i; }
+      });
+      if (hit >= 0) {
+        draggingIndex = hit;
+        dragOffset.x = x - cfg.coordinates[hit].origin.x;
+        dragOffset.y = y - cfg.coordinates[hit].origin.y;
+        overlay.style.cursor = 'grabbing';
+      }
+    });
+
+    overlay.addEventListener('mousemove', (e) => {
+      if (draggingIndex < 0) return;
+      const rect = overlay.getBoundingClientRect();
+      let x = Math.round(e.clientX - rect.left - dragOffset.x);
+      let y = Math.round(e.clientY - rect.top - dragOffset.y);
+      const r = stoneRadius();
+      x = clamp(x, r, overlay.width - r);
+      y = clamp(y, r, overlay.height - r);
+      const cfg = getConfig();
+      if (cfg.coordinates && cfg.coordinates[draggingIndex]) {
+        cfg.coordinates[draggingIndex].origin.x = x;
+        cfg.coordinates[draggingIndex].origin.y = y;
+        setConfig(cfg);
+        if (typeof refreshHouse === 'function') { refreshHouse(cfg); }
+      }
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (draggingIndex >= 0) {
+        draggingIndex = -1;
+        overlay.style.cursor = placeEnabled ? 'crosshair' : 'default';
+        // sync manual array with current config after drag
+        const cfg = getConfig();
+        manual = (cfg.coordinates || []).slice();
+        updateCount();
+      }
+    });
+
+    overlay.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      const rect = overlay.getBoundingClientRect();
+      const x = e.clientX - rect.left, y = e.clientY - rect.top;
+      const cfg = getConfig();
+      const radius = stoneRadius();
+      let hit = -1, best = Infinity;
+      (cfg.coordinates || []).forEach((s, i) => {
+        const d = dist(x,y,s.origin.x,s.origin.y);
+        if (d < radius && d < best) { best = d; hit = i; }
+      });
+      if (hit >= 0) {
+        cfg.coordinates.splice(hit, 1);
+        setConfig(cfg);
+        manual = (cfg.coordinates || []).slice();
+        updateCount();
+        if (typeof refreshHouse === 'function') { refreshHouse(cfg); }
+      }
+      return false;
+    });
+
+    // === Import / Export JSON ===
+    byId('export-json').addEventListener('click', () => {
+      const text = byId('scenario_config').value;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([text], {type: 'application/json'}));
+      a.download = 'scenario.json';
+      a.click();
+    });
+    byId('import-json').addEventListener('click', () => byId('import-file').click());
+    byId('import-file').addEventListener('change', async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const text = await file.text();
+      try {
+        const cfg = JSON.parse(text);
+        setConfig(cfg);
+        manual = (cfg.coordinates || []).slice();
+        updateCount();
+        if (typeof refreshHouse === 'function') { refreshHouse(cfg); }
+      } catch { alert('Invalid JSON'); }
+      e.target.value = '';
+    });
+
+    // When the page loads, if JSON has coordinates, mirror into manual view and ensure grid draws
+    window.addEventListener('load', () => {
+      try {
+        const cfg = getConfig();
+        if (Array.isArray(cfg.coordinates) && cfg.coordinates.length) {
+          manual = cfg.coordinates.slice();
+          updateCount();
+        }
+      } catch {}
+      drawGrid();
+    });
+  })();
+  </script>
+</body>
+</html>
