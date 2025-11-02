@@ -27,8 +27,95 @@ const getRandomItem = function(list, weight) {
 };
 
 const refreshHouse = function(config= null) {
-  let house = new HouseScenario(21, "houseCanvas")
+  let house = new HouseScenario(16.5, "houseCanvas")
   house.generate(config);
+}
+
+
+
+// Mirror generated/randomized scenario into the manual editor textarea
+function mirrorScenarioToEditor(){
+  try {
+    const cfgText = document.getElementById('scenario_config')?.value || '{}';
+    const cfg = JSON.parse(cfgText);
+    const scale = Number(cfg.scale || 30);
+    const houseEl = document.getElementById('houseCanvas');
+    if (!houseEl) return;
+    const cx = houseEl.width / 2, cy = houseEl.width / 2;
+    const cols = Array.isArray(cfg.stone_colours) ? cfg.stone_colours : ['Red','Yellow'];
+    const lines = (cfg.coordinates || []).map((st, i) => {
+      const xft = ((st.origin.x - cx) / scale).toFixed(2);
+      const yft = ((st.origin.y - cy) / scale).toFixed(2);
+      const cname = cols[st.colour_index] || (st.colour_index === 1 ? 'Yellow' : 'Red');
+      const num = (st.num != null) ? st.num : Math.ceil((i+1)/2);
+      return `${cname}, ${xft}, ${yft}, ${num}`;
+    });
+    const ta = document.getElementById('stones-ft');
+    if (ta) ta.value = lines.join('\n');
+    const mc = document.getElementById('manual-count');
+    if (mc) mc.textContent = String((cfg.coordinates || []).length);
+  } catch (e) {
+    // ignore
+  }
+}
+
+
+// Integer-only behavior for zoneInput fields (desktop-safe)
+function setupZoneInputSanitizers(){
+  const fields = Array.from(document.getElementsByClassName('zoneInput'));
+  if (!fields.length) return;
+  fields.forEach(el => {
+    // Helpful attributes
+    el.setAttribute('inputmode', 'numeric');
+    el.setAttribute('step', '1');
+    el.setAttribute('min', '0');
+    el.setAttribute('max', '100');
+    el.setAttribute('pattern', '\\d*');
+
+    // Prevent decimals while typing; allow empty while editing
+    el.addEventListener('input', (e) => {
+      const t = e.target;
+      // keep only digits
+      const digits = String(t.value).replace(/[^\d]/g, '');
+      if (t.value !== digits) t.value = digits;
+    });
+
+    // On blur/Enter, coerce to 0..100 integer
+    const commit = (t) => {
+      const n = parseInt(String(t.value||'').trim(), 10);
+      const v = Math.max(0, Math.min(100, isNaN(n) ? 0 : n));
+      t.value = String(v);
+    };
+    el.addEventListener('blur', (e) => commit(e.target));
+    el.addEventListener('change', (e) => commit(e.target));
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); commit(e.target); e.target.blur(); }
+    });
+  });
+}
+// === Write current scenario JSON into the editor (feet) ===
+function mirrorScenarioToEditor(){
+  try {
+    const ta = document.getElementById('stones-ft');
+    const cfgText = document.getElementById('scenario_config')?.value || '{}';
+    if (!ta || !cfgText) return;
+
+    const cfg   = JSON.parse(cfgText);
+    const scale = Number(cfg.scale || 30);
+    const house = document.getElementById('houseCanvas');
+    const cx    = (house?.width || (scale*14)) / 2;
+    const cy    = cx;
+    const cols  = Array.isArray(cfg.stone_colours) ? cfg.stone_colours : ['Red','Yellow'];
+
+    const lines = (cfg.coordinates || []).map((st, i) => {
+      const xft = ((st.origin.x - cx) / scale).toFixed(2);
+      const yft = ((st.origin.y - cy) / scale).toFixed(2);
+      const cname = cols[st.colour_index] || (st.colour_index === 1 ? 'Yellow' : 'Red');
+      const num = (st.num != null) ? st.num : Math.ceil((i+1)/2);
+      return `${cname}, ${xft}, ${yft}, ${num}`;
+    });
+    ta.value = lines.join('\n');
+  } catch {}
 }
 
 function HouseScenario(scale, canvasId) {
@@ -104,12 +191,7 @@ HouseScenario.prototype.drawStone = function(pos, colour, num) {
   this.drawCircle(pos, this.stone_radius, 'grey');
   this.drawCircle(pos, (this.stone_radius * 0.7), colour);
   this.context.lineWidth = this.defaultCanvasValues.lineWidth;
-  if (num !== undefined) {
-    this.context.fillStyle = (colour == 'Yellow' ? 'black' : 'white');
-    this.context.font = '18px serif';
-    this.context.textAlign = "center";
-    this.context.fillText(num, pos.x, pos.y+5);
-  }
+  return false;
 },
 
 HouseScenario.prototype.overlappingStones = function(pos, existing) {
@@ -230,7 +312,7 @@ HouseScenario.prototype.generate = function(config=null) {
     for (let field of zoneFields) {
       for(let x=0; x < this.scenarioConfig.zone_weights.length; x++) {
         if (field.name == this.scenarioConfig.zone_weights[x].name) {
-          field.value = this.scenarioConfig.zone_weights[x].weight * 100
+          field.value = Math.round(this.scenarioConfig.zone_weights[x].weight * 100)
         }
       }
     }
@@ -253,7 +335,7 @@ HouseScenario.prototype.generate = function(config=null) {
 
     let zones = [];
     Array.prototype.forEach.call(zoneFields, function(element) {
-      zones.push({ name: element.name, weight: parseInt(element.value) / 100 })
+      (() => { const n = parseInt(element.value, 10); const v = Math.max(0, Math.min(100, isNaN(n)?0:n)); zones.push({ name: element.name, weight: v / 100 }); })()
     });
     zones.sort((a,b) => (a.weight > b.weight) ? 1 : -1).reverse();
 
@@ -307,6 +389,7 @@ HouseScenario.prototype.generate = function(config=null) {
   // Dump the config to screen (for debugging)
   let dump = document.getElementById("scenario_config");
   dump.value = JSON.stringify(this.scenarioConfig, null, 2);
+  
 }
 
 // Manage the Saved Scenario List
@@ -351,14 +434,20 @@ const loadSavedList = function() {
   }
 }
 
-// Page load initializations
+// Page load initializationsrenderManual
 window.addEventListener('load', function() {
 
-  document.getElementById('configForm').addEventListener('submit', function(evt){
-    evt.preventDefault()
-    let field = JSON.parse(document.getElementById('scenario_config').value);
-    refreshHouse();
-  });
+  setupZoneInputSanitizers();
+
+
+document.getElementById('configForm').addEventListener('submit', function(evt){
+  evt.preventDefault()
+  let field = JSON.parse(document.getElementById('scenario_config').value);
+  refreshHouse();
+  if (typeof mirrorScenarioToEditor === 'function') mirrorScenarioToEditor();
+  if (window.resetManual) window.resetManual();
+});
+
 
   document.getElementById('toggle-advanced').addEventListener('click', function(evt){
     let advancedForm = document.getElementById('advanced-config');
@@ -385,14 +474,21 @@ window.addEventListener('load', function() {
         else if (ints[i] > 0) { ints[i] -= 1; delta++; }
       }
       fields.forEach((el, i) => { el.value = ints[i]; });
-      if (typeof refreshHouse === 'function') { refreshHouse(); }
+if (typeof refreshHouse === 'function') {
+  refreshHouse();
+  if (typeof mirrorScenarioToEditor === 'function') mirrorScenarioToEditor();
+  if (window.resetManual) window.resetManual();
+}
     });
   }
 document.getElementById('rawJSONConfigForm').addEventListener('submit', function(evt){
-    evt.preventDefault()
-    let field = JSON.parse(document.getElementById('scenario_config').value);
-    refreshHouse(field);
-  });
+  evt.preventDefault()
+  let field = JSON.parse(document.getElementById('scenario_config').value);
+  refreshHouse(field);
+  if (typeof mirrorScenarioToEditor === 'function') mirrorScenarioToEditor();
+  if (window.resetManual) window.resetManual();
+});
+
 
   document.getElementById('clear-saved').addEventListener('click', function(evt){
     if (confirm("Remove all saved scenarios? They cannot be recovered!")) {
