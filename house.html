@@ -55,7 +55,7 @@ button:active,.btn:active{transform:translateY(1px)}
 .pill.active{background:linear-gradient(180deg,var(--pro-accent),var(--pro-accent-2));color:#fff;border:none;box-shadow:0 8px 20px rgba(15,111,255,.18)}
 
 /* Layout helpers */
-.row{display:grid;grid-template-columns: repeat(4, 1fr); gap: 12px}
+.row{display:grid;grid-template-columns: repeat(5, 1fr); gap: 15px}
 .row>*{display:flex;flex-direction:column}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .inline{display:flex;align-items:center;gap:10px}
@@ -71,6 +71,13 @@ tbody tr:nth-child(odd) td{background:#fafbfe}
 /* Highlights */
 td.cell-best-est{background: linear-gradient(90deg,#ffe5b4,#ffcf6b)!important;color:#111!important;font-weight:700;border-radius:6px}
 td.cell-best-player{background: linear-gradient(90deg,#bff3d0,#50d88a)!important;color:#022!important;font-weight:700;border-radius:6px}
+
+.nav-row{display:flex;gap:8px;margin-left:auto}
+.nav-row a{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:10px 12px;border-radius:10px;border:1px solid var(--pro-border);
+  text-decoration:none;color:#111;background:#fff;font-weight:600;
+}
 
 /* Canvas stage */
 .stage-card{position:relative}
@@ -91,7 +98,7 @@ td.cell-best-player{background: linear-gradient(90deg,#bff3d0,#50d88a)!important
 }
 
 /* Two-column layout: controls left, stage right */
-.two-col{display:grid;grid-template-columns:minmax(360px,1fr) minmax(440px,auto);gap:14px;align-items:start}
+.two-col{display:grid;grid-template-columns:minmax(330px,1fr) minmax(330px,auto);gap:14px;align-items:start}
 @media (max-width: 980px){ .two-col{grid-template-columns:1fr} }
 
 /* Stage container keeps intrinsic canvas size, no CSS scaling */
@@ -106,26 +113,37 @@ input.zoneInput[type="number"]{ width:6ch; min-width:6ch; text-align:right; }
 </head>
 <body>
 <div class="wrap">
-<header>
-<div class="logo"><h1>House Builder</h1></div>
-<span class="muted">Random &amp; Manual Scenario Editor</span>
-</header><div class="two-col"><div><form class="section card" id="configForm">
-<h3>Random scenario controls</h3>
+    <header>
+      <div class="logo">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 2l3.5 7H8.5L12 2zM4 21h16l-8-8-8 8z" fill="white"/></svg>
+        <h1>IcePulse — House Builder</h1>
+      </div>
+      <div class="nav-row"><a href="index.html">Home</a></div>
+    </header>
+<div class="two-col"><div><form class="section card" id="configForm">
 <div class="row">
 <div>
-<label for="stoneColours">Stone colours</label>
-<select id="stoneColours" name="stoneColours">
+<label for="stoneColours"style="display:none">Stone colours</label>
+<select id="stoneColours" name="stoneColours"style="display:none">
 <option>Red / Yellow</option>
 <option>Yellow / Red</option>
 </select>
 </div>
 <div>
-<label for="numOfEnds"># of ends</label>
-<input id="numOfEnds" max="10" min="1" name="numOfEnds" type="number" value="8"/>
+<label for="minThrown"style="display:none">Min stones thrown</label>
+<select id="minThrown" name="minThrown" style="display:none">
+<option>0</option><option>2</option><option selected="">0</option>
+<option>4</option><option>6</option><option>8</option>
+</select>
 </div>
 <div>
-<label for="currentEnd">Current end<!--</label-->
-<select id="currentEnd" name="currentEnd">
+<label for="numOfEnds" style="display:none"># of ends</label>
+<input id="numOfEnds" max="10" min="1" name="numOfEnds" type="number" value="8" style="display:none"/>
+</div>
+<div>
+<label for="currentEnd"style="display:none">Current end<!--</label--></label>
+<select id="currentEnd" name="currentEnd" style="display:none">
 <option value="">Random</option>
 <option>1st</option><option>2nd</option><option>3rd</option>
 <option>4th</option><option>5th</option><option>6th</option>
@@ -133,87 +151,105 @@ input.zoneInput[type="number"]{ width:6ch; min-width:6ch; text-align:right; }
 <option>10th</option>
 </select>
 </label></div>
-<div>
-<label for="minThrown">Min stones thrown</label>
-<select id="minThrown" name="minThrown">
-<option>0</option><option>2</option><option selected="">3</option>
-<option>4</option><option>6</option><option>8</option>
-</select>
+
 </div>
-</div>
+
 <div class="row" style="margin-top:12px">
-<div>
-<label>Zone 1 %</label>
-<input class="zoneInput" name="zone1" type="number" value="8"/>
+  <div>
+    <label>Zone 1 %</label>
+    <input class="zoneInput" name="zone1" type="number" value="3"/>
+  </div>
+  <div>
+    <label>Zone 2 %</label>
+    <input class="zoneInput" name="zone2" type="number" value="7"/>
+  </div>
+  <div>
+    <label>Zone 3 %</label>
+    <input class="zoneInput" name="zone3" type="number" value="12"/>
+  </div>
+  <div>
+    <label>Zone 4 %</label>
+    <input class="zoneInput" name="zone4" type="number" value="10"/>
+  </div>
+  <div>
+    <label>Zone 5 %</label>
+    <input class="zoneInput" name="zone5" type="number" value="10"/>
+  </div>
 </div>
-<div>
-<label>Zone 2 %</label>
-<input class="zoneInput" name="zone2" type="number" value="22"/>
+<div class="row" style="margin-top:8px">
+  <div>
+    <label>Zone 6 %</label>
+    <input class="zoneInput" name="zone6" type="number" value="12"/>
+  </div>
+  <div>
+    <label>Zone 7 %</label>
+    <input class="zoneInput" name="zone7" type="number" value="16"/>
+  </div>
+  <div>
+    <label>Zone 8 %</label>
+    <input class="zoneInput" name="zone8" type="number" value="12"/>
+  </div>
+  <div>
+    <label>Zone 9 %</label>
+    <input class="zoneInput" name="zone9" type="number" value="10"/>
+  </div>
+  <div>
+    <label>Zone 10 %</label>
+    <input class="zoneInput" name="zone10" type="number" value="8"/>
+  </div>
 </div>
-<div>
-<label>Zone 3 %</label>
-<input class="zoneInput" name="zone3" type="number" value="40"/>
-</div>
-<div>
-<label>Zone 4 %</label>
-<input class="zoneInput" name="zone4" type="number" value="30"/>
-</div>
-</div>
+
 <div style="max-width:var(--w);margin:12px auto 0">
-<label for="scenarioNotes">Notes</label>
-<textarea id="scenarioNotes" name="scenarioNotes" placeholder="Describe the call..." rows="3"></textarea>
+<label for="scenarioNotes" style="display:none">Notes</label>
+<textarea id="scenarioNotes" name="scenarioNotes" placeholder="Describe the call..." rows="3" style="display:none"></textarea>
 </div>
 <div class="buttons" style="max-width:var(--w);margin:12px auto 0;">
 <button id="toggle-advanced" style="display:none" type="button">Advanced</button>
-<button type="submit">Regenerate House (Random)</button>
+<button type="submit">Random House</button>
+<button id="randomize-zones" type="button">Randomize Zones</button>
 <button id="save-button" type="button">Save</button>
 <button id="clear-saved" type="button">Clear Saved</button>
+<button id="export-json" type="button">Export JSON</button>
+<input accept="application/json,.json" id="import-file" style="display:none" type="file"/>
+<button id="import-json" type="button">Import JSON</button>
 </div>
-</form><section class="card">
-<div class="hr"></div>
-<h3>Manual placement</h3>
+</form>
+<section class="card">
 <p class="muted">Use either the editor (feet from tee) or click/drag on the canvas. Right‑click a rock to delete.</p>
 <div class="grid2">
 <div>
-<label for="stones-ft">Manual stones (feet from tee center)</label>
 <textarea id="stones-ft" placeholder="Red, 0, 0, 1
 Yellow, -1.0, 3.5, 1
 Red, 2.2, -2.0, 2" rows="7"></textarea>
 <div class="buttons" style="margin-top:8px">
 <button id="apply-stones" type="button">Render manual stones</button>
 <button id="append-stones" title="Keep current and add more" type="button">Append to current</button>
-<button id="clear-manual" type="button">Clear manual</button>
-<button id="export-json" type="button">Export JSON</button>
-<input accept="application/json,.json" id="import-file" style="display:none" type="file"/>
-<button id="import-json" type="button">Import JSON</button>
+<button id="clear-manual" type="button" style="display:none">Clear manual</button>
 </div>
 </div>
 <div>
-<label>Canvas builder</label>
 <div class="buttons">
-<span>Next colour:</span>
 <button class="pill" id="next-red" type="button">Red</button>
 <button class="pill" id="next-yellow" type="button">Yellow</button>
 <button class="pill" id="undo" type="button">Undo</button>
-<button class="pill" id="enable-click" type="button">Enable click-to-place</button>
+<button class="pill" id="enable-click" type="button">Click-to-place</button>
 </div>
 <p class="muted">Click the overlay to drop. <span class="kbd">C</span> switches colour. <span class="kbd">Z</span> undoes. <span class="kbd">Esc</span> disables click mode. Drag a stone to move. Right‑click to delete.</p>
 <div class="inline"><strong>Manual stones:</strong> <span class="muted" id="manual-count">0</span></div>
 </div>
 </div>
-</section><section class="card">
 <div style="max-width:var(--w);margin:16px auto">
 <h4>Saved Scenarios</h4>
 <div id="saved-scenario-list"></div>
 </div>
 </section></div><div><section class="card p-0 stage-card">
 <div class="stage">
-<canvas height="900" id="houseCanvas" width="420"></canvas>
-<canvas height="900" id="overlayCanvas" width="420"></canvas>
+<canvas height="450" id="houseCanvas" width="210"></canvas>
+<canvas height="450" id="overlayCanvas" width="210"></canvas>
 </div>
 <div class="toolbar toolbar-sticky">
 <div class="inline">
-<label class="inline"><input checked="" id="toggle-grid" type="checkbox"/> Show grid (1 ft)</label>
+<label class="inline"><input id="toggle-grid" type="checkbox"/> Show grid (1 ft)</label>
 <span class="muted" id="cursor-ft"></span>
 </div>
 </div>
@@ -222,17 +258,69 @@ Red, 2.2, -2.0, 2" rows="7"></textarea>
 <form id="rawJSONConfigForm">
 <textarea id="scenario_config" rows="8">{
   "coordinates": [
-    { "origin": { "y": 266, "x": 360 }, "num": 1, "colour_index": 1 }
+    {
+      "origin": {
+        "y": 266,
+        "x": 360
+      },
+      "num": 1,
+      "colour_index": 1
+    }
   ],
-  "details": { "numberOfEnds": "8", "end": "7th", "hammer": false, "colour": "Red",
-               "thrower": "Second's first", "score_diff": "Up 3" },
+  "details": {
+    "numberOfEnds": "8",
+    "end": "7th",
+    "hammer": false,
+    "colour": "Red",
+    "thrower": "Second's first",
+    "score_diff": "Up 3"
+  },
   "scale": 30,
-  "stone_colours": ["Red", "Yellow"],
+  "stone_colours": [
+    "Red",
+    "Yellow"
+  ],
   "zone_weights": [
-    {"name":"zone3","weight":0.40},
-    {"name":"zone4","weight":0.30},
-    {"name":"zone2","weight":0.22},
-    {"name":"zone1","weight":0.08}
+    {
+      "name": "zone1",
+      "weight": 0.03
+    },
+    {
+      "name": "zone2",
+      "weight": 0.07
+    },
+    {
+      "name": "zone3",
+      "weight": 0.12
+    },
+    {
+      "name": "zone4",
+      "weight": 0.1
+    },
+    {
+      "name": "zone5",
+      "weight": 0.1
+    },
+    {
+      "name": "zone6",
+      "weight": 0.12
+    },
+    {
+      "name": "zone7",
+      "weight": 0.16
+    },
+    {
+      "name": "zone8",
+      "weight": 0.12
+    },
+    {
+      "name": "zone9",
+      "weight": 0.1
+    },
+    {
+      "name": "zone10",
+      "weight": 0.08
+    }
   ],
   "notes": ""
 }</textarea>
@@ -258,7 +346,7 @@ Red, 2.2, -2.0, 2" rows="7"></textarea>
     // === Config helpers ===
     function getConfig() {
       try { return JSON.parse(byId('scenario_config').value); }
-      catch { return { coordinates: [], scale: 30, stone_colours: ['Red','Yellow'] }; }
+      catch { return { coordinates: [], scale: 28, stone_colours: ['Red','Yellow'] }; }
     }
     function setConfig(cfg) {
       byId('scenario_config').value = JSON.stringify(cfg, null, 2);
@@ -268,7 +356,7 @@ Red, 2.2, -2.0, 2" rows="7"></textarea>
       const parts = sel ? sel.value.split('/').map(s => s.trim()) : ['Red','Yellow'];
       return parts.length === 2 ? parts : ['Red','Yellow'];
     }
-    function getScale() { const cfg = getConfig(); return Number(cfg.scale || 30); }
+    function getScale() { const cfg = getConfig(); return Number(cfg.scale || 28); }
     function tee() { return { cx: house.width / 2, cy: house.width / 2 }; }
     function stoneRadius() { return getScale() * 0.48; }
     function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
@@ -536,7 +624,7 @@ Red, 2.2, -2.0, 2" rows="7"></textarea>
           updateCount();
         }
       } catch {}
-      drawGrid();
+ //add event here
     });
   })();
   </script>

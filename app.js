@@ -27,7 +27,7 @@ const getRandomItem = function(list, weight) {
 };
 
 const refreshHouse = function(config= null) {
-  let house = new HouseScenario(30, "houseCanvas")
+  let house = new HouseScenario(21, "houseCanvas")
   house.generate(config);
 }
 
@@ -36,7 +36,7 @@ function HouseScenario(scale, canvasId) {
   this.scale = scale;
   this.stone_radius = (this.scale * 0.48);
   this.width = (scale * 14);
-  this.height = (scale * 30);
+  this.height = (scale * 28);
   this.scenarioConfig = {
     coordinates: [],
     description: "",
@@ -67,9 +67,9 @@ HouseScenario.prototype.drawHouse = function() {
       back_line = (origin.y - (6 * this.scale)),
       hog_line  = (origin.y + (21 * this.scale));
 
-  this.drawCircle(origin, (6 * this.scale), 'blue');  // Twelve foot
+  this.drawCircle(origin, (6 * this.scale), 'red');  // Twelve foot
   this.drawCircle(origin, (4 * this.scale)); // Eight foot
-  this.drawCircle(origin, (2 * this.scale), 'red'); // Four foot
+  this.drawCircle(origin, (2 * this.scale), 'blue'); // Four foot
   this.drawCircle(origin, (0.5 * this.scale)); // Button
 
   // Centre line
@@ -135,14 +135,36 @@ HouseScenario.prototype.fetchZone = function(zones) {
 
   let list = zones.map(function(e) { return e.name });
   let weight = zones.map(function(e) { return e.weight });
+
+  const s = this.scale;
+  const y = origin.y;
+
+  // Thresholds in feet from tee center (converted via scale)
+  const plus16  = y + (16 * s);
+  const plus11  = y + (11 * s);
+  const plus7   = y + (7  * s);
+  const plus5   = y + (5  * s);
+  const plus3   = y + (3  * s);
+  const plus1   = y + (1  * s);
+  const minus1  = y - (1  * s);
+  const minus2_5= y - (2.5* s);
+  const minus4  = y - (4  * s);
+
+  // Ten zones: far hog to deep backline
   let elements = {
-    "zone1": {min: (origin.y + (12 * this.scale)), max: hog_line},
-    "zone2": {min: (origin.y + (6 * this.scale)), max: (origin.y + (12 * this.scale))},
-    "zone3": {min: origin.y, max: (origin.y + (6 * this.scale))},
-    "zone4": {min: back_line, max: origin.y},
-  }
-  
-  return elements[getRandomItem(list, weight)]
+    "zone1":  { min: plus16,  max: hog_line },
+    "zone2":  { min: plus11,  max: plus16 },
+    "zone3":  { min: plus7,   max: plus11 },
+    "zone4":  { min: plus5,   max: plus7 },
+    "zone5":  { min: plus3,   max: plus5 },
+    "zone6":  { min: plus1,   max: plus3 },
+    "zone7":  { min: minus1,  max: plus1 },
+    "zone8":  { min: minus2_5,max: minus1 },
+    "zone9":  { min: minus4,  max: minus2_5 },
+    "zone10": { min: back_line, max: minus4 },
+  };
+
+  return elements[getRandomItem(list, weight)];
 };
 
 HouseScenario.prototype.generateStonePos = function(zone) {
@@ -183,12 +205,7 @@ HouseScenario.prototype.randomScenario = function(colours, numberOfEnds = 8, sto
   return conf;
 }
 
-HouseScenario.prototype.drawScenarioText = function(description) {
-  this.context.fillStyle = 'black';
-  this.context.font = '14px sans-serif';
-  this.context.textAlign = "center";
-  this.context.fillText(description, (this.width / 2), 20);
-}
+HouseScenario.prototype.drawScenarioText = function(description) { /* removed on request */ }
 
 HouseScenario.prototype.resetHouse = function() {
   this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -227,10 +244,12 @@ HouseScenario.prototype.generate = function(config=null) {
 
     let minStonesSelect = configForm.elements.namedItem('minThrown');
     let minStones = minStonesSelect.options[minStonesSelect.selectedIndex].value;
-    let numberOfEnds = configForm.elements.namedItem("numOfEnds").value;
+    let numEndsEl = configForm.elements.namedItem("numOfEnds");
+    let numberOfEnds = numEndsEl ? numEndsEl.value : 8;
     
+    let currentEnd = "";
     let currentEndSelect = configForm.elements.namedItem("currentEnd");
-    let currentEnd = currentEndSelect.options[currentEndSelect.selectedIndex].value;
+    if (currentEndSelect) { currentEnd = currentEndSelect.options[currentEndSelect.selectedIndex].value; }
 
     let zones = [];
     Array.prototype.forEach.call(zoneFields, function(element) {
@@ -346,7 +365,30 @@ window.addEventListener('load', function() {
     advancedForm.style.display = advancedForm.style.display == "block" ? "none" : "block";
   });
 
-  document.getElementById('rawJSONConfigForm').addEventListener('submit', function(evt){
+  
+  // Randomize zone percentages
+  const randBtn = document.getElementById('randomize-zones');
+  if (randBtn) {
+    randBtn.addEventListener('click', function(){
+      const fields = Array.from(document.getElementsByClassName('zoneInput'));
+      if (!fields.length) return;
+      const n = fields.length;
+      // random parts -> 100 with integer rounding
+      let parts = Array.from({length:n}, () => Math.random());
+      let sum = parts.reduce((a,b)=>a+b,0) || 1;
+      parts = parts.map(p => (p/sum)*100);
+      let ints = parts.map(p => Math.round(p));
+      let delta = 100 - ints.reduce((a,b)=>a+b,0);
+      while (delta !== 0) {
+        const i = Math.floor(Math.random()*n);
+        if (delta > 0) { ints[i] += 1; delta--; }
+        else if (ints[i] > 0) { ints[i] -= 1; delta++; }
+      }
+      fields.forEach((el, i) => { el.value = ints[i]; });
+      if (typeof refreshHouse === 'function') { refreshHouse(); }
+    });
+  }
+document.getElementById('rawJSONConfigForm').addEventListener('submit', function(evt){
     evt.preventDefault()
     let field = JSON.parse(document.getElementById('scenario_config').value);
     refreshHouse(field);
