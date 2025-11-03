@@ -27,37 +27,11 @@ const getRandomItem = function(list, weight) {
 };
 
 const refreshHouse = function(config= null) {
-  let house = new HouseScenario(16.5, "houseCanvas")
+  let house = new HouseScenario(21, "houseCanvas")
   house.generate(config);
 }
 
 
-
-// Mirror generated/randomized scenario into the manual editor textarea
-function mirrorScenarioToEditor(){
-  try {
-    const cfgText = document.getElementById('scenario_config')?.value || '{}';
-    const cfg = JSON.parse(cfgText);
-    const scale = Number(cfg.scale || 30);
-    const houseEl = document.getElementById('houseCanvas');
-    if (!houseEl) return;
-    const cx = houseEl.width / 2, cy = houseEl.width / 2;
-    const cols = Array.isArray(cfg.stone_colours) ? cfg.stone_colours : ['Red','Yellow'];
-    const lines = (cfg.coordinates || []).map((st, i) => {
-      const xft = ((st.origin.x - cx) / scale).toFixed(2);
-      const yft = ((st.origin.y - cy) / scale).toFixed(2);
-      const cname = cols[st.colour_index] || (st.colour_index === 1 ? 'Yellow' : 'Red');
-      const num = (st.num != null) ? st.num : Math.ceil((i+1)/2);
-      return `${cname}, ${xft}, ${yft}, ${num}`;
-    });
-    const ta = document.getElementById('stones-ft');
-    if (ta) ta.value = lines.join('\n');
-    const mc = document.getElementById('manual-count');
-    if (mc) mc.textContent = String((cfg.coordinates || []).length);
-  } catch (e) {
-    // ignore
-  }
-}
 
 
 // Integer-only behavior for zoneInput fields (desktop-safe)
@@ -115,6 +89,9 @@ function mirrorScenarioToEditor(){
       return `${cname}, ${xft}, ${yft}, ${num}`;
     });
     ta.value = lines.join('\n');
+
+    const mc = document.getElementById('manual-count');
+    if (mc) mc.textContent = String((cfg.coordinates || []).length);
   } catch {}
 }
 
@@ -396,9 +373,8 @@ HouseScenario.prototype.generate = function(config=null) {
 const scenarioListItemNode = function(index, description) {
   let textnode = document.createTextNode(description);
   let node = document.createElement("BUTTON");
-  node.setAttribute('type', 'button');
+  node.setAttribute('type', 'button','data-index', index);
   node.className += "list-group-item list-group-item-action";
-  node.setAttribute('data-index', index);
   node.appendChild(textnode);
   // Code below is used to set the value of button of each scenario eg: Scenario 1, Scenario 2, ...
   index++;

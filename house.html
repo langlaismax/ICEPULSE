@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html>
 <head>
 <meta charset="utf-8"/>
@@ -165,8 +164,8 @@ input.zoneInput[type="number"]{ width:5ch; min-width:5ch; text-align:right; }
 <button id="toggle-advanced" style="display:none" type="button">Advanced</button>
 <button type="submit">Random House</button>
 <button id="randomize-zones" type="button">Randomize Zones</button>
-<button id="save-button" type="button">Save</button>
-<button id="clear-saved" type="button">Clear Saved</button>
+<button id="save-button" type="button" style="display:none">Save</button>
+<button id="clear-saved" type="button" style="display:none">Clear Saved</button>
 <button id="export-json" type="button" style="display:none">Export JSON</button>
 <input accept="application/json,.json" id="import-file" style="display:none" type="file"/>
 <button id="import-json" type="button" style="display:none">Import JSON</button>
@@ -200,32 +199,36 @@ input.zoneInput[type="number"]{ width:5ch; min-width:5ch; text-align:right; }
 </div>
 </form>
 <section class="card">
-<div class="grid2">
+<div class="grid">
 <div>
-<textarea id="stones-ft" placeholder="Red, 0, 0, 1
+<textarea id="stones-ft" class="muted-xs" style="white-space:pre-wrap;line-height:1.35;background:#fff;border:1px solid var(--pro-border);border-radius:10px;padding:10px;box-shadow:var(--pro-shadow)" placeholder="Red, 0, 0, 1
 Yellow, -1.0, 3.5, 1
 Red, 2.2, -2.0, 2" rows="7"></textarea>
 <div class="buttons" style="margin-top:8px">
-<button id="apply-stones" type="button">Render manual stones</button>
-<button id="append-stones" title="Keep current and add more" type="button">Append to current</button>
-<button id="clear-manual" type="button" style="display:none">Clear manual</button>
 </div>
 </div>
 <div>
 <div class="buttons">
+<button class="pill" id="apply-stones" type="button">Render</button>
+<button id="append-stones" title="Keep current and add more" type="button" style="display:none"></button>
+<button class="pill" id="clear-manual" type="button">Clear</button>
 <button class="pill" id="next-red" type="button">Red</button>
 <button class="pill" id="next-yellow" type="button">Yellow</button>
 <button class="pill" id="undo" type="button">Undo</button>
 <button class="pill" id="enable-click" type="button">Click-to-place</button>
+<span class="muted" id="manual-count" style="display:none"></span>
 </div>
-<p class="muted"><span class="kbd">C</span> switches colour. <span class="kbd">Z</span> undoes. <span class="kbd">Esc</span> disables click mode. Drag a stone to move. Right‑click to delete.</p>
-<div class="inline"><strong>Manual stones:</strong> <span class="muted" id="manual-count">0</span></div>
+<p class="muted"><span class="kbd">C</span> switches colour. <span class="kbd">Z</span> undoes. <span class="kbd">Esc</span> disables click mode. Drag a stone to move. Right-click to delete.</p>
 </div>
 </div>
-<div style="max-width:var(--w);margin:16px auto">
-<h4>Saved Scenarios</h4>
-<div id="saved-scenario-list"></div>
+<div style="margin:16px auto">
+<div id="saved-scenario-list" style="display:none"></div>
+<div class="hr"></div>
+  <button class="pill" id="copy-positions" type="button">Copy Chess on Ice Position</button>
 </div>
+<pre id="positions-out" class="muted-xs" style="white-space:pre-wrap;line-height:1.35;background:#fff;border:1px solid var(--pro-border);border-radius:10px;padding:10px;box-shadow:var(--pro-shadow)">Positions
+B
+A</pre>
 </section></div><div><section class="card p-0 stage-card">
 <div class="stage">
 <canvas height="450" id="houseCanvas" width="180"></canvas>
@@ -233,7 +236,7 @@ Red, 2.2, -2.0, 2" rows="7"></textarea>
 </div>
 <div class="toolbar toolbar-sticky">
 <div class="inline">
-<label class="inline"><input id="toggle-grid" type="checkbox"/> Show grid (1 ft)</label>
+<label class="inline"><input id="toggle-grid" type="checkbox"/>Grid</label>
 <span class="muted" id="cursor-ft"></span>
 </div>
 </div>
@@ -319,7 +322,6 @@ Red, 2.2, -2.0, 2" rows="7"></textarea>
     const overlay = byId('overlayCanvas');
     const octx = overlay.getContext('2d');
 
-    // Keep overlay size synced
     function syncOverlaySize() {
       overlay.width = house.width;
       overlay.height = house.height;
@@ -361,24 +363,19 @@ Red, 2.2, -2.0, 2" rows="7"></textarea>
       octx.strokeStyle = '#6aa3ff';
       octx.fillStyle = '#1a1a1a';
 
-      // verticals (x)
       for (let n = Math.floor(-cx/scale); n <= Math.ceil((overlay.width-cx)/scale); n++) {
         const x = Math.round(cx + n*scale);
         octx.beginPath(); octx.moveTo(x, 0); octx.lineTo(x, overlay.height); octx.stroke();
-        // label at top
         octx.font = '11px system-ui, sans-serif'; octx.textAlign='center';
         octx.fillText(n.toString(), x, 12);
       }
-      // horizontals (y)
       for (let n = Math.floor(-cy/scale); n <= Math.ceil((overlay.height-cy)/scale); n++) {
         const y = Math.round(cy + n*scale);
         octx.beginPath(); octx.moveTo(0, y); octx.lineTo(overlay.width, y); octx.stroke();
-        // label at left
         octx.textAlign='left';
         octx.fillText(n.toString(), 4, y-2);
       }
 
-      // crosshair at tee
       octx.strokeStyle = '#000';
       octx.beginPath(); octx.moveTo(cx-6, cy); octx.lineTo(cx+6, cy); octx.stroke();
       octx.beginPath(); octx.moveTo(cx, cy-6); octx.lineTo(cx, cy+6); octx.stroke();
@@ -387,9 +384,16 @@ Red, 2.2, -2.0, 2" rows="7"></textarea>
     }
     byId('toggle-grid').addEventListener('change', drawGrid);
     drawGrid();
-    if (typeof mirrorScenarioToEditor === 'function') mirrorScenarioToEditor();
 
-    // track cursor ft display
+    // ---- Single source of truth for the textarea ----
+    window.mirrorScenarioToEditor = function () {
+      try {
+        const cfg = getConfig();
+        manual = (cfg.coordinates || []).slice();
+        updateCount(); // writes textarea (with dedupe+sort)
+      } catch {}
+    };
+
     overlay.addEventListener('mousemove', (e) => {
       const rect = overlay.getBoundingClientRect();
       const x = e.clientX - rect.left, y = e.clientY - rect.top;
@@ -405,66 +409,230 @@ Red, 2.2, -2.0, 2" rows="7"></textarea>
     let placeEnabled = false;
     let nextColour = 'Red';
 
-function updateCount() {
-  // Show "base + manual" in the editor
-  const cfg   = getConfig();
-  const cols  = Array.isArray(cfg.stone_colours) ? cfg.stone_colours : currentColours();
+    // ---------- NEW: Dedupe + Sort utilities ----------
+// Max rock number to enforce (Yellow/Red 1..8)
+const MAX_ROCK_NUM = 8;
+
+function colourName(s, cols){
+  return cols[s.colour_index] || (s.colour_index === 1 ? 'Yellow' : 'Red');
+}
+
+function usedNumsByColour(stones){
+  const cols = currentColours();
+  const map = { 'Yellow': new Set(), 'Red': new Set() };
+  for (const s of stones || []) {
+    const name = colourName(s, cols);
+    const n = Number(s.num ?? 0);
+    if (n > 0) (map[name] ??= new Set()).add(n);
+  }
+  return map;
+}
+
+// Smallest available number in 1..MAX_ROCK_NUM for that colour; null if none.
+function nextAvailableNumberFor(colour, stones){
+  const used = usedNumsByColour(stones)[colour] || new Set();
+  for (let n = 1; n <= MAX_ROCK_NUM; n++) if (!used.has(n)) return n;
+  return null;
+}
+    function colourRank(s, cols){
+      const name = colourName(s, cols);
+      return /^y/i.test(name) ? 0 : 1; // Yellow first, then Red
+    }
+// Key used to *enforce uniqueness*: one per (colour,num)
+function stoneKeyColourNum(s){
+  return `${s.colour_index},${Number(s.num ?? 0)}`;
+}
+// Key used only to check if the underlying set actually changed (includes position)
+function posKey(s){
+  return `${Math.round(s.origin.x)},${Math.round(s.origin.y)},${s.colour_index},${Number(s.num ?? 0)}`;
+}
+
+function dedupeAndSortStones(stones){
+  const cols = currentColours();
+  // Keep the *last* occurrence of a (colour,num) pair
+  const byKey = new Map();
+  for (const s of (stones || [])) {
+    byKey.set(stoneKeyColourNum(s), s);
+  }
+  const arr = [...byKey.values()];
+  // Sort by number asc; ties Yellow before Red; then position for stability
+  arr.sort((a,b) => {
+    const na = Number(a.num ?? 0), nb = Number(b.num ?? 0);
+    if (na !== nb) return na - nb;
+    const ra = /^y/i.test(colourName(a, cols)) ? 0 : 1;
+    const rb = /^y/i.test(colourName(b, cols)) ? 0 : 1;
+    if (ra !== rb) return ra - rb;
+    if (a.origin.x !== b.origin.x) return a.origin.x - b.origin.x;
+    return a.origin.y - b.origin.y;
+  });
+  return arr;
+}
+
+function onlyNewStones(parsed, existing){
+  const seen = new Set((existing || []).map(stoneKeyColourNum));
+  return parsed.filter(s => !seen.has(stoneKeyColourNum(s)));
+}
+
+// ---- Positions readout helpers (B = Red, A = Yellow) ----
+function fmtFt(n){
+  // keep up to 2 decimals, strip .00 / trailing 0
+  let s = Number(n).toFixed(2);
+  s = s.replace(/\.00$/, '').replace(/(\.\d)0$/, '$1');
+  return s;
+}
+function buildPositionsReadout(stones){
+  const cfg = getConfig();
   const scale = getScale();
   const {cx, cy} = tee();
 
-  // Prefer the combined config (base + manual); fall back to manual if empty
-  const stones = (Array.isArray(cfg.coordinates) && cfg.coordinates.length) ? cfg.coordinates : manual;
+  // maps: num -> "(x,y)"
+  const red = new Map();     // B line
+  const yellow = new Map();  // A line
+  let maxNum = 0;
 
-  // Manual counter still reflects only the local manual layer
-  byId('manual-count').textContent = String(manual.length);
+  for (const s of stones || []){
+    const xft = ( (s.origin.x - cx) / scale );
+    const yft = ( (s.origin.y - cy) / scale );
+    const tag = `(${fmtFt(xft)},${fmtFt(yft)})`;
+    const num = Number(s.num || 0);
+    if (num > 0) {
+      const name = colourName(s, currentColours()); // "Red" or "Yellow"
+      if (/^r/i.test(name)) red.set(num, tag);
+      else yellow.set(num, tag);
+      if (num > maxNum) maxNum = num;
+    }
+  }
 
-  const lines = stones.map((s, i) => {
-    const xft = ((s.origin.x - cx) / scale).toFixed(2);
-    const yft = ((s.origin.y - cy) / scale).toFixed(2);
-    const cname = cols[s.colour_index] || (s.colour_index === 1 ? 'Yellow' : 'Red');
-    const num = (s.num != null) ? s.num : Math.ceil((i+1)/2);
-    return `${cname}, ${xft}, ${yft}, ${num}`;
-  });
-  byId('stones-ft').value = lines.join('\n');
+  // Build arrays with leading (!) where missing; then trim trailing (!)
+  const B = []; const A = [];
+  for (let i = 1; i <= maxNum; i++){
+    B.push( red.get(i) || '(!)' );
+    A.push( yellow.get(i) || '(!)' );
+  }
+  while (B.length && B[B.length-1] === '(!)') B.pop();
+  while (A.length && A[A.length-1] === '(!)') A.pop();
+
+  // Compose final string
+  return `Positions\nB${B.join('')}\nA${A.join('')}`;
 }
 
-	
-	byId('scenario_config').addEventListener('input', () => { manual = []; updateCount(); });
+// Copy button
+function wireCopyPositions(){
+  const btn = document.getElementById('copy-positions');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const out = document.getElementById('positions-out');
+    const text = out ? out.textContent : '';
+    navigator.clipboard.writeText(text).catch(()=>{});
+  });
+}
+
+    // ---------------------------------------------------
+
+    function updateCount() {
+      const cfg   = getConfig();
+      const cols  = Array.isArray(cfg.stone_colours) ? cfg.stone_colours : currentColours();
+      const scale = getScale();
+      const {cx, cy} = tee();
+
+      // combined view (cfg already includes base+manual)
+      let stones = Array.isArray(cfg.coordinates) ? cfg.coordinates : [];
+
+      // Dedupe + sort and write back to config if changed
+		const cleaned = dedupeAndSortStones(stones);
+		const changed = cleaned.length !== stones.length ||
+						cleaned.some((s,i) => posKey(s) !== posKey(stones[i]));
+
+      if (changed) {
+        cfg.coordinates = cleaned;
+        setConfig(cfg);
+        stones = cleaned;
+      }
+
+      byId('manual-count').textContent = String(manual.length);
+
+      const lines = stones.map((s, i) => {
+        const xft = ((s.origin.x - cx) / scale).toFixed(2);
+        const yft = ((s.origin.y - cy) / scale).toFixed(2);
+        const cname = colourName(s, cols);
+        const num = (s.num != null) ? s.num : Math.ceil((i+1)/2);
+        return `${cname}, ${xft}, ${yft}, ${num}`;
+      });
+      byId('stones-ft').value = lines.join('\n');
+	  // Update the Positions readout
+const posEl = byId('positions-out');
+if (posEl) posEl.textContent = buildPositionsReadout(stones);
+
+    }
+
+    // keep textarea in sync if JSON is edited elsewhere
+    byId('scenario_config').addEventListener('input', () => { manual = []; updateCount(); });
     window.resetManual = function(){ manual = []; updateCount(); };
 
     function renderManual(reuseRandom=false) {
       const cfg = getConfig();
       const base = reuseRandom ? (cfg.coordinates || []) : [];
-      cfg.coordinates = base.concat(manual);
+      cfg.coordinates = dedupeAndSortStones(base.concat(manual)); // <— clean here
       setConfig(cfg);
       if (typeof refreshHouse === 'function') { refreshHouse(cfg); }
-      // overlay is independent, so no need to redraw unless toggled
     }
 
-    function parseTextarea() {
-      const lines = (byId('stones-ft').value || '').split(/\n+/).map(s => s.trim()).filter(Boolean);
-      const cols = currentColours();
+    // Robust parser
+    function parseTextareaToArray(){
+      const lines = (byId('stones-ft').value || '')
+        .split(/\n+/).map(s => s.trim()).filter(Boolean);
+
+      const cols  = currentColours();
       const scale = getScale();
       const {cx, cy} = tee();
       const out = [];
-      for (let i=0;i<lines.length;i++) {
+
+      for (let i = 0; i < lines.length; i++) {
         const parts = lines[i].split(/[ ,]+/).filter(Boolean);
         if (parts.length < 3) continue;
+
         const cname = parts[0];
         const xft = parseFloat(parts[1]);
         const yft = parseFloat(parts[2]);
         const num = parts[3] ? parseInt(parts[3], 10) : Math.ceil((i+1)/2);
+
         const pos = { x: Math.round(cx + xft * scale), y: Math.round(cy + yft * scale) };
         const idx = /^y/i.test(cname) ? cols.indexOf('Yellow') : cols.indexOf('Red');
-        out.push({ origin: pos, num, colour_index: (idx>=0?idx:(/^y/i.test(cname)?1:0)) });
+
+        out.push({ origin: pos, num, colour_index: (idx >= 0 ? idx : (/^y/i.test(cname) ? 1 : 0)) });
       }
-      manual = out;
-      updateCount();
+      return out;
     }
 
-    byId('apply-stones').addEventListener('click', () => { parseTextarea(); renderManual(true); });
-    byId('append-stones').addEventListener('click', () => { parseTextarea(); renderManual(true); });
-    byId('clear-manual').addEventListener('click', () => { manual = []; updateCount(); renderManual(true); });
+    // Apply replaces; Append adds only new stones and then treats the combined set as baseline
+    byId('apply-stones').addEventListener('click', () => {
+      const parsed = parseTextareaToArray();
+      manual = dedupeAndSortStones(parsed).slice();
+      renderManual(false);  // replace cfg.coordinates with manual (cleaned)
+      updateCount();
+    });
+
+    byId('append-stones').addEventListener('click', () => {
+      const parsed = parseTextareaToArray();
+      const cfg = getConfig();
+      const base = (cfg.coordinates || []);
+      manual = onlyNewStones(parsed, base); // only unseen
+      renderManual(false);                   // base + manual, then cleaned
+      // After appending, treat combined set as the current baseline:
+      manual = (getConfig().coordinates || []).slice();
+      updateCount();
+    });
+
+    // NEW: Normalize when the box loses focus (useful for paste/hand edits)
+    byId('stones-ft').addEventListener('change', () => {
+      const parsed = parseTextareaToArray();
+      const cleaned = dedupeAndSortStones(parsed);
+      manual = cleaned.slice();
+      renderManual(false); // treat as Apply for consistency
+      updateCount();
+    });
+
+    byId('clear-manual').addEventListener('click', () => { manual = []; renderManual(false); });
 
     byId('next-red').addEventListener('click', () => {
       nextColour = 'Red';
@@ -477,7 +645,7 @@ function updateCount() {
     byId('next-red').classList.add('active');
 
     byId('undo').addEventListener('click', () => {
-      manual.pop(); updateCount(); renderManual(true);
+      manual.pop(); renderManual(false); updateCount();
     });
 
     byId('enable-click').addEventListener('click', () => {
@@ -493,40 +661,61 @@ function updateCount() {
         byId('next-red').classList.toggle('active', nextColour === 'Red');
         byId('next-yellow').classList.toggle('active', nextColour === 'Yellow');
       } else if (e.key === 'z' || e.key === 'Z') {
-        manual.pop(); updateCount(); renderManual(true);
+        manual.pop(); renderManual(false); updateCount();
       } else if (e.key === 'Escape') {
         placeEnabled = false; byId('enable-click').classList.remove('active'); overlay.style.cursor = 'default';
       }
     });
 
     // === Click-to-place on overlay ===
-    overlay.addEventListener('click', (evt) => {
-      if (!placeEnabled) return;
-      const rect = overlay.getBoundingClientRect();
-      let x = Math.round(evt.clientX - rect.left);
-      let y = Math.round(evt.clientY - rect.top);
-      const r = stoneRadius();
-      x = clamp(x, r, overlay.width - r);
-      y = clamp(y, r, overlay.height - r);
-      const cols = currentColours();
-      const idx = (nextColour === 'Yellow') ? cols.indexOf('Yellow') : cols.indexOf('Red');
-      const stone = { origin: {x,y}, num: Math.ceil((manual.length+1)/2), colour_index: (idx>=0?idx:(nextColour==='Yellow'?1:0)) };
-      manual.push(stone);
-      updateCount();
-      renderManual(true);
-    });
+overlay.addEventListener('click', (evt) => {
+  if (!placeEnabled) return;
+
+  const rect = overlay.getBoundingClientRect();
+  let x = Math.round(evt.clientX - rect.left);
+  let y = Math.round(evt.clientY - rect.top);
+  const r = stoneRadius();
+  x = clamp(x, r, overlay.width - r);
+  y = clamp(y, r, overlay.height - r);
+
+  const cfg = getConfig();
+  const cols = currentColours();
+  const colour = nextColour; // "Yellow" or "Red"
+
+  // Pick the smallest available number for this colour (1..8)
+  const nextNum = nextAvailableNumberFor(colour, cfg.coordinates || []);
+  if (nextNum === null) {
+    // All 1..8 taken for this colour — don't place and inform the user
+    console.warn(`${colour} 1–${MAX_ROCK_NUM} already used; cannot add another.`);
+    // Optional: replace with your own toast/notice UI
+    alert(`${colour} 1–${MAX_ROCK_NUM} already used.`);
+    return;
+  }
+
+  const idx = (colour === 'Yellow') ? cols.indexOf('Yellow') : cols.indexOf('Red');
+  const stone = {
+    origin: { x, y },
+    num: nextNum,
+    colour_index: (idx >= 0 ? idx : (colour === 'Yellow' ? 1 : 0)),
+  };
+
+  // Add, clean, and render
+  manual.push(stone);
+  renderManual(true);   // combines with base then de-dupes/sorts
+  updateCount();        // shows clean, ordered list
+});
+
 
     // === Drag-to-move & Right-click delete ===
     let draggingIndex = -1;
     let dragOffset = {x:0,y:0};
 
     overlay.addEventListener('mousedown', (e) => {
-      if (e.button !== 0) return; // left only
+      if (e.button !== 0) return;
       const rect = overlay.getBoundingClientRect();
       const x = e.clientX - rect.left, y = e.clientY - rect.top;
       const cfg = getConfig();
       const radius = stoneRadius();
-      // pick nearest stone within radius
       let hit = -1, best = Infinity;
       (cfg.coordinates || []).forEach((s, i) => {
         const d = dist(x,y,s.origin.x,s.origin.y);
@@ -552,6 +741,7 @@ function updateCount() {
       if (cfg.coordinates && cfg.coordinates[draggingIndex]) {
         cfg.coordinates[draggingIndex].origin.x = x;
         cfg.coordinates[draggingIndex].origin.y = y;
+        cfg.coordinates = dedupeAndSortStones(cfg.coordinates); // keep tidy while dragging too
         setConfig(cfg);
         if (typeof refreshHouse === 'function') { refreshHouse(cfg); }
       }
@@ -561,8 +751,9 @@ function updateCount() {
       if (draggingIndex >= 0) {
         draggingIndex = -1;
         overlay.style.cursor = placeEnabled ? 'crosshair' : 'default';
-        // sync manual array with current config after drag
         const cfg = getConfig();
+        cfg.coordinates = dedupeAndSortStones(cfg.coordinates || []);
+        setConfig(cfg);
         manual = (cfg.coordinates || []).slice();
         updateCount();
       }
@@ -581,6 +772,7 @@ function updateCount() {
       });
       if (hit >= 0) {
         cfg.coordinates.splice(hit, 1);
+        cfg.coordinates = dedupeAndSortStones(cfg.coordinates);
         setConfig(cfg);
         manual = (cfg.coordinates || []).slice();
         updateCount();
@@ -604,6 +796,7 @@ function updateCount() {
       const text = await file.text();
       try {
         const cfg = JSON.parse(text);
+        cfg.coordinates = dedupeAndSortStones(cfg.coordinates || []);
         setConfig(cfg);
         manual = (cfg.coordinates || []).slice();
         updateCount();
@@ -612,18 +805,27 @@ function updateCount() {
       e.target.value = '';
     });
 
-    // When the page loads, if JSON has coordinates, mirror into manual view and ensure grid draws
     window.addEventListener('load', () => {
       try {
         const cfg = getConfig();
         if (Array.isArray(cfg.coordinates) && cfg.coordinates.length) {
+          cfg.coordinates = dedupeAndSortStones(cfg.coordinates);
+          setConfig(cfg);
           manual = cfg.coordinates.slice();
+          updateCount();
+        } else {
           updateCount();
         }
       } catch {}
- //add event here
+      if (typeof mirrorScenarioToEditor === 'function') mirrorScenarioToEditor();
+	  wireCopyPositions();
+const cfgAfterLoad = getConfig();
+const stonesAfterLoad = Array.isArray(cfgAfterLoad.coordinates) ? cfgAfterLoad.coordinates : [];
+const posEl = document.getElementById('positions-out');
+if (posEl) posEl.textContent = buildPositionsReadout(stonesAfterLoad);
+
     });
   })();
-  </script>
+</script>
 </body>
 </html>
