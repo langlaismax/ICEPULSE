@@ -1,3 +1,24 @@
+"""
+            "HammerEff%":                   Hammer Efficiency
+            "ForceEff%":                    Force Efficiency
+            "StealEff%":                    Steal Efficiency
+            "StealDef%":                    Steal Defense
+            "PP_team_throws16_hammer":      Point per End with Hammer
+            "PP_opp_throws16_hammer":       Point per End without Hammer
+            "FromBehind%":                  Win from behind, minimum 3 point deficit.
+            "Choke%":                       Lose from ahead, minimum 3 point lead
+            "HammerFactor(pp)":             Hammer Factor (HammerEff% - StealDef%)
+            "Record":                       Wins - Losses
+            "Score":                        Points for - Points against
+            "LSFE":                         Last stone first end wins - Last stone first end losses
+            "NLSFE":                        No last stone first end wins - No last stone first end losses
+            "StealsFor":                    Number of steal taken
+            "ForPoints":                    Points Stolen
+            "StealsAgainst":                Number of steals given 
+            "AgainstPoints":                Points given up with hammer
+            "Ends":                         Number of ends total
+"""
+
 def derive_team_metrics_from_games(games: pd.DataFrame) -> Dict[str, dict]:
     if games is None or games.empty:
         return {}
