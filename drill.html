@@ -62,6 +62,17 @@
     @media (max-width:600px){html,body{padding:12px}}
     .hint{font-size:.85rem;color:#5f6672;margin-left:8px}
     .hint a{color:#0f6fff;text-decoration:none}
+	/* Read-only house canvas in thumbnails */
+.thumb .house-canvas{
+  display:block;
+  width:100%;
+  aspect-ratio: 1 / 2;      /* house is 14ft x 28ft */
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:#fff;
+  pointer-events:none;       /* the whole card stays clickable */
+}
+
   </style>
 
   <!-- Firebase SDK (compat for simplicity in a single file) -->
@@ -544,5 +555,76 @@
     // Init copy buttons
     document.addEventListener('DOMContentLoaded', attachCopyButtons);
   </script>
+  <!-- Load your renderer -->
+<script src="/app.js"></script>
+
+<!-- Render read-only houses from the <code>B(...), A(...)</code> lines -->
+<script>
+(function(){
+  // Make sure app.js is available
+  if (typeof HouseScenario !== 'function') { 
+    console.error('HouseScenario not found. Is /app.js reachable?'); 
+    return; 
+  }
+
+  const SCALE = 21; // matches your default in app.js
+  const DRILLS = ['crazy-eights','great-wall','in-offs','nose-hits','picket-fences','popcorn'];
+
+  // Parse <code>B(...)</code> / <code>A(...)</code> from a card
+  function parseCodes(article){
+    const codes = Array.from(article.querySelectorAll('.positions code'))
+      .map(c => c.textContent.trim());
+    const reds = [], yellows = [];
+    for (const line of codes){
+      const target = line.startsWith('B(') ? reds : line.startsWith('A(') ? yellows : null;
+      if (!target) continue;
+      const re = /\(([^)]+)\)/g; let m; let i = 1;
+      while ((m = re.exec(line))){
+        const [x,y] = m[1].split(',').map(v => parseFloat(v.trim()));
+        if (Number.isFinite(x) && Number.isFinite(y)) target.push({x,y,num:i++});
+      }
+    }
+    return {reds, yellows};
+  }
+
+  // Render one card’s house into a canvas
+  function render(slug){
+    const article = document.getElementById(slug);
+    if (!article) return;
+
+    const thumb = article.querySelector('.thumb');
+    const img = thumb && thumb.querySelector('img');
+
+    // Create canvas and swap it in for the image
+    const canvas = document.createElement('canvas');
+    canvas.id = 'house-' + slug;
+    canvas.className = 'house-canvas';
+    canvas.setAttribute('aria-hidden', 'true');
+    if (img) img.replaceWith(canvas);
+
+    // Build scene
+    const hs = new HouseScenario(SCALE, canvas.id);
+    hs.resetHouse(); // clears + draws rings/lines
+
+    // Convert Chess-on-Ice feet to canvas pixels and draw stones
+    const {reds, yellows} = parseCodes(article);
+    const cx = (SCALE * 14) / 2; // center x (button)
+    const cy = cx;               // center y (button)
+
+    for (const p of reds){
+      const pos = { x: Math.round(cx + p.x * SCALE), y: Math.round(cy + p.y * SCALE) };
+      hs.drawStone(pos, 'red', p.num);
+    }
+    for (const p of yellows){
+      const pos = { x: Math.round(cx + p.x * SCALE), y: Math.round(cy + p.y * SCALE) };
+      hs.drawStone(pos, 'yellow', p.num);
+    }
+  }
+
+  // Render all drill cards
+  DRILLS.forEach(render);
+})();
+</script>
+
 </body>
 </html>
