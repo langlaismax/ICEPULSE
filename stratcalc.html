@@ -1472,7 +1472,7 @@ try {
 
       // prefer *_hammer if present; fall back to any team/opp throws16 column
       const rawTeam = (extRow['PP_team_throws16_hammer'] ?? extRow['pp_team_throws16_hammer'] ?? (kTeam ? extRow[kTeam] : null));
-      const rawOpp  = (extRow['PP_opp_throws16_hammer']  ?? extRow['pp_opp_throws16_hammer']  ?? (kOpp  ? extRow[kOpp]  : null));
+      const rawOpp  = (extRow['OP_opp_throws16_hammer']  ?? extRow['op_opp_throws16_hammer']  ?? (kOpp  ? extRow[kOpp]  : null));
 
       ppTeam = setIfValid(ppTeam, toNum(rawTeam));
       ppOpp  = setIfValid(ppOpp,  toNum(rawOpp));
@@ -1484,7 +1484,7 @@ try {
     const prow = playerStatsObj[pname];
 
     // Team PP candidates
-    const teamNames = ['PP_team_throws16_hammer', 'pp_team_throws16_hammer', 'PP_team_throws16', 'pp_team_throws16'];
+    const teamNames = ['PP_team_throws16_hammer'];
     for (const c of teamNames) {
       if (ppTeam === 1.0 && prow[c] !== undefined && prow[c] !== null && prow[c] !== '') {
         const n = toNum(prow[c]);
@@ -1493,7 +1493,7 @@ try {
     }
 
     // Opponent PP candidates
-    const oppNames = ['PP_opp_throws16_hammer', 'pp_opp_throws16_hammer', 'PP_opp_throws16', 'pp_opp_throws16'];
+    const oppNames = ['OP_opp_throws16_hammer'];
     for (const c of oppNames) {
       if (ppOpp === 1.0 && prow[c] !== undefined && prow[c] !== null && prow[c] !== '') {
         const n = toNum(prow[c]);
@@ -1523,7 +1523,7 @@ if (winFrac == null || playerFrac == null || avgScore == null) {
   const J = (K * playerFrac)
   r.playerAdj = preferMin
   
-    ? (avgScore / J)   // odd shot → lower better
+    ? (avgScore / J * ppOpp)   // odd shot → lower better
     : (avgScore * J * ppTeam); // even shot → higher better
 
   // track best (min or max) for highlighting
@@ -2013,7 +2013,9 @@ document.getElementById('backHomeBtn').addEventListener('click', function () {
     if(row){
       const ppTeam = row['PP_team_throws16_hammer'] || row['pp_team_throws16_hammer'] || row['PP_team'] || '';
       const ppOpp = row['PP_opp_throws16_hammer'] || row['pp_opp_throws16_hammer'] || row['PP_opp'] || '';
-      if(ppTeam || ppOpp){
+	  const opTeam = row['OP_opp_throws16_hammer'] || row['op_team_throws16_hammer'] || row['PP_team'] || '';
+      const opOpp = row['OP_team_throws16_hammer'] || row['op_opp_throws16_hammer'] || row['PP_opp'] || '';
+      if(ppTeam || ppOpp|| opTeam || opOpp){
         const h = document.createElement('div'); h.style.fontWeight='700'; h.style.marginTop='10px'; h.textContent = 'Estimated points-per-end';
         extendedInfoDiv.appendChild(h);
         const tbl = document.createElement('div');
@@ -2026,8 +2028,10 @@ document.getElementById('backHomeBtn').addEventListener('click', function () {
           const b = document.createElement('div'); b.style.textAlign = 'right'; b.style.color = '#000'; b.textContent = (value==null || value==='') ? 'N/A' : String(value);
           tbl.appendChild(a); tbl.appendChild(b);
         };
-        addRow('Hammer:', ppTeam);
-        addRow('Non-Hammer:', ppOpp);
+        addRow('With:', ppTeam);
+        addRow('Without Hammer:', ppOpp);
+		addRow('Opponent with Hammer:', opTeam);
+        addRow('Opponent without Hammer:', opOpp);
         extendedInfoDiv.appendChild(tbl);
       }
     }
