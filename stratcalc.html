@@ -1240,6 +1240,7 @@ async function analyze(){
   const dataset = mergedAll;
   const cons = readConstraints();
   const evalShot = Number(evalPos.value || 1);
+  const preferMin = (evalShot % 2 === 1); // odd → pick lowest, even → pick highest
   const sd = startDateEl.value? new Date(startDateEl.value) : null;
   const ed = endDateEl.value? new Date(endDateEl.value) : null;
   const minSupport = Number(supportSlider.value);
@@ -1404,10 +1405,15 @@ let selectedCategoryAliases = null;
   if(globalMin === globalMax){ globalMin=0; globalMax = globalMin + 1; }
 
   // compute estimates & player-adjusted
-  let maxEstimate = -Infinity, maxPlayerAdj = -Infinity;
+let maxEstimate  = preferMin ?  Infinity : -Infinity;
+let maxPlayerAdj = preferMin ?  Infinity : -Infinity;
   rowsFiltered.forEach(r=>{
     r.estimate = computeEstimateFromCounts(r.counts, r.total);
-    if(r.estimate!=null && r.estimate > maxEstimate) maxEstimate = r.estimate;
+if (r.estimate != null) {
+  if ((preferMin && r.estimate < maxEstimate) || (!preferMin && r.estimate > maxEstimate)) {
+    maxEstimate = r.estimate;
+  }
+}
     // player %
     let playerPct = null;
     if(playerSelect.value && playerStatsObj && playerStatsObj[playerSelect.value]){
@@ -1439,61 +1445,96 @@ if (playerPct == null) {
     // compute win percent for this row (keep it as percent 0..100)
     r.winPct = (r.total === 0) ? null : (((r.totalWins || 0) / r.total) * 100);
 
-    // Determine PP factor source:
-    // preference: window.extPlayers (if your extended CSV loader exposes it),
-    // fallback: playerStatsObj (if it contains PP fields), else 1.0
-    let ppFactor = 1.0;
-    const pname = playerSelect && playerSelect.value ? playerSelect.value : null;
+// Determine PP factors (team & opponent) from extPlayers or playerStatsObj
+let ppTeam = 1.0; // PP_team_throws16_hammer
+let ppOpp  = 1.0; // PP_opp_throws16_hammer
+const pname = (playerSelect && playerSelect.value) ? playerSelect.value : null;
 
-    try {
-      // try global extended players map if present
-      if (typeof window !== 'undefined' && window.extPlayers && pname) {
-        const extRow = findKeyInsensitive(window.extPlayers, pname) ? window.extPlayers[findKeyInsensitive(window.extPlayers, pname)] : null;
-        if(extRow) {
-          const keyTeam = Object.keys(extRow).find(k => k && k.toString().toLowerCase().indexOf('pp_team_throws16') !== -1);
-          const keyOpp  = Object.keys(extRow).find(k => k && k.toString().toLowerCase().indexOf('pp_opp_throws16') !== -1);
-          const raw = (evalShot % 2 === 1) ? (extRow[keyTeam] || extRow['PP_team_throws16_hammer']) : (extRow[keyOpp] || extRow['PP_opp_throws16_hammer']);
-          const numeric = raw === undefined || raw === null || raw === '' ? null : Number(String(raw).replace('%','').trim());
-          if(!isNaN(numeric) && numeric !== null) ppFactor = Number(numeric);
-        }
+// helper: to number, stripping '%'
+const toNum = (v) => {
+  if (v === undefined || v === null || v === '') return null;
+  const n = Number(String(v).replace('%','').trim());
+  return isNaN(n) ? null : n;
+};
+
+// helper: safe-assign if we haven't got a real value yet
+const setIfValid = (cur, val) => (cur === 1.0 && val != null ? Number(val) : cur);
+
+try {
+  // 1) Try global extended players map (new loader)
+  if (typeof window !== 'undefined' && window.extPlayers && pname) {
+    const key = findKeyInsensitive(window.extPlayers, pname);
+    const extRow = key ? window.extPlayers[key] : null;
+    if (extRow) {
+      // find keys case-insensitively
+      const kTeam = Object.keys(extRow).find(k => k && k.toLowerCase().includes('pp_team_throws16'));
+      const kOpp  = Object.keys(extRow).find(k => k && k.toLowerCase().includes('pp_opp_throws16'));
+
+      // prefer *_hammer if present; fall back to any team/opp throws16 column
+      const rawTeam = (extRow['PP_team_throws16_hammer'] ?? extRow['pp_team_throws16_hammer'] ?? (kTeam ? extRow[kTeam] : null));
+      const rawOpp  = (extRow['PP_opp_throws16_hammer']  ?? extRow['pp_opp_throws16_hammer']  ?? (kOpp  ? extRow[kOpp]  : null));
+
+      ppTeam = setIfValid(ppTeam, toNum(rawTeam));
+      ppOpp  = setIfValid(ppOpp,  toNum(rawOpp));
+    }
+  }
+
+  // 2) Fallback to playerStatsObj (older loader)
+  if (playerStatsObj && pname && playerStatsObj[pname]) {
+    const prow = playerStatsObj[pname];
+
+    // Team PP candidates
+    const teamNames = ['PP_team_throws16_hammer', 'pp_team_throws16_hammer', 'PP_team_throws16', 'pp_team_throws16'];
+    for (const c of teamNames) {
+      if (ppTeam === 1.0 && prow[c] !== undefined && prow[c] !== null && prow[c] !== '') {
+        const n = toNum(prow[c]);
+        if (n != null) { ppTeam = Number(n); break; }
       }
-
-      // fallback to playerStatsObj (older loader)
-      if(ppFactor === 1.0 && playerStatsObj && pname && playerStatsObj[pname]) {
-        const prow = playerStatsObj[pname];
-        // try several possible column names
-        const candNames = ['PP_team_throws16_hammer','pp_team_throws16_hammer','PP_opp_throws16_hammer','pp_opp_throws16_hammer'];
-        for(const c of candNames){
-          if(prow[c] !== undefined && prow[c] !== null && prow[c] !== ''){
-            const n = Number(String(prow[c]).replace('%','').trim());
-            if(!isNaN(n)){ ppFactor = n; break; }
-          }
-        }
-      }
-    } catch(e){ /* ignore and use 1.0 */ }
-
-    // ensure ppFactor is a usable number; if not, default to 1.0
-    if(ppFactor === null || ppFactor === undefined || isNaN(Number(ppFactor))) ppFactor = 1.0;
-    ppFactor = Number(ppFactor);
-
-    // Convert percents to fractions
-    const winFrac = (r.winPct == null) ? null : (Number(r.winPct) / 100.0);
-    const playerFrac = (r.playerPct == null) ? null : (Number(r.playerPct) / 100.0);
-    const avgScore = (r.estimate == null) ? null : Number(r.estimate);
-
-    // If any core factor is missing, we can't compute the adjusted score
-    if(winFrac == null || playerFrac == null || avgScore == null) {
-      r.playerAdj = null;
-    } else {
-      // final formula: win% * player% * avgScore * ppFactor
-      // note: ppFactor is used as-is (e.g. 1.31) — if your CSV stores it as percent (e.g. "131%")
-      // you may need to divide by 100 here. This code assumes ppFactor is a numeric multiplier already.
-	  r.playerAdj = 1.2919896640826873385012919896641 * playerFrac * avgScore * ppFactor;
-      // keep numeric formatting consistent with previous behavior
-      if(r.playerAdj != null && r.playerAdj > maxPlayerAdj) maxPlayerAdj = r.playerAdj;
     }
 
-    if(r.playerAdj!=null && r.playerAdj > maxPlayerAdj) maxPlayerAdj = r.playerAdj;
+    // Opponent PP candidates
+    const oppNames = ['PP_opp_throws16_hammer', 'pp_opp_throws16_hammer', 'PP_opp_throws16', 'pp_opp_throws16'];
+    for (const c of oppNames) {
+      if (ppOpp === 1.0 && prow[c] !== undefined && prow[c] !== null && prow[c] !== '') {
+        const n = toNum(prow[c]);
+        if (n != null) { ppOpp = Number(n); break; }
+      }
+    }
+  }
+} catch(e) { /* ignore; keep defaults */ }
+
+// ensure both are usable numbers
+ppTeam = (ppTeam == null || isNaN(Number(ppTeam))) ? 1.0 : Number(ppTeam);
+ppOpp  = (ppOpp  == null || isNaN(Number(ppOpp)))  ? 1.0 : Number(ppOpp);
+
+// Convert percents to fractions
+const winFrac    = (r.winPct   == null) ? null : (Number(r.winPct)   / 100.0);
+const playerFrac = (r.playerPct == null) ? null : (Number(r.playerPct) / 100.0);
+const avgScore   = (r.estimate  == null) ? null : Number(r.estimate);
+
+// If any core factor is missing, we can't compute the adjusted score
+if (winFrac == null || playerFrac == null || avgScore == null) {
+  r.playerAdj = null;
+} else {
+  // final formula (parity-aware):
+  // Even shots (preferMin=false): multiply by playerFrac and use OPP PP
+  // Odd shots  (preferMin=true):  divide by playerFrac and use TEAM PP
+  const K = 1.2919896640826873385012919896641;
+  const J = (K * playerFrac)
+  r.playerAdj = preferMin
+  
+    ? (avgScore / J)   // odd shot → lower better
+    : (avgScore * J * ppTeam); // even shot → higher better
+
+  // track best (min or max) for highlighting
+  if (r.playerAdj != null) {
+    if ((preferMin && r.playerAdj < maxPlayerAdj) || (!preferMin && r.playerAdj > maxPlayerAdj)) {
+      maxPlayerAdj = r.playerAdj;
+    }
+  }
+}
+
+
     // compute win percent for this row
     r.winPct = (r.total === 0) ? null : ( (r.totalWins || 0) / r.total * 100 );
   });
