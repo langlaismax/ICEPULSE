@@ -165,7 +165,7 @@
 
     <!-- Head-to-Head -->
     <section class="card" style="margin-top:16px">
-      <div class="flex"><h2 style="margin:0">Head‑to‑Head</h2><span class="note">Positive numbers favour Team 1</span></div>
+      <div class="flex"><h2 style="margin:0">Head‑to‑Head</h2><span class="note">Positive numbers favour Team 1 (except Steal Defense and Lose from Ahead)</span></div>
       <div class="table-wrap">
         <table id="compareTable">
           <thead>
@@ -188,6 +188,12 @@
 
     <p class="small muted" id="srcMsg" style="margin-top:12px"></p>
   </div>
+<!-- ——— Theoretical Win (mini) ——— -->
+<section class="card" id="win-mini-card" style="auto;padding:10px">
+  <pre id="win-mini-out" style="margin:0;font:24px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">
+Team 1 Win%: 50.00%
+Team 2 Win%: 50.00%</pre>
+</section>
 
 <script>
 // -------------------------- Utility helpers --------------------------
@@ -702,7 +708,166 @@ window.addEventListener('DOMContentLoaded', ()=>{
   setTimeout(()=>{ renderPlayerPanels(1); renderPlayerPanels(2); }, 0);
 });
 
+(function () {
+  const LABELS = [
+    "Overall","Last End","PPE Hammer","PPE No Hammer",
+    "Hammer Efficiency","Force Efficiency","Steal Efficiency","Steal Defense"
+  ];
+
+  function clamp(x, lo, hi){ return Math.max(lo, Math.min(hi, x)); }
+  function fmt2(x){ return x.toFixed(2); }
+  function parseNumber(s){
+    if (!s) return null;
+    // normalize minus (−) and strip everything but digits/.- 
+    s = s.replace(/−/g,"-").replace(/[^\d.\-]/g,"");
+    const v = parseFloat(s);
+    return Number.isFinite(v) ? v : null;
+  }
+
+  function findH2HTable(){
+    // Heuristic: a table whose header includes the Δ column
+    const tables = Array.from(document.querySelectorAll("table"));
+    return tables.find(t => /Δ\s*\(T1\s*−?\s*T2\)/i.test(t.textContent) || /Δ/.test(t.textContent));
+  }
+
+  function getDeltaFromRow(table, label){
+    const rows = Array.from(table.querySelectorAll("tr"));
+    for (const tr of rows){
+      const first = tr.children[0];
+      if (!first) continue;
+      const name = first.textContent.trim();
+      if (name.toLowerCase() === label.toLowerCase()){
+        // Row shape: [Metric, Team1, Δ, Team2] → Δ is index 2
+        const deltaCell = tr.children[2];
+        return parseNumber(deltaCell && deltaCell.textContent);
+      }
+    }
+    return null;
+  }
+
+  function computeFromTable(){
+    const table = findH2HTable();
+    if (!table) return null;
+
+    const d = {
+      overall:  getDeltaFromRow(table, "Overall"),
+      lastEnd:  getDeltaFromRow(table, "Last End"),
+      ppeH:     getDeltaFromRow(table, "PPE Hammer"),
+      ppeNH:    getDeltaFromRow(table, "PPE No Hammer"),
+      hamEff:   getDeltaFromRow(table, "Hammer Efficiency"),
+      forEff:   getDeltaFromRow(table, "Force Efficiency"),
+      steEff:   getDeltaFromRow(table, "Steal Efficiency"),
+      steDef:   getDeltaFromRow(table, "Steal Defense"),
+    };
+
+    if (LABELS.some(k => d[kToKey(k)] === null)) return null;
+
+    // Your weights:
+    // ΔWIN = Overall + 2·LastEnd + 4·PPE_H + 4·PPE_NH + HammerEff + ForceEff + StealEff − StealDef
+    const dwin = d.overall + d.lastEnd + 4*d.ppeH + 4*d.ppeNH + d.hamEff + d.forEff + d.steEff - d.steDef;
+    const t1 = clamp(50 + dwin, 0, 100);
+    const t2 = 100 - t1;
+    return { dwin, t1, t2 };
+  }
+
+  function kToKey(label){
+    return ({
+      "Overall":"overall","Last End":"lastEnd","PPE Hammer":"ppeH","PPE No Hammer":"ppeNH",
+      "Hammer Efficiency":"hamEff","Force Efficiency":"forEff","Steal Efficiency":"steEff","Steal Defense":"steDef"
+    })[label];
+  }
+
+function render(){
+  const out = document.getElementById("win-mini-out");
+  if (!out) return;
+
+  // Use picked team names if available; fall back to "Team 1/2"
+  const getName = (side) =>
+    (typeof window.getTeamDisplayName === "function"
+      ? window.getTeamDisplayName(side)
+      : `Team ${side}`);
+
+  const n1 = getName(1);
+  const n2 = getName(2);
+
+  const res = computeFromTable();
+  if (!res){
+    out.textContent = `${n1} Win%: —\n${n2} Win%: —`;
+    return;
+  }
+  out.textContent = `${n1} Win%: ${fmt2(res.t1)}%\n${n2} Win%: ${fmt2(res.t2)}%`;
+}
+
+
+  function setupAuto(){
+    // Recompute when team/role pickers change
+    document.addEventListener("change", (e) => {
+      if (e.target.matches("select.team, select.role")) setTimeout(render, 60);
+    });
+    // Recompute when the Head-to-Head table re-renders
+    const root = document.querySelector(".wrap") || document.body;
+    const mo = new MutationObserver(() => { render(); });
+    mo.observe(root, { childList:true, subtree:true, characterData:true });
+    render();
+  }
+
+  if (document.readyState !== "loading") setupAuto();
+  else document.addEventListener("DOMContentLoaded", setupAuto);
+})();
+
+/* ==== Auto-populate Team 1 / Team 2 labels with picked team names ==== */
+(function(){
+  function getTeamDisplayName(side){
+    const sel = document.getElementById(`team${side}TeamPicker`);
+    const v = sel && sel.value ? sel.value.trim() : "";
+    return v || `Team ${side}`;
+  }
+  // Expose so other scripts (like mini-card) can call it if needed
+  window.getTeamDisplayName = getTeamDisplayName;
+
+  function updateTeamLabels(){
+    const n1 = getTeamDisplayName(1);
+    const n2 = getTeamDisplayName(2);
+
+    // Card titles
+    const h1 = document.querySelector('#team1 h2');
+    const h2 = document.querySelector('#team2 h2');
+    if (h1) h1.textContent = n1;
+    if (h2) h2.textContent = n2;
+
+    // Head-to-Head table headers
+    const ths = document.querySelectorAll('#compareTable thead th');
+    if (ths[1]) ths[1].textContent = n1;
+    if (ths[3]) ths[3].textContent = n2;
+
+    // Chart legend labels
+    if (window.chartObj && chartObj.data && chartObj.data.datasets) {
+      if (chartObj.data.datasets[0]) chartObj.data.datasets[0].label = n1;
+      if (chartObj.data.datasets[1]) chartObj.data.datasets[1].label = n2;
+      chartObj.update();
+    }
+
+    // Mini win card labels (leave numbers alone)
+    const pre = document.getElementById('win-mini-out');
+    if (pre && pre.textContent) {
+      pre.textContent = pre.textContent
+        .replace(/^Team 1 Win%:/m, `${n1} Win%:`)
+        .replace(/^Team 2 Win%:/m, `${n2} Win%:`);
+    }
+
+    // Optional: update the “favour Team 1” note to name
+    const note = document.querySelector('section.card .note');
+    if (note) note.textContent = `Positive numbers favour ${n1}`;
+  }
+
+  // Re-run on any select change
+  document.addEventListener('change', (e) => {
+    if (e.target.matches('select')) updateTeamLabels();
+  });
+
+})();
 </script>
+	
 
 </body>
 </html>
