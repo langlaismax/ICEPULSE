@@ -209,6 +209,9 @@ const METRIC_KEYS = [
 
   [['PP_team_throws16_hammer','PP_team_t','PP Team 16 Hammer','PP_team'], 'PPTeam16', false],
   [['PP_opp_throws16_hammer','PP_opp_t','PP Opp 16 Hammer','PP_opp'], 'PPOpp16', false],
+  [['OP_team_throws16_hammer','OP_team_t','OPE_H','OP Team 16 Hammer','OP_team'], 'OPTeam16', false],
+  [['OP_opp_throws16_hammer','OP_opp_t','OPE_NH','OP Opp 16 Hammer','OP_opp'], 'OPOpp16', false],
+
 
   ['HammerEff%','HammerEffPct', true],
   ['ForceEff%','ForceEffPct',  true],
@@ -320,7 +323,7 @@ async function loadPlayers(){
       let foundKey=null; for(const c of candidates){ const k=findKeyInsensitive(row, c); if(k){ foundKey=k; break; } }
       if(!foundKey) return;
       if(isPct) entry.metrics[outKey] = parsePercentLoose(row[foundKey]);
-      else if(outKey==='HammerFactorPP' || outKey==='PPTeam16' || outKey==='PPOpp16') entry.metrics[outKey] = parseNumber(row[foundKey]);
+      else if(outKey==='HammerFactorPP' || outKey==='PPTeam16' || outKey==='PPOpp16' || outKey==='OPTeam16' || outKey==='OPOpp16') entry.metrics[outKey] = parseNumber(row[foundKey]);
       else entry.metrics[outKey] = String(row[foundKey] ?? '').trim();
     });
 
@@ -375,6 +378,8 @@ function computeTeamMetrics(names){
   out.ClutchPct    = p('ClutchPct');
   out.PPTeam16     = n('PPTeam16');
   out.PPOpp16      = n('PPOpp16');
+  out.OPTeam16 = n('OPTeam16');
+  out.OPOpp16  = n('OPOpp16');
   out.HammerEffPct = p('HammerEffPct');
   out.ForceEffPct  = p('ForceEffPct');
   out.StealEffPct  = p('StealEffPct');
@@ -404,6 +409,8 @@ function renderCompare(t1, t2){
     ['Last End',    t1.ClutchPct,    t2.ClutchPct,    true],
     ['PPE Hammer', t1.PPTeam16, t2.PPTeam16, false],
     ['PPE No Hammer',  t1.PPOpp16,  t2.PPOpp16,  false],
+	['OPPE Hammer',    t1.OPTeam16,  t2.OPTeam16,  false],
+    ['OPPE No Hammer', t1.OPOpp16,   t2.OPOpp16,   false],
     ['Hammer Efficiency', t1.HammerEffPct, t2.HammerEffPct, true],
     ['Force Efficiency',  t1.ForceEffPct,  t2.ForceEffPct,  true],
     ['Steal Efficiency',  t1.StealEffPct,  t2.StealEffPct,  true],
@@ -710,7 +717,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
 
 (function () {
   const LABELS = [
-    "Overall","Last End","PPE Hammer","PPE No Hammer",
+    "Overall","Last End","PPE Hammer","PPE No Hammer","OPE Hammer","OPE No Hammer",
     "Hammer Efficiency","Force Efficiency","Steal Efficiency","Steal Defense"
   ];
 
@@ -744,7 +751,6 @@ window.addEventListener('DOMContentLoaded', ()=>{
     }
     return null;
   }
-
   function computeFromTable(){
     const table = findH2HTable();
     if (!table) return null;
@@ -754,6 +760,8 @@ window.addEventListener('DOMContentLoaded', ()=>{
       lastEnd:  getDeltaFromRow(table, "Last End"),
       ppeH:     getDeltaFromRow(table, "PPE Hammer"),
       ppeNH:    getDeltaFromRow(table, "PPE No Hammer"),
+	  opeH:    getDeltaFromRow(table, "OPE Hammer"),
+      opeNH:   getDeltaFromRow(table, "OPE No Hammer"),
       hamEff:   getDeltaFromRow(table, "Hammer Efficiency"),
       forEff:   getDeltaFromRow(table, "Force Efficiency"),
       steEff:   getDeltaFromRow(table, "Steal Efficiency"),
@@ -763,12 +771,13 @@ window.addEventListener('DOMContentLoaded', ()=>{
     if (LABELS.some(k => d[kToKey(k)] === null)) return null;
 
     // Your weights:
-    // ΔWIN = Overall + 2·LastEnd + 4·PPE_H + 4·PPE_NH + HammerEff + ForceEff + StealEff − StealDef
-    const dwin = d.overall + d.lastEnd + 4*d.ppeH + 4*d.ppeNH + d.hamEff + d.forEff + d.steEff - d.steDef;
+	// ΔWIN = Overall + 2·LastEnd + 4·PPE_H + 4·PPE_NH - 4·OPE_H - 4·OPE_NH + HammerEff + ForceEff + StealEff − StealDef
+	const dwin = d.overall + 2*d.lastEnd + 4*d.ppeH + 4*d.ppeNH - 4*d.opeH - 4*d.opeNH + d.hamEff + d.forEff + d.steEff - d.steDef;
     const t1 = clamp(50 + dwin, 0, 100);
     const t2 = 100 - t1;
     return { dwin, t1, t2 };
   }
+ 
 
   function kToKey(label){
     return ({
