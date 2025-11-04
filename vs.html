@@ -191,8 +191,8 @@
 <!-- ——— Theoretical Win (mini) ——— -->
 <section class="card" id="win-mini-card" style="auto;padding:10px">
   <pre id="win-mini-out" style="margin:0;font:24px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">
-Team 1 Win%: 50.00%
-Team 2 Win%: 50.00%</pre>
+Team 1: 50.00%
+Team 2: 50.00%</pre>
 </section>
 
 <script>
@@ -420,7 +420,7 @@ function renderCompare(t1, t2){
   let deltaHtml = fmt(diff, isPct);
   if (diff != null && isPct) {
     const absDiff = Math.abs(diff);
-    if (absDiff >= 3) {
+    if (absDiff >= 1) {
       const cls = diff > 0 ? 'diff-pos' : 'diff-neg';
       deltaHtml = `<span class="diff-chip ${cls}">${fmt(diff, true)}</span>`;
     }
@@ -792,10 +792,10 @@ function render(){
 
   const res = computeFromTable();
   if (!res){
-    out.textContent = `${n1} Win%: —\n${n2} Win%: —`;
+    out.textContent = `${n1}: —\n${n2}: —`;
     return;
   }
-  out.textContent = `${n1} Win%: ${fmt2(res.t1)}%\n${n2} Win%: ${fmt2(res.t2)}%`;
+  out.textContent = `${n1}: ${fmt2(res.t1)}%\n${n2}: ${fmt2(res.t2)}%`;
 }
 
 
@@ -851,13 +851,13 @@ function render(){
     const pre = document.getElementById('win-mini-out');
     if (pre && pre.textContent) {
       pre.textContent = pre.textContent
-        .replace(/^Team 1 Win%:/m, `${n1} Win%:`)
-        .replace(/^Team 2 Win%:/m, `${n2} Win%:`);
+        .replace(/^Team 1:/m, `${n1}:`)
+        .replace(/^Team 2:/m, `${n2}:`);
     }
 
     // Optional: update the “favour Team 1” note to name
     const note = document.querySelector('section.card .note');
-    if (note) note.textContent = `Positive numbers favour ${n1}`;
+    if (note) note.textContent = `Positive numbers favour ${n1} (except Steal Defense and Lose from Ahead)`;
   }
 
   // Re-run on any select change
