@@ -190,11 +190,12 @@
   </div>
 <!-- ——— Theoretical Win (mini) ——— -->
 <section class="card" id="win-mini-card" style="auto;padding:10px">
-  <pre id="win-mini-out" style="margin:0;font:24px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">
-Team 1: 50.00%
-Team 2: 50.00%</pre>
+  <pre id="win-mini-out" style="margin:0;font:24px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">Team 1: 50.00% - Team 2: 50.00%</pre>
+<span id="win-mini-h2h" style="margin:0;font:24px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace"></span>
 </section>
-
+<footer style="text-align:center">
+  <span>ΔWIN = (0.8*Overall% + 0.2*Clutch% + 40*PPE_H + 40*PPE_NH - 40*OPE_H - 40*OPE_NH + HammerEff% + ForceEff% + StealEff% − StealDef%)</span>
+</footer>
 <script>
 // -------------------------- Utility helpers --------------------------
 const PLAYERS = {}; // name -> { metrics:{}, tasks:{}, yearSeries:{} }
@@ -406,7 +407,7 @@ function renderCompare(t1, t2){
     ['Clockwise',    t1.AvgCwPct,     t2.AvgCwPct,     true],
     ['Counter Clockwise',   t1.AvgCcwPct,    t2.AvgCcwPct,    true],
     ['Overall', t1.AvgTotalPct,  t2.AvgTotalPct,  true],
-    ['Last End',    t1.ClutchPct,    t2.ClutchPct,    true],
+    ['Clutch',    t1.ClutchPct,    t2.ClutchPct,    true],
     ['PPE Hammer', t1.PPTeam16, t2.PPTeam16, false],
     ['PPE No Hammer',  t1.PPOpp16,  t2.PPOpp16,  false],
 	['OPPE Hammer',    t1.OPTeam16,  t2.OPTeam16,  false],
@@ -420,6 +421,9 @@ function renderCompare(t1, t2){
     ['Lose from Ahead',           t1.ChokePct,       t2.ChokePct,       true],
   ];
   const labels=[], d1=[], d2=[];
+  const chartAllow = new Set([
+    'Hammer Efficiency','Force Efficiency','Steal Efficiency','Steal Defense','Win from Behind','Lose from Ahead'
+  ]);
  rows.forEach(([label,a,b,isPct])=>{
   const diff = (a!=null && b!=null) ? (a - b) : null;
 
@@ -442,7 +446,7 @@ function renderCompare(t1, t2){
   `;
   compareTbody.appendChild(tr);
 
-  if (a!=null && b!=null){ labels.push(label); d1.push(a); d2.push(b); }
+  if (a!=null && b!=null && chartAllow.has(label)){ labels.push(label); d1.push(a); d2.push(b); }
 });
 
 
@@ -717,7 +721,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
 
 (function () {
   const LABELS = [
-    "Overall","Last End","PPE Hammer","PPE No Hammer","OPE Hammer","OPE No Hammer",
+    "Overall","Clutch","PPE Hammer","PPE No Hammer","OPE Hammer","OPE No Hammer",
     "Hammer Efficiency","Force Efficiency","Steal Efficiency","Steal Defense"
   ];
 
@@ -757,7 +761,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
 
     const d = {
       overall:  getDeltaFromRow(table, "Overall"),
-      lastEnd:  getDeltaFromRow(table, "Last End"),
+      lastEnd:  getDeltaFromRow(table, "Clutch"),
       ppeH:     getDeltaFromRow(table, "PPE Hammer"),
       ppeNH:    getDeltaFromRow(table, "PPE No Hammer"),
 	  opeH:    getDeltaFromRow(table, "OPE Hammer"),
@@ -771,9 +775,9 @@ window.addEventListener('DOMContentLoaded', ()=>{
     if (LABELS.some(k => d[kToKey(k)] === null)) return null;
 
     // Your weights:
-	// ΔWIN = Overall + 2·LastEnd + 4·PPE_H + 4·PPE_NH - 4·OPE_H - 4·OPE_NH + HammerEff + ForceEff + StealEff − StealDef
-	const dwin = d.overall + 2*d.lastEnd + 4*d.ppeH + 4*d.ppeNH - 4*d.opeH - 4*d.opeNH + d.hamEff + d.forEff + d.steEff - d.steDef;
-    const t1 = clamp(50 + dwin, 0, 100);
+	// ΔWIN = 0.8·Overall + 0.2·LastEnd + 4·PPE_H + 4·PPE_NH - 4·OPE_H - 4·OPE_NH + HammerEff + ForceEff + StealEff − StealDef
+	const dwin = (0.8*d.overall + 0.2*d.lastEnd + 40*d.ppeH + 40*d.ppeNH - 40*d.opeH - 40*d.opeNH + d.hamEff + d.forEff + d.steEff - d.steDef);
+    const t1 = clamp(50 + dwin, 1, 99);
     const t2 = 100 - t1;
     return { dwin, t1, t2 };
   }
@@ -781,7 +785,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
 
   function kToKey(label){
     return ({
-      "Overall":"overall","Last End":"lastEnd","PPE Hammer":"ppeH","PPE No Hammer":"ppeNH",
+      "Overall":"overall","Clutch":"lastEnd","PPE Hammer":"ppeH","PPE No Hammer":"ppeNH",
       "Hammer Efficiency":"hamEff","Force Efficiency":"forEff","Steal Efficiency":"steEff","Steal Defense":"steDef"
     })[label];
   }
@@ -877,6 +881,111 @@ function render(){
 })();
 </script>
 	
+<script>
+/* ==== H2H mini-line from vs.csv (name canonicalization for year tags etc.) ==== */
+(function(){
+  let VS_ROWS = [];
+
+  // --- Name canonicalization ---
+  function removeDiacritics(s){
+    try { return s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+    catch { return s; }
+  }
+  function canon(raw){
+    let t = String(raw || '').trim();
+    t = removeDiacritics(t);
+    // Drop trailing " (YYYY)"
+    t = t.replace(/\s*\((?:19|20)\d{2}\)\s*$/i, '');
+    // Convert "AB (Koe)" -> "Koe"
+    t = t.replace(/^[A-Z]{1,3}\s*\(([^)]+)\)\s*$/i, '$1');
+    // Collapse internal spaces and lowercase
+    t = t.replace(/\s+/g, ' ').trim().toLowerCase();
+    return t;
+  }
+
+  function parseNum(x){ const n = parseFloat(String(x).replace(/,/g,'')); return Number.isFinite(n) ? n : null; }
+  function fmtPct(p){ if(p==null || !isFinite(p)) return '—'; return `${(p*100).toFixed(2)}%`; }
+
+  async function loadVsCsv(){
+    const candidates = ['data/vs.csv','./data/vs.csv','/data/vs.csv','vs.csv'];
+    let txt;
+    try {
+      // expects fetchFirst & parseCSV already on the page
+      txt = await fetchFirst(candidates);
+    } catch(e){
+      console.warn('vs.csv not found (H2H mini-line will be hidden):', e);
+      return;
+    }
+    const { rows } = parseCSV(txt);
+    // Store both raw and canonical names for fast lookup
+    VS_ROWS = rows.map(r => {
+      const t1 = r['Team 1'] ?? r['Team1'] ?? r['team1'] ?? '';
+      const t2 = r['Team 2'] ?? r['Team2'] ?? r['team2'] ?? '';
+      return {
+        t1, t2,
+        c1: canon(t1),
+        c2: canon(t2),
+        w1: parseNum(r['Wins1'] ?? r['W1'] ?? 0) || 0,
+        w2: parseNum(r['Wins2'] ?? r['W2'] ?? 0) || 0,
+        p1: parseNum(r['Team1Win %'] ?? r['Team1Win%'] ?? r['Team1Win'] ?? r['Team1 Win %'] ?? r['Team1 Win%']),
+        p2: parseNum(r['Team2Win %'] ?? r['Team2Win%'] ?? r['Team2Win'] ?? r['Team2 Win %'] ?? r['Team2 Win%']),
+      };
+    });
+  }
+
+  function findRow(n1, n2){
+    if(!VS_ROWS.length) return null;
+    const a = canon(n1), b = canon(n2);
+    for(const r of VS_ROWS){
+      if(r.c1===a && r.c2===b) return { w1:r.w1, w2:r.w2, p1:r.p1, p2:r.p2 };
+      if(r.c1===b && r.c2===a) return { w1:r.w2, w2:r.w1, p1:r.p2, p2:r.p1 }; // flip to page's Team1/Team2
+    }
+    return null;
+  }
+
+  function ensureHost(){
+    const card = document.getElementById('win-mini-card');
+    if(!card) return null;
+    let host = document.getElementById('win-mini-h2h');
+    if(!host){
+      host = document.createElement('span');
+      host.id = 'win-mini-h2h';
+      card.appendChild(host);
+    }
+    return host;
+  }
+
+  function getPageTeamName(side){
+    return (typeof window.getTeamDisplayName === 'function')
+      ? window.getTeamDisplayName(side)
+      : `Team ${side}`;
+  }
+
+  function renderH2H(){
+    const host = ensureHost();
+    if(!host) return;
+    const n1 = getPageTeamName(1);
+    const n2 = getPageTeamName(2);
+    const r = findRow(n1, n2);
+    host.innerHTML = r ? `Record: ${r.w1} - ${r.w2} <br>(${fmtPct(r.p1)} - ${fmtPct(r.p2)})</br>` : '';
+  }
+
+  async function boot(){
+    await loadVsCsv();
+    renderH2H();
+    // Update when team selection changes or page mutates
+    document.addEventListener('change', (e)=>{
+      if(e.target.matches('select.team, select.role')) setTimeout(renderH2H, 60);
+    });
+    const root = document.querySelector('.wrap') || document.body;
+    const mo = new MutationObserver(() => renderH2H());
+    mo.observe(root, { childList:true, subtree:true, characterData:true });
+  }
+
+  if(document.readyState !== 'loading') boot();
+  else document.addEventListener('DOMContentLoaded', boot);
+})();
+</script>
 
 </body>
 </html>
