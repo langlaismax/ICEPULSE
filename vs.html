@@ -165,7 +165,7 @@
 
     <!-- Head-to-Head -->
     <section class="card" style="margin-top:16px">
-      <div class="flex"><h2 style="margin:0">Head‑to‑Head</h2><span class="note">Positive numbers favour Team 1 (except Steal Defense and Lose from Ahead)</span></div>
+      <div class="flex"><h2 style="margin:0">Head‑to‑Head</h2><span class="note">Positive numbers favour Team 1, except StealDef%, O.P.P.E.Hammer, O.P.P.E.NoHammer, and LosefromAhead. O.P.P.E. = Opponents Points per End.</span></div>
       <div class="table-wrap">
         <table id="compareTable">
           <thead>
@@ -194,7 +194,7 @@
 <span id="win-mini-h2h" style="margin:0;font:24px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace"></span>
 </section>
 <footer style="text-align:center">
-  <span>ΔWIN = (0.8*Overall% + 0.2*Clutch% + 40*PPE_H + 40*PPE_NH - 40*OPE_H - 40*OPE_NH + HammerEff% + ForceEff% + StealEff% − StealDef%)</span>
+  <span>ΔWIN = 0.8*ΔOverall% + 0.2*ΔClutch% + 40*ΔPPE_H + 40*ΔPPE_NH - 40*ΔOPE_H - 40*ΔOPE_NH + ΔHammerEff% + ΔForceEff% + ΔStealEff% − ΔStealDef%</span>
 </footer>
 <script>
 // -------------------------- Utility helpers --------------------------
@@ -407,7 +407,7 @@ function renderCompare(t1, t2){
     ['Clockwise',    t1.AvgCwPct,     t2.AvgCwPct,     true],
     ['Counter Clockwise',   t1.AvgCcwPct,    t2.AvgCcwPct,    true],
     ['Overall', t1.AvgTotalPct,  t2.AvgTotalPct,  true],
-    ['Clutch',    t1.ClutchPct,    t2.ClutchPct,    true],
+    ['Clutch (Last End)',    t1.ClutchPct,    t2.ClutchPct,    true],
     ['PPE Hammer', t1.PPTeam16, t2.PPTeam16, false],
     ['PPE No Hammer',  t1.PPOpp16,  t2.PPOpp16,  false],
 	['OPPE Hammer',    t1.OPTeam16,  t2.OPTeam16,  false],
@@ -417,8 +417,8 @@ function renderCompare(t1, t2){
     ['Steal Efficiency',  t1.StealEffPct,  t2.StealEffPct,  true],
     ['Steal Defense',  t1.StealDefPct,  t2.StealDefPct,  true],
     ['Hammer Factor', t1.HammerFactorPP, t2.HammerFactorPP, false],
-    ['Win from Behind',      t1.FromBehindPct,  t2.FromBehindPct,  true],
-    ['Lose from Ahead',           t1.ChokePct,       t2.ChokePct,       true],
+    ['Win from Behind -3',      t1.FromBehindPct,  t2.FromBehindPct,  true],
+    ['Lose from Ahead +3',           t1.ChokePct,       t2.ChokePct,       true],
   ];
   const labels=[], d1=[], d2=[];
   const chartAllow = new Set([
