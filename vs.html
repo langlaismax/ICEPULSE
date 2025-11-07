@@ -191,12 +191,12 @@
 <!-- ——— Theoretical Win (mini) ——— -->
 <section class="card" id="win-mini-card" style="auto;padding:10px">
 Calculated win percentages:
-<pre id="win-mini-out" style="margin:0;font:24px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">Team 1: 50.00% - Team 2: 50.00%</pre>
+  <pre id="win-mini-out" style="margin:0;font:24px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">Team 1: 50.00% - Team 2: 50.00%</pre>
 Real head-to-head percentages:<br>
 <span id="win-mini-h2h" style="margin:0;font:24px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace"></span>
 </section>
 <footer style="text-align:center">
-  <span>ΔWIN = 0.8*ΔOverall% + 0.2*ΔClutch% + 40*ΔPPE_H + 40*ΔPPE_NH - 40*ΔOPE_H - 40*ΔOPE_NH + ΔHammerEff% + ΔForceEff% + ΔStealEff% − ΔStealDef%</span>
+  <span>ΔWIN=0.8Overall%+0.2Clutch%+Win%+LSFE%+LSFEW%+NLSFEW%+40PPEH+40PPENH−40OPEH−40OPENH+HammerEff%+ForceEff%+StealEff%−StealDef%+WinB-LoseA</span>
 </footer>
 <script>
 // -------------------------- Utility helpers --------------------------
@@ -220,6 +220,12 @@ const METRIC_KEYS = [
   ['ForceEff%','ForceEffPct',  true],
   ['StealEff%','StealEffPct',  true],
   ['StealDef%','StealDefPct',  true],
+  
+  // NEW: LSFE & Win% (treat like % metrics)
+  ['LSFEW%','LSFEWPct',   true],
+  ['NLSFEW%','NLSFEWPct', true],
+  ['LSFE%','LSFEPct',     true],
+  [['Win%','Win %'],'WinPct', true],
 
   [['HammerFactor(pp)','HammerFactor','HammerFactor_pp'], 'HammerFactorPP', false],
   ['FromBehind%','FromBehindPct', true],
@@ -383,6 +389,10 @@ function computeTeamMetrics(names){
   out.PPOpp16      = n('PPOpp16');
   out.OPTeam16 = n('OPTeam16');
   out.OPOpp16  = n('OPOpp16');
+  out.LSFEWPct   = p('LSFEWPct');
+  out.NLSFEWPct  = p('NLSFEWPct');
+  out.LSFEPct    = p('LSFEPct');
+  out.WinPct     = p('WinPct');
   out.HammerEffPct = p('HammerEffPct');
   out.ForceEffPct  = p('ForceEffPct');
   out.StealEffPct  = p('StealEffPct');
@@ -410,6 +420,10 @@ function renderCompare(t1, t2){
     ['Counter Clockwise',   t1.AvgCcwPct,    t2.AvgCcwPct,    true],
     ['Overall', t1.AvgTotalPct,  t2.AvgTotalPct,  true],
     ['Clutch',    t1.ClutchPct,    t2.ClutchPct,    true],
+	['Win %',        t1.WinPct,     t2.WinPct,     true],
+    ['LSFE %',       t1.LSFEPct,    t2.LSFEPct,    true],
+    ['LSFE Win %',      t1.LSFEWPct,   t2.LSFEWPct,   true],
+    ['NLSFE Win %',     t1.NLSFEWPct,  t2.NLSFEWPct,  true],
     ['PPE Hammer', t1.PPTeam16, t2.PPTeam16, false],
     ['PPE No Hammer',  t1.PPOpp16,  t2.PPOpp16,  false],
 	['OPPE Hammer',    t1.OPTeam16,  t2.OPTeam16,  false],
@@ -424,7 +438,7 @@ function renderCompare(t1, t2){
   ];
   const labels=[], d1=[], d2=[];
   const chartAllow = new Set([
-    'Hammer Efficiency','Force Efficiency','Steal Efficiency','Steal Defense','Win from Behind','Lose from Ahead'
+    'Win %','LSFE %','Hammer Efficiency','Force Efficiency','Steal Efficiency','Steal Defense','Win from Behind','Lose from Ahead'
   ]);
  rows.forEach(([label,a,b,isPct])=>{
   const diff = (a!=null && b!=null) ? (a - b) : null;
@@ -764,21 +778,30 @@ window.addEventListener('DOMContentLoaded', ()=>{
     const d = {
       overall:  getDeltaFromRow(table, "Overall"),
       lastEnd:  getDeltaFromRow(table, "Clutch"),
+      win:      getDeltaFromRow(table, "Win%"),
+      lsfe:     getDeltaFromRow(table, "LSFE%"),
+      lsfew:    getDeltaFromRow(table, "LSFEW%"),
+      nlsfew:   getDeltaFromRow(table, "NLSFEW%"),
       ppeH:     getDeltaFromRow(table, "PPE Hammer"),
       ppeNH:    getDeltaFromRow(table, "PPE No Hammer"),
-	  opeH:    getDeltaFromRow(table, "OPE Hammer"),
-      opeNH:   getDeltaFromRow(table, "OPE No Hammer"),
+      opeH:     getDeltaFromRow(table, "OPE Hammer"),
+      opeNH:    getDeltaFromRow(table, "OPE No Hammer"),
       hamEff:   getDeltaFromRow(table, "Hammer Efficiency"),
       forEff:   getDeltaFromRow(table, "Force Efficiency"),
       steEff:   getDeltaFromRow(table, "Steal Efficiency"),
       steDef:   getDeltaFromRow(table, "Steal Defense"),
+	  winB:     getDeltaFromRow(table, "Win from Behind"),
+      loseA:    getDeltaFromRow(table, "Lose from Ahead"),
     };
 
     if (LABELS.some(k => d[kToKey(k)] === null)) return null;
 
-    // Your weights:
-	// ΔWIN = 0.8·Overall + 0.2·LastEnd + 4·PPE_H + 4·PPE_NH - 4·OPE_H - 4·OPE_NH + HammerEff + ForceEff + StealEff − StealDef
-	const dwin = (0.8*d.overall + 0.2*d.lastEnd + 40*d.ppeH + 40*d.ppeNH - 40*d.opeH - 40*d.opeNH + d.hamEff + d.forEff + d.steEff - d.steDef);
+    //const z = x => (x==null || !isFinite(x) ? 0 : x);
+    // New ΔWIN:
+    // 0.8·Overall + 0.2·LastEnd + Win% + (LSFE% * (LSFEW% − NLSFEW%))
+    // + 40·PPE_H + 40·PPE_NH − 40·OPE_H − 40·OPE_NH + HammerEff + ForceEff + StealEff − StealDef
+    //const dwin = (0.8*z(d.overall) + 0.2*z(d.lastEnd) + z(d.win) + z(d.lsfe) * (z(d.lsfew) - z(d.nlsfew)) + 40*z(d.ppeH) + 40*z(d.ppeNH) - 40*z(d.opeH) - 40*z(d.opeNH) + z(d.hamEff) + z(d.forEff) + z(d.steEff) - z(d.steDef));
+    const dwin = 0.8*d.overall + 0.2*d.lastEnd + d.win + d.lsfe + d.lsfew + d.nlsfew + 40*d.ppeH + 40*d.ppeNH - 40*d.opeH - 40*d.opeNH + d.hamEff + d.forEff + d.steEff - d.steDef + d.winB - d.loseA;
     const t1 = clamp(50 + dwin, 1, 99);
     const t2 = 100 - t1;
     return { dwin, t1, t2 };
