@@ -296,10 +296,10 @@ async function fetchFirst(paths){
 }
 async function loadPlayers(){
   const candidates=[
-	'data/players_stats_spreadsheet_enriched.csv',
-	'./data/players_stats_spreadsheet_enriched.csv',
-	'../data/players_stats_spreadsheet_enriched.csv',
-	'/data/players_stats_spreadsheet_enriched.csv'
+    'data/players_stats_spreadsheet_extended.csv',
+    './data/players_stats_spreadsheet_extended.csv',
+    '../data/players_stats_spreadsheet_extended.csv',
+    '/data/players_stats_spreadsheet_extended.csv',
   ];
   let txt;
   try{ txt = await fetchFirst(candidates); }
@@ -480,8 +480,10 @@ function renderCompare(t1, t2){
 function renderPlayerList(host, names){
   host.innerHTML = names.map(n=>{
     const m=PLAYERS[n]?.metrics||{};
+    const best = m.Best? `Best: ${m.Best}`:''; const worst = m.Worst? `Worst: ${m.Worst}`:'';
     return `<div class="card" style="padding:10px; border-radius:10px; border:1px solid #eef0f7;">`+
       `<div style="font-weight:600">${n}</div>`+
+      (best||worst? `<div class="small muted" style="display:none;">${best}${best&&worst? ' · ':''}${worst}</div>`:'')+
       `<div class="grid" style="grid-template-columns:repeat(4,1fr); gap:6px; margin-top:6px">`+
       `<div class="small">HammerEff%<br><strong>${fmt(m.HammerEffPct,true)}</strong></div>`+
       `<div class="small">ForceEff%<br><strong>${fmt(m.ForceEffPct,true)}</strong></div>`+
@@ -694,7 +696,7 @@ function playerCardHtml(name){
          onerror="if(this.dataset.alt!=='1'){this.dataset.alt='1';this.src='/heads/${enc}.jpg';}"/>
     <div>
       <div class="name">${name}</div>
-      <div class="sub" style="display:none;" >Best: ${best} · Worst: ${worst}</div>
+      <div class="sub" style="display:none;">Best: ${best} · Worst: ${worst}</div>
       <div class="mini-kpis">
         <div><div class="k">HammerEff%</div><div class="v">${fmtPct(m.HammerEffPct)}</div></div>
         <div><div class="k">ForceEff%</div><div class="v">${fmtPct(m.ForceEffPct)}</div></div>
