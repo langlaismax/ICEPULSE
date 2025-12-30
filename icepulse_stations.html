@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="color-scheme" content="light only">
+  <title>IcePulse — Club Weather Dashboard</title>
+  <style>
+    :root{
+      --bg:#f7f9fc;
+      --card:#ffffff;
+      --text:#111318;
+      --muted:#5f6672;
+      --border:#e7ecf3;
+      --accent:#0f6fff;
+      --accent-2:#58b6ff;
+      --radius:14px;
+      --shadow:0 10px 30px rgba(14,30,65,.08);
+      --gap:14px;
+    }
+    *{box-sizing:border-box}
+    html,body{background:var(--bg);color:var(--text);margin:0}
+    body{padding:18px;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+    header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px}
+    h1{font-size:20px;margin:0;letter-spacing:.2px}
+    .sub{color:var(--muted);font-size:13px;margin-top:4px}
+    .wrap{display:grid;grid-template-columns:320px 1fr;gap:var(--gap);align-items:start}
+    @media (max-width: 980px){ .wrap{grid-template-columns:1fr} }
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .card h2{font-size:14px;margin:0}
+    .pad{padding:14px}
+    .stations{max-height:74vh;overflow:auto}
+    .station{padding:12px 12px;border-bottom:1px solid var(--border);cursor:pointer}
+    .station:last-child{border-bottom:none}
+    .station.active{background:linear-gradient(180deg, rgba(15,111,255,.08), rgba(15,111,255,.02))}
+    .station .name{font-weight:650}
+    .station .meta{font-size:12px;color:var(--muted);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap}
+    .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);background:#fff;font-size:12px;color:var(--muted)}
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .btn{appearance:none;border:1px solid var(--border);background:#fff;border-radius:10px;padding:8px 10px;font-size:12px;cursor:pointer}
+    .btn.active{border-color:rgba(15,111,255,.35);background:rgba(15,111,255,.08);color:#0b3a99}
+    .kpi{display:grid;grid-template-columns:repeat(4, minmax(0,1fr));gap:10px;margin-top:12px}
+    @media (max-width: 980px){ .kpi{grid-template-columns:repeat(2, minmax(0,1fr))} }
+    .kpi .box{padding:12px;border-radius:12px;border:1px solid var(--border);background:#fff}
+    .kpi .label{color:var(--muted);font-size:12px}
+    .kpi .val{font-size:18px;margin-top:6px;font-weight:700}
+    canvas{width:100% !important;height:380px !important}
+    .muted{color:var(--muted)}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>IcePulse — Club Weather Dashboard</h1>
+      <div class="sub">Live Firestore view of all stations (multi-club). Select a club to view recent history.</div>
+    </div>
+    <div class="pill">
+      <span>Firestore:</span>
+      <strong id="conn">connecting…</strong>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="card">
+      <div class="pad">
+        <div class="row">
+          <h2>Stations</h2>
+          <span class="muted" id="stationCount">0</span>
+        </div>
+      </div>
+      <div class="stations" id="stations"></div>
+    </div>
+
+    <div class="card">
+      <div class="pad">
+        <div class="row" style="margin-bottom:10px">
+          <div>
+            <h2 id="selTitle">Select a station</h2>
+            <div class="sub" id="selSubtitle"></div>
+          </div>
+          <div class="toolbar">
+            <button class="btn active" data-range="96">96h</button>
+            <button class="btn" data-range="24">24h</button>
+            <button class="btn" data-range="12">12h</button>
+            <button class="btn" data-range="6">6h</button>
+            <span style="width:8px"></span>
+            <button class="btn active" data-metric="airF">Air °F</button>
+            <button class="btn" data-metric="iceF">Ice °F</button>
+            <button class="btn" data-metric="rh">RH %</button>
+            <button class="btn" data-metric="co2">CO₂ ppm</button>
+          </div>
+        </div>
+
+        <div class="kpi">
+          <div class="box"><div class="label">Air</div><div class="val" id="kAir">—</div></div>
+          <div class="box"><div class="label">Ice</div><div class="val" id="kIce">—</div></div>
+          <div class="box"><div class="label">RH</div><div class="val" id="kRh">—</div></div>
+          <div class="box"><div class="label">CO₂</div><div class="val" id="kCo2">—</div></div>
+        </div>
+
+        <div style="margin-top:12px">
+          <canvas id="chart"></canvas>
+        </div>
+
+        <div class="sub" style="margin-top:10px">
+          Data model expected:
+          <span class="muted">stations/{stationId} (doc) + stations/{stationId}/readings/{doc} (subcollection)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase (compat, matches your existing drill.html style) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <script>
+    window.FIREBASE_CONFIG = {
+      apiKey: "AIzaSyBeNfHXl_9TgD1VzKK3VgI81gGz37Mr-5U",
+      authDomain: "icepulse-922d7.firebaseapp.com",
+      projectId: "icepulse-922d7",
+      storageBucket: "icepulse-922d7.firebasestorage.app",
+      messagingSenderId: "317028949393",
+      appId: "1:317028949393:web:a59ff4fa482f1385074e30"
+    };
+
+
+    // ---- Firebase init ----
+    const app = firebase.initializeApp(window.FIREBASE_CONFIG);
+    const db = firebase.firestore();
+
+    const elStations = document.getElementById('stations');
+    const elCount = document.getElementById('stationCount');
+    const elConn = document.getElementById('conn');
+
+    const elTitle = document.getElementById('selTitle');
+    const elSubtitle = document.getElementById('selSubtitle');
+
+    const kAir = document.getElementById('kAir');
+    const kIce = document.getElementById('kIce');
+    const kRh  = document.getElementById('kRh');
+    const kCo2 = document.getElementById('kCo2');
+
+    let selectedStationId = null;
+    let selectedRangeH = 96;
+    let selectedMetric = 'airF';
+    let unsubReadings = null;
+    let chart = null;
+
+    function fmtTs(ts) {
+      if (!ts) return '—';
+      const d = (ts.toDate) ? ts.toDate() : new Date(ts * 1000);
+      return d.toLocaleString();
+    }
+
+    function fmtNum(v, digits=1) {
+      if (v === null || v === undefined || Number.isNaN(v)) return '—';
+      return Number(v).toFixed(digits);
+    }
+
+    function setActiveButtons() {
+      document.querySelectorAll('[data-range]').forEach(b => {
+        b.classList.toggle('active', Number(b.dataset.range) === selectedRangeH);
+      });
+      document.querySelectorAll('[data-metric]').forEach(b => {
+        b.classList.toggle('active', b.dataset.metric === selectedMetric);
+      });
+    }
+
+    document.querySelectorAll('[data-range]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedRangeH = Number(btn.dataset.range);
+        setActiveButtons();
+        if (selectedStationId) loadReadings(selectedStationId);
+      });
+    });
+
+    document.querySelectorAll('[data-metric]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedMetric = btn.dataset.metric;
+        setActiveButtons();
+        if (selectedStationId) loadReadings(selectedStationId);
+      });
+    });
+
+    function renderStations(docs) {
+      elStations.innerHTML = '';
+      elCount.textContent = String(docs.length);
+
+      docs.forEach(doc => {
+        const data = doc.data() || {};
+        const club = data.clubName || data.name || doc.id;
+        const lastTs = data.lastTs || data.updatedAt || null;
+
+        const div = document.createElement('div');
+        div.className = 'station' + (doc.id === selectedStationId ? ' active' : '');
+        div.innerHTML = `
+          <div class="name">${club}</div>
+          <div class="meta">
+            <span>id: <span class="muted">${doc.id}</span></span>
+            <span>updated: <span class="muted">${fmtTs(lastTs)}</span></span>
+          </div>
+        `;
+        div.addEventListener('click', () => selectStation(doc.id, data));
+        elStations.appendChild(div);
+      });
+    }
+
+    function selectStation(stationId, data) {
+      selectedStationId = stationId;
+      renderStations(currentStations);
+
+      const club = (data && (data.clubName || data.name)) ? (data.clubName || data.name) : stationId;
+      elTitle.textContent = club;
+      elSubtitle.textContent = stationId;
+
+      // KPIs from station doc (fast)
+      kAir.textContent = (data && data.airF != null) ? `${fmtNum(data.airF, 1)}°F` : '—';
+      kIce.textContent = (data && data.iceF != null) ? `${fmtNum(data.iceF, 1)}°F` : '—';
+      kRh.textContent  = (data && data.rh   != null) ? `${fmtNum(data.rh, 1)}%` : '—';
+      kCo2.textContent = (data && data.co2  != null) ? `${Math.round(data.co2)}` : '—';
+
+      loadReadings(stationId);
+    }
+
+    function ensureChart() {
+      if (chart) return chart;
+      const ctx = document.getElementById('chart');
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{ label: '—', data: [], tension: 0.15, pointRadius: 0 }]
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: true },
+            tooltip: { callbacks: {
+              label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}`
+            } }
+          },
+          scales: {
+            x: {
+              ticks: { maxRotation: 0 },
+            },
+            y: {
+              beginAtZero: false
+            }
+          }
+        }
+      });
+      return chart;
+    }
+
+    function readingLimit(hours) {
+      // 10-min cadence expected; add some buffer
+      const perHour = 6;
+      return Math.min(1000, Math.max(12, Math.round(hours * perHour * 1.2)));
+    }
+
+    function loadReadings(stationId) {
+      if (unsubReadings) unsubReadings();
+
+      const limit = readingLimit(selectedRangeH);
+
+      const ref = db.collection('stations').doc(stationId).collection('readings')
+        .orderBy('ts', 'desc')
+        .limit(limit);
+
+      unsubReadings = ref.onSnapshot(snap => {
+        elConn.textContent = 'live';
+        const rows = [];
+        snap.forEach(d => rows.push(d.data() || {}));
+
+        // newest -> oldest, reverse for chart left-to-right
+        rows.reverse();
+
+        const labels = rows.map(r => {
+          const t = r.ts;
+          const d = (t && t.toDate) ? t.toDate() : new Date((t || 0) * 1000);
+          return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) + '\n' + d.toLocaleDateString();
+        });
+
+        const series = rows.map(r => {
+          const v = r[selectedMetric];
+          return (v === null || v === undefined) ? null : Number(v);
+        });
+
+        const metricLabelMap = {
+          airF: 'Air °F',
+          iceF: 'Ice °F',
+          rh: 'RH %',
+          co2: 'CO₂ ppm'
+        };
+
+        const c = ensureChart();
+        c.data.labels = labels;
+        c.data.datasets[0].label = metricLabelMap[selectedMetric] || selectedMetric;
+        c.data.datasets[0].data = series;
+        c.update('none');
+
+        // Update KPIs from latest reading (more accurate than station doc if you only update readings)
+        const last = rows[rows.length - 1] || null;
+        if (last) {
+          kAir.textContent = (last.airF != null) ? `${fmtNum(last.airF, 1)}°F` : kAir.textContent;
+          kIce.textContent = (last.iceF != null) ? `${fmtNum(last.iceF, 1)}°F` : kIce.textContent;
+          kRh.textContent  = (last.rh   != null) ? `${fmtNum(last.rh, 1)}%` : kRh.textContent;
+          kCo2.textContent = (last.co2  != null) ? `${Math.round(last.co2)}` : kCo2.textContent;
+        }
+      }, err => {
+        elConn.textContent = 'error';
+        console.error(err);
+      });
+    }
+
+    // ---- Load stations list ----
+    let currentStations = [];
+    db.collection('stations').orderBy('clubName').onSnapshot(snap => {
+      elConn.textContent = 'live';
+      currentStations = [];
+      snap.forEach(doc => currentStations.push(doc));
+      renderStations(currentStations);
+
+      // auto-select first station
+      if (!selectedStationId && currentStations.length) {
+        selectStation(currentStations[0].id, currentStations[0].data());
+      }
+    }, err => {
+      elConn.textContent = 'error';
+      console.error(err);
+      elStations.innerHTML = '<div class="pad muted">Firestore read failed. Check your Firebase config and rules.</div>';
+    });
+  </script>
+</body>
+</html>
